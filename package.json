@@ -1,0 +1,23 @@
+{
+  "name": "deburapy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deburapy for AI-human relationships: not therapy, not debugging.",
+  "scripts": {
+    "dev": "node src/server.mjs",
+    "start": "node src/server.mjs",
+    "mcp": "node src/mcp-server.mjs",
+    "test": "node test/run-tests.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "ai-human-relationship",
+    "mediator",
+    "mcp",
+    "byok"
+  ],
+  "license": "MIT"
+}

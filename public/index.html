@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Deburapy</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>Deburapy</h1>
+        <p id="tagline">Not therapy, not debugging. Deburapy for AI-human relationships.</p>
+      </div>
+      <select id="locale">
+        <option value="en">English</option>
+        <option value="zh-Hans">简中</option>
+      </select>
+    </header>
+
+    <main class="layout">
+      <section class="panel config">
+        <h2>Model</h2>
+        <label>
+          Provider
+          <select id="provider">
+            <option value="openai-compatible">OpenAI-compatible</option>
+            <option value="openrouter">OpenRouter</option>
+          </select>
+        </label>
+        <label>
+          Base URL
+          <input id="baseUrl" placeholder="https://api.openai.com/v1">
+        </label>
+        <label>
+          Model
+          <input id="model" placeholder="gpt-4.1-mini">
+        </label>
+        <label>
+          API key
+          <input id="apiKey" type="password" autocomplete="off" placeholder="Stored only in this browser">
+        </label>
+        <button id="saveConfig">Save locally</button>
+
+        <h2>Channel Push</h2>
+        <label>
+          From
+          <input id="pushFrom" value="External Channel">
+        </label>
+        <label>
+          Message
+          <textarea id="pushContent" rows="4"></textarea>
+        </label>
+        <button id="sendPush">Push to companion</button>
+      </section>
+
+      <section class="room">
+        <div class="roomHeader">
+          <h2>Deburapy Room</h2>
+          <button id="askMediator">Ask Deburapy</button>
+        </div>
+        <div id="messages" class="messages"></div>
+        <form id="messageForm" class="composer">
+          <select id="authorRole">
+            <option value="human">Human</option>
+            <option value="companion">AI Companion</option>
+            <option value="mediator">Deburapy</option>
+          </select>
+          <input id="messageInput" placeholder="Write a room message">
+          <button>Send</button>
+        </form>
+      </section>
+
+      <section class="panel promptPanel">
+        <h2>System Prompt</h2>
+        <textarea id="systemPrompt" spellcheck="false"></textarea>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
