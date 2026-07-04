@@ -26,6 +26,8 @@ const els = {
   mediatorStatus: document.querySelector("#mediatorStatus"),
   testMediator: document.querySelector("#testMediator"),
   testCompanion: document.querySelector("#testCompanion"),
+  companionDot: document.querySelector("#companionDot"),
+  companionStatus: document.querySelector("#companionStatus"),
   companionMode: document.querySelector("#companionMode"),
   companionName: document.querySelector("#companionName"),
   companionApiSettings: document.querySelector("#companionApiSettings"),
@@ -193,12 +195,14 @@ function writeSavedJson(key, value) {
 
 function saveConfig() {
   const current = fullConfig();
+  const shouldSaveMediatorKey = current.mediator.rememberApiKey || current.mediator.apiKey;
+  const shouldSaveCompanionKey = current.companion.rememberApiKey || current.companion.apiKey;
   const saved = {
     mediator: {
       provider: current.mediator.provider,
       baseUrl: current.mediator.baseUrl,
       model: current.mediator.model,
-      rememberApiKey: current.mediator.rememberApiKey,
+      rememberApiKey: Boolean(shouldSaveMediatorKey),
       systemPrompt: current.mediator.systemPrompt
     },
     companion: {
@@ -207,14 +211,18 @@ function saveConfig() {
       model: current.companion.model,
       mode: current.companion.mode,
       name: current.companion.name,
-      rememberApiKey: current.companion.rememberApiKey,
+      rememberApiKey: Boolean(current.companion.mode === "api" && shouldSaveCompanionKey),
       systemPrompt: current.companion.systemPrompt,
       documents: current.companion.documents
     }
   };
-  if (current.mediator.rememberApiKey) saved.mediator.apiKey = current.mediator.apiKey;
-  if (current.companion.mode === "api" && current.companion.rememberApiKey) {
+  if (shouldSaveMediatorKey) {
+    saved.mediator.apiKey = current.mediator.apiKey;
+    els.rememberMediatorApiKey.checked = true;
+  }
+  if (current.companion.mode === "api" && shouldSaveCompanionKey) {
     saved.companion.apiKey = current.companion.apiKey;
+    els.rememberCompanionApiKey.checked = true;
   }
   if (writeSavedJson("deburapy.config", saved)) {
     appendLog("Settings saved locally.");
@@ -275,7 +283,9 @@ function loadTargetConfig(target, saved = {}) {
   if (saved.baseUrl) els[`${target}BaseUrl`].value = saved.baseUrl;
   if (saved.model) els[`${target}Model`].value = saved.model;
   const rememberEl = target === "mediator" ? els.rememberMediatorApiKey : els.rememberCompanionApiKey;
-  rememberEl.checked = saved.rememberApiKey === true;
+  if (saved.rememberApiKey !== undefined) {
+    rememberEl.checked = saved.rememberApiKey === true;
+  }
   if (saved.rememberApiKey === true && saved.apiKey) {
     els[`${target}ApiKey`].value = saved.apiKey;
   }
@@ -463,7 +473,7 @@ function updateTurnUi() {
     : "Send to AI companion";
 }
 
-function startSession() {
+async function startSession() {
   reportClientEvent("click", { action: "startSession.before" });
   const durationMinutes = Number(els.sessionDuration.value || 60);
   session.running = true;
@@ -475,6 +485,7 @@ function startSession() {
   updateTurnUi();
   appendLog(`Started session ${els.sessionNumber.value} for ${durationMinutes} minutes.`);
   reportClientEvent("click", { action: "startSession.after" });
+  await askMediator();
 }
 
 function endSession() {
@@ -515,6 +526,10 @@ function setStatus(target, next, detail) {
   status[target] = next;
   const dot = target === "mediator" ? els.mediatorDot : els.companionDot;
   const text = target === "mediator" ? els.mediatorStatus : els.companionStatus;
+  if (!dot || !text) {
+    console.warn(`Missing status element for ${target}.`);
+    return;
+  }
   dot.className = `statusDot statusDot--${next}`;
   text.textContent = detail;
 }
@@ -650,7 +665,9 @@ els.sessionDuration.addEventListener("change", () => {
   if (!session.running) updateSessionDisplay();
   saveSessionState();
 });
-els.startSession.addEventListener("click", startSession);
+els.startSession.addEventListener("click", () => {
+  runAction(els.startSession, "Starting...", startSession);
+});
 els.endSession.addEventListener("click", endSession);
 els.mediatorProvider.addEventListener("change", () => applyProviderDefaults("mediator"));
 els.companionProvider.addEventListener("change", () => applyProviderDefaults("companion"));
@@ -732,11 +749,11 @@ setStatus("mediator", "idle", "Not tested.");
 setStatus("companion", "idle", "Not tested.");
 updateCompanionMode();
 appendLog("Deburapy loaded. Test both connections before running a room.");
-await loadMediatorPrompt();
-await refreshRoom();
 window.setInterval(updateSessionDisplay, 1000);
 window.setInterval(() => {
   if (els.companionMode.value === "mcp" && session.turnPhase === "companion") {
     refreshRoom().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
   }
 }, 4000);
+loadMediatorPrompt().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
+refreshRoom().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));

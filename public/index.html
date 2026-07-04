@@ -124,11 +124,11 @@
         </label>
         <label>
           API key
-          <input id="mediatorApiKey" type="password" autocomplete="off" placeholder="Not saved by default">
+          <input id="mediatorApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save">
         </label>
         <label class="checkboxLabel">
-          <input id="rememberMediatorApiKey" type="checkbox">
-          Remember mediator key
+          <input id="rememberMediatorApiKey" type="checkbox" checked>
+          Save mediator key locally
         </label>
         <button id="saveConfig">Save settings</button>
         <button id="clearMediatorKey" type="button" class="secondary">Clear mediator key</button>
@@ -168,14 +168,14 @@
             Model
             <input id="companionModel" data-model>
           </label>
-          <label>
-            API key
-            <input id="companionApiKey" type="password" autocomplete="off" placeholder="Not saved by default">
-          </label>
-          <label class="checkboxLabel">
-            <input id="rememberCompanionApiKey" type="checkbox">
-            Remember companion key
-          </label>
+            <label>
+              API key
+              <input id="companionApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save">
+            </label>
+            <label class="checkboxLabel">
+              <input id="rememberCompanionApiKey" type="checkbox" checked>
+              Save companion key locally
+            </label>
           <button id="copyMediatorConfig" type="button" class="secondary">Use mediator model settings</button>
           <button id="clearCompanionKey" type="button" class="secondary">Clear companion key</button>
           <details open>

@@ -104,11 +104,10 @@ Smoke test through the UI:
    responded. MCP companion mode only verifies that the bridge is reachable;
    it cannot prove an external Claude/Codex client is connected from the
    browser.
-8. Close settings and click `Start` in the session rail when you want the
-   countdown to begin.
-9. Click `Continue with Deburapy`. The mediator decides the next speaker. By
-   default it hands the turn to the human; it can also route the next turn to
-   the AI companion first.
+8. Close settings and click `Start` in the session rail. The countdown begins
+   and Deburapy automatically writes the first mediator message.
+9. Deburapy decides the next speaker. By default it hands the turn to the
+   human; it can also route the next turn to the AI companion first.
 10. When the turn badge says `Next: Human`, add a human message in the bottom
     composer. The composer is human-only.
 11. After the human sends, Deburapy routes the turn to the AI companion. In

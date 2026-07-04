@@ -36,7 +36,8 @@ The browser composer is intentionally human-only. The other two roles speak
 through their configured connections instead of through a role selector.
 The guided turn flow is Deburapy -> Human -> AI Companion -> Deburapy. The
 mediator can choose `Next speaker: companion` when it needs the AI companion's
-runtime-side account before the human answers.
+runtime-side account before the human answers. In the browser UI, `Start`
+begins the session countdown and triggers the first Deburapy mediator response.
 
 The default web layout keeps the room uncluttered: session metadata and the
 60/90 minute countdown live in the left rail, connection status lives in compact
