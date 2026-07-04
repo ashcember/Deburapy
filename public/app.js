@@ -1,8 +1,25 @@
 const roomId = "default";
+const onboardingStorageKey = "deburapy.onboarding.v1";
 
 const els = {
   locale: document.querySelector("#locale"),
   tagline: document.querySelector("#tagline"),
+  consentGate: document.querySelector("#consentGate"),
+  consentForm: document.querySelector("#consentForm"),
+  intakeConcern: document.querySelector("#intakeConcern"),
+  intakeUrgency: document.querySelector("#intakeUrgency"),
+  consentSignature: document.querySelector("#consentSignature"),
+  consentAgreeScope: document.querySelector("#consentAgreeScope"),
+  consentAgreeLocal: document.querySelector("#consentAgreeLocal"),
+  consentAgreeAiLimits: document.querySelector("#consentAgreeAiLimits"),
+  consentConfirm: document.querySelector("#consentConfirm"),
+  consentStatus: document.querySelector("#consentStatus"),
+  consentAssistantHistory: document.querySelector("#consentAssistantHistory"),
+  consentAssistantForm: document.querySelector("#consentAssistantForm"),
+  consentAssistantInput: document.querySelector("#consentAssistantInput"),
+  consentAssistantSend: document.querySelector("#consentAssistantSend"),
+  consentAssistantStatus: document.querySelector("#consentAssistantStatus"),
+  consentAssistantSettings: document.querySelector("#consentAssistantSettings"),
   openSettings: document.querySelector("#openSettings"),
   closeSettings: document.querySelector("#closeSettings"),
   settingsBackdrop: document.querySelector("#settingsBackdrop"),
@@ -44,6 +61,7 @@ const els = {
   copyMediatorConfig: document.querySelector("#copyMediatorConfig"),
   clearMediatorKey: document.querySelector("#clearMediatorKey"),
   clearCompanionKey: document.querySelector("#clearCompanionKey"),
+  resetOnboarding: document.querySelector("#resetOnboarding"),
   companionPrompt: document.querySelector("#companionPrompt"),
   companionFiles: document.querySelector("#companionFiles"),
   companionDocs: document.querySelector("#companionDocs"),
@@ -206,6 +224,85 @@ function writeSavedJson(key, value) {
   }
 }
 
+function removeSavedJson(key) {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch (err) {
+    appendLog(`Could not clear ${key}: ${storageErrorMessage(err)}`, "warn");
+    return false;
+  }
+}
+
+function readOnboarding() {
+  return readSavedJson(onboardingStorageKey);
+}
+
+function onboardingComplete() {
+  const saved = readOnboarding();
+  return Boolean(
+    saved.acceptedAt &&
+    saved.screeningCompletedAt &&
+    saved.signature &&
+    saved.screening?.concern &&
+    saved.screening?.urgency
+  );
+}
+
+function showConsentGate() {
+  els.consentGate.hidden = false;
+  document.body.classList.add("isConsentOpen");
+  window.setTimeout(() => els.consentSignature.focus(), 80);
+}
+
+function hideConsentGate() {
+  els.consentGate.hidden = true;
+  document.body.classList.remove("isConsentOpen");
+}
+
+function syncConsentGate() {
+  if (onboardingComplete()) {
+    hideConsentGate();
+    return true;
+  }
+  showConsentGate();
+  return false;
+}
+
+function completeOnboarding() {
+  const record = {
+    version: 1,
+    acceptedAt: new Date().toISOString(),
+    screeningCompletedAt: new Date().toISOString(),
+    signature: els.consentSignature.value.trim(),
+    screening: {
+      concern: els.intakeConcern.value,
+      urgency: els.intakeUrgency.value
+    },
+    agreements: {
+      scope: els.consentAgreeScope.checked,
+      localStorage: els.consentAgreeLocal.checked,
+      aiLimitations: els.consentAgreeAiLimits.checked
+    }
+  };
+  if (writeSavedJson(onboardingStorageKey, record)) {
+    hideConsentGate();
+    appendLog(`Intake consent saved locally for ${record.screening.concern}.`, "ok");
+  }
+}
+
+function resetOnboarding() {
+  if (removeSavedJson(onboardingStorageKey)) {
+    els.consentForm.reset();
+    els.settingsBackdrop.classList.remove("isOpen");
+    els.settingsDrawer.classList.remove("isOpen");
+    els.settingsBackdrop.hidden = true;
+    els.settingsDrawer.hidden = true;
+    showConsentGate();
+    appendLog("Local intake consent reset.", "warn");
+  }
+}
+
 function saveConfig() {
   const current = fullConfig();
   const shouldSaveMediatorKey = current.mediator.rememberApiKey || current.mediator.apiKey;
@@ -338,7 +435,8 @@ function uiDebugState() {
     askMediatorDisabled: els.askMediator.disabled,
     askCompanionDisabled: els.askCompanion.disabled,
     startDisabled: els.startSession.disabled,
-    settingsOpen: !els.settingsDrawer.hidden
+    settingsOpen: !els.settingsDrawer.hidden,
+    consentOpen: !els.consentGate.hidden
   };
 }
 
@@ -640,6 +738,11 @@ function updateTurnUi() {
 }
 
 async function startSession() {
+  if (!onboardingComplete()) {
+    showConsentGate();
+    appendLog("Complete intake consent before starting a session.", "warn");
+    return;
+  }
   reportClientEvent("click", { action: "startSession.before" });
   const durationMinutes = Number(els.sessionDuration.value || 60);
   const startedAt = Date.now();
@@ -731,7 +834,13 @@ function closeSettings() {
   window.setTimeout(() => {
     els.settingsBackdrop.hidden = true;
     els.settingsDrawer.hidden = true;
+    if (!onboardingComplete()) showConsentGate();
   }, 180);
+}
+
+function openSettingsFromConsent() {
+  hideConsentGate();
+  openSettings();
 }
 
 function appendLog(message, level = "info") {
@@ -753,12 +862,65 @@ function setStatus(target, next, detail) {
   text.textContent = detail;
 }
 
+function setConsentAssistantStatus(message, level = "info") {
+  els.consentAssistantStatus.textContent = message;
+  els.consentAssistantStatus.classList.toggle("isOk", level === "ok");
+  els.consentAssistantStatus.classList.toggle("isWarn", level === "warn");
+  els.consentAssistantStatus.classList.toggle("isError", level === "error");
+}
+
+function appendConsentAssistantMessage(role, content) {
+  const item = document.createElement("article");
+  item.className = `consentAssistantMessage consentAssistantMessage--${role}`;
+  const body = document.createElement("p");
+  body.textContent = content;
+  item.append(body);
+  els.consentAssistantHistory.append(item);
+  els.consentAssistantHistory.scrollTop = els.consentAssistantHistory.scrollHeight;
+}
+
 function requireApiConfig(target) {
   const cfg = modelConfig(target);
   if (!cfg.apiKey) throw new Error(`${target} API key is missing.`);
   if (!cfg.baseUrl) throw new Error(`${target} base URL is missing.`);
   if (!cfg.model) throw new Error(`${target} model is missing.`);
   return cfg;
+}
+
+async function askConsentAssistant(question) {
+  const content = String(question || "").trim();
+  if (!content) return;
+  appendConsentAssistantMessage("user", content);
+  els.consentAssistantInput.value = "";
+
+  let cfg;
+  try {
+    cfg = requireApiConfig("mediator");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    setConsentAssistantStatus("Connect the Deburapy provider in Settings before using model-backed intake answers.", "warn");
+    appendConsentAssistantMessage(
+      "assistant",
+      `I can answer with a connected model after Settings has a Deburapy provider, model, and API key. Current blocker: ${message}`
+    );
+    return;
+  }
+
+  setConsentAssistantStatus("Asking pre-intake assistant...", "warn");
+  const payload = await json("/api/intake/respond", {
+    method: "POST",
+    body: JSON.stringify({
+      ...cfg,
+      locale: els.locale.value,
+      question: content,
+      screening: {
+        concern: els.intakeConcern.value,
+        urgency: els.intakeUrgency.value
+      }
+    })
+  });
+  appendConsentAssistantMessage("assistant", payload.content);
+  setConsentAssistantStatus("Pre-intake assistant answered. This was not added to the room transcript.", "ok");
 }
 
 async function testConnection(target) {
@@ -873,6 +1035,22 @@ async function readCompanionFiles() {
 }
 
 els.locale.addEventListener("change", () => setLocale(els.locale.value));
+els.consentForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  completeOnboarding();
+});
+els.consentAssistantForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  runAction(els.consentAssistantSend, "…", () => askConsentAssistant(els.consentAssistantInput.value));
+});
+document.querySelectorAll("[data-consent-question]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const question = button.getAttribute("data-consent-question") || "";
+    els.consentAssistantInput.value = question;
+    runAction(els.consentAssistantSend, "…", () => askConsentAssistant(question));
+  });
+});
+els.consentAssistantSettings.addEventListener("click", openSettingsFromConsent);
 els.openSettings.addEventListener("click", openSettings);
 els.closeSettings.addEventListener("click", closeSettings);
 els.settingsBackdrop.addEventListener("click", closeSettings);
@@ -909,6 +1087,7 @@ els.clearCompanionKey.addEventListener("click", () => {
   els.rememberCompanionApiKey.checked = false;
   saveConfig();
 });
+els.resetOnboarding.addEventListener("click", resetOnboarding);
 els.copyMediatorConfig.addEventListener("click", () => {
   els.companionProvider.value = els.mediatorProvider.value;
   els.companionBaseUrl.value = els.mediatorBaseUrl.value;
@@ -985,6 +1164,7 @@ setStatus("mediator", "idle", "Not tested.");
 setStatus("companion", "idle", "Not tested.");
 updateCompanionMode();
 appendLog("Deburapy loaded. Local room data reloads from .deburapy-data.");
+syncConsentGate();
 window.setInterval(checkSessionClock, 1000);
 window.setInterval(() => {
   if (els.companionMode.value === "mcp" && session.turnPhase === "companion") {

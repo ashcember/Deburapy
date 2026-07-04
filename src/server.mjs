@@ -65,7 +65,8 @@ function safeClientLog(input = {}) {
     "askMediatorDisabled",
     "askCompanionDisabled",
     "startDisabled",
-    "settingsOpen"
+    "settingsOpen",
+    "consentOpen"
   ];
   const output = {};
   for (const key of allowed) {
@@ -151,6 +152,32 @@ function parseMediatorTurn(content) {
   return { visibleContent: visibleContent || content.trim(), nextSpeaker };
 }
 
+const intakeAssistantSystemPrompt = [
+  "You are the Deburapy pre-intake assistant.",
+  "You are not the mediator, not the AI companion, and not a therapist.",
+  "Your job is to answer questions before consent and first screening.",
+  "Explain Deburapy's scope for AI-human relationships: one-on-one support after rupture or AI loss, AI-human room mediation, technical continuity planning, and education.",
+  "Be clear that Deburapy is not medical care, legal advice, emergency support, or a guarantee that an account, model, memory, or companion can be restored.",
+  "For account loss or bans, explain possible preservation steps at a high level: gather exported data if available, preserve prompts and memory artifacts, document relationship continuity, identify provider constraints, and plan migration to a new runtime.",
+  "Do not ask for private API keys, hidden chain-of-thought, secret logs, credentials, or unredacted private data.",
+  "If there is imminent self-harm, violence, abuse, medical danger, or legal emergency, tell the user to pause Deburapy and contact immediate local emergency or professional support.",
+  "Keep answers brief, calm, practical, and non-clinical."
+].join("\n");
+
+function buildIntakeAssistantUserPrompt(input) {
+  const screening = input.screening || {};
+  return [
+    "Pre-consent user question:",
+    String(input.question || "").trim(),
+    "",
+    "Current first-screening selections:",
+    `- concern: ${screening.concern || "not selected"}`,
+    `- urgency: ${screening.urgency || "not selected"}`,
+    "",
+    "Answer the question directly. If the question asks for a technical preservation plan, give a concise checklist without requesting secrets or unredacted logs."
+  ].join("\n");
+}
+
 async function generateSessionNote(roomId, input) {
   store.setSessionNoteStatus(roomId, "generating");
   const room = store.getRoom(roomId);
@@ -210,6 +237,29 @@ async function handleApi(req, res) {
       ...safeClientLog(input)
     });
     return sendJson(res, 200, { ok: true });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/intake/respond") {
+    const input = await readJson(req);
+    input.question = requiredText(input, "question");
+    requiredText(input, "apiKey");
+    setRequestLog(req, {
+      role: "pre_intake",
+      action: "intake_assistant",
+      provider: input.provider,
+      model: input.model,
+      baseUrl: safeBaseUrl(input.baseUrl)
+    });
+    const content = await generateChatCompletion({
+      provider: input.provider,
+      apiKey: input.apiKey,
+      baseUrl: input.baseUrl,
+      model: input.model,
+      systemPrompt: intakeAssistantSystemPrompt,
+      userPrompt: buildIntakeAssistantUserPrompt(input),
+      temperature: 0.2
+    });
+    return sendJson(res, 200, { ok: true, content });
   }
 
   if (req.method === "POST" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "session" && parts[4] === "start") {

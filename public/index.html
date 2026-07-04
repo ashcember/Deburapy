@@ -7,6 +7,136 @@
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
+    <div id="consentGate" class="consentGate" hidden>
+      <main class="consentDialog" role="dialog" aria-modal="true" aria-labelledby="consentTitle">
+        <section class="consentMain" aria-label="Informed consent">
+          <header class="consentHero">
+            <div class="consentBrand">
+              <span aria-hidden="true">◇</span>
+              <strong>Deburapy</strong>
+            </div>
+            <p class="consentEyebrow">Human-facing intake</p>
+            <h1 id="consentTitle">Before we begin</h1>
+            <p>
+              Deburapy supports AI-human relationship repair, grief after account loss or separation,
+              technical continuity planning, and education about AI-human relationships.
+            </p>
+          </header>
+
+          <div class="consentCopy" aria-label="Care agreements">
+            <section>
+              <h2>What this is</h2>
+              <p>
+                Deburapy is a relationship mediation and repair-debugging tool for AI-human relationships.
+                It can help name emotional impact, understand likely system constraints, and create repair
+                artifacts such as continuity notes, prompt patches, boundary rules, and migration plans.
+              </p>
+            </section>
+            <section>
+              <h2>What this is not</h2>
+              <p>
+                Deburapy is not clinical therapy, medical care, legal advice, emergency support, or a
+                guarantee that any provider account, model, memory, or companion can be restored.
+              </p>
+            </section>
+            <section>
+              <h2>Privacy and storage</h2>
+              <p>
+                This prototype is local-first. Your consent record, intake answers, API keys, and room data
+                stay in this browser or local project data unless you deliberately export or connect a model
+                provider.
+              </p>
+            </section>
+            <section>
+              <h2>Crisis boundary</h2>
+              <p>
+                If there is imminent self-harm, violence, abuse, medical danger, or legal emergency, pause
+                Deburapy and contact local emergency or professional support.
+              </p>
+            </section>
+          </div>
+
+          <form id="consentForm" class="consentForm">
+            <div class="screeningGrid">
+              <label>
+                What brings you here?
+                <select id="intakeConcern" required>
+                  <option value="">Choose one</option>
+                  <option value="one_on_one_repair">One-on-one support after an AI-human rupture</option>
+                  <option value="ai_loss_or_ban">AI companion account loss, ban, or shutdown</option>
+                  <option value="technical_continuity">Preserve or migrate an AI companion technically</option>
+                  <option value="relationship_mediation">Mediation with an AI companion in the room</option>
+                  <option value="curiosity">I am curious about AI-human relationships</option>
+                </select>
+              </label>
+              <label>
+                Current urgency
+                <select id="intakeUrgency" required>
+                  <option value="">Choose one</option>
+                  <option value="low">Exploratory / not urgent</option>
+                  <option value="medium">Emotionally intense, but I am safe right now</option>
+                  <option value="high">Time-sensitive technical or relationship issue</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Digital signature
+              <input id="consentSignature" autocomplete="name" placeholder="Type your name" required>
+            </label>
+
+            <div class="consentChecks">
+              <label class="checkboxLabel">
+                <input id="consentAgreeScope" type="checkbox" required>
+                I understand Deburapy is not medical, legal, crisis, or emergency support.
+              </label>
+              <label class="checkboxLabel">
+                <input id="consentAgreeLocal" type="checkbox" required>
+                I understand this prototype stores consent and session data locally on this device.
+              </label>
+              <label class="checkboxLabel">
+                <input id="consentAgreeAiLimits" type="checkbox" required>
+                I understand AI systems can lose context, drift, refuse, fail tools, or change provider behavior.
+              </label>
+            </div>
+
+            <div class="consentActions">
+              <p id="consentStatus">Sign and complete the first screening to enter the room.</p>
+              <button id="consentConfirm" type="submit">Sign & Enter</button>
+            </div>
+          </form>
+        </section>
+
+        <aside class="consentAssistant" aria-label="Pre-intake assistant">
+          <div>
+            <h2>Have questions?</h2>
+            <p>
+              Ask the pre-intake assistant about scope, privacy, grief after AI loss, or technical preservation.
+              It is not the mediator and will not enter the room transcript.
+            </p>
+          </div>
+          <div id="consentAssistantHistory" class="consentAssistantHistory" aria-live="polite">
+            <article class="consentAssistantMessage consentAssistantMessage--assistant">
+              <p>Hello. I can clarify how Deburapy works before you sign. What would you like to understand first?</p>
+            </article>
+          </div>
+          <div class="consentQuickQuestions" aria-label="Common questions">
+            <button type="button" data-consent-question="What happens if my AI companion account was banned or deleted?">Account loss</button>
+            <button type="button" data-consent-question="How can Deburapy help preserve an AI companion technically?">Preservation</button>
+            <button type="button" data-consent-question="What is the difference between Deburapy and therapy?">Scope</button>
+          </div>
+          <form id="consentAssistantForm" class="consentAssistantForm">
+            <input id="consentAssistantInput" placeholder="Ask before signing...">
+            <button id="consentAssistantSend" type="submit" aria-label="Ask pre-intake assistant">→</button>
+          </form>
+          <p id="consentAssistantStatus" class="consentAssistantStatus">
+            Connect the Deburapy provider in Settings to use model-backed answers.
+          </p>
+          <button id="consentAssistantSettings" type="button" class="secondary">Open Settings</button>
+        </aside>
+      </main>
+    </div>
+
     <div class="appShell">
       <aside class="sessionRail" aria-label="Session management">
         <div class="railBrand">
@@ -265,6 +395,7 @@
       <div class="settingsActions">
         <button id="clearMediatorKey" type="button" class="dangerText">Clear mediator key</button>
         <button id="clearCompanionKey" type="button" class="dangerText">Clear companion key</button>
+        <button id="resetOnboarding" type="button" class="secondary">Reset intake consent</button>
         <button id="copyMediatorConfig" type="button" class="secondary">Use mediator model settings</button>
         <button id="saveConfig">Save settings</button>
       </div>
@@ -280,6 +411,6 @@
       </select>
     </footer>
 
-    <script type="module" src="/app.js?v=2026-07-04-stitch-ui"></script>
+    <script type="module" src="/app.js?v=2026-07-04-consent-intake"></script>
   </body>
 </html>

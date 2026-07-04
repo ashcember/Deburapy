@@ -14,6 +14,8 @@ Chinese name for the first prototype: **Deburapy 人机关系协调员**.
 - A simple browser UI inspired by character-chat tools: transcript, connection
   health, BYOK model settings, mediator setup, AI companion setup, and
   diagnostics.
+- A first-run informed consent and screening gate, with a model-backed
+  pre-intake assistant for questions before signing.
 - BYOK model calls through OpenAI-compatible chat completions, OpenRouter, and
   Google AI Studio Gemini API keys.
 - A default Deburapy mediator system prompt plus selectable mediator persona
@@ -65,6 +67,12 @@ key to the local server only when you ask the mediator to respond. The key is
 not saved by default; only check "Remember API key" on a private browser
 profile you trust.
 
+First-run consent and screening are stored in the browser under
+`deburapy.onboarding.v1`. They are not written to `.deburapy-data/` and are not
+added to the room transcript. Use `Settings -> Reset intake consent` to test the
+new-user flow again. The pre-intake assistant uses the Deburapy provider config
+only when you ask it a question; its answers are not saved into the room.
+
 ## Mediator Personas
 
 Mediator personas work like lightweight local character cards for the
@@ -115,38 +123,41 @@ Smoke test through the UI:
 
 1. Start `npm run dev`.
 2. Open `http://127.0.0.1:8787`.
-3. Use the left rail to set the session number and a 60 or 90 minute duration.
-4. Click `Settings` in the top right.
-5. Configure the Deburapy mediator provider, base URL, model, and API key.
-6. Configure the AI companion:
+3. Complete the informed consent and first screening gate. If you want to test
+   the pre-intake assistant first, open Settings from the gate and configure
+   the Deburapy provider.
+4. Use the left rail to set the session number and a 60 or 90 minute duration.
+5. Click `Settings` in the top right.
+6. Configure the Deburapy mediator provider, base URL, model, and API key.
+7. Configure the AI companion:
    - `BYOK API companion`: fill provider/base URL/model/key and optional
      companion prompt/docs.
    - `External MCP companion`: do not fill an API key. Follow the MCP guide in
      Settings and connect an external Claude/Codex client to Deburapy's MCP
      server.
-7. Click `Test mediator` and `Test companion`. A green dot means that endpoint
+8. Click `Test mediator` and `Test companion`. A green dot means that endpoint
    responded. MCP companion mode only verifies that the bridge is reachable;
    it cannot prove an external Claude/Codex client is connected from the
    browser.
-8. Close settings and click `Start` in the session rail. The countdown begins,
+9. Close settings and click `Start` in the session rail. The countdown begins,
    the server stores the session start/end time, and Deburapy automatically
    writes the first mediator message.
-9. Deburapy decides the next speaker. By default it hands the turn to the
+10. Deburapy decides the next speaker. By default it hands the turn to the
    human; it can also route the next turn to the AI companion first.
-10. When the turn badge says `Next: Human`, add a human message in the bottom
+11. When the turn badge says `Next: Human`, add a human message in the bottom
     composer. The composer is human-only.
-11. After the human sends, Deburapy routes the turn to the AI companion. In
+12. After the human sends, Deburapy routes the turn to the AI companion. In
     BYOK API mode it calls the companion model; in MCP mode it queues a pending
     turn for the external MCP client.
-12. After the AI companion replies, the turn returns to Deburapy.
-13. When the countdown reaches the final five minutes, Deburapy marks the
+13. After the AI companion replies, the turn returns to Deburapy.
+14. When the countdown reaches the final five minutes, Deburapy marks the
     wrap-up window and includes that reminder in mediator, API companion, and
     MCP companion context.
-14. Click `End`, or let the timer expire, to generate a session note. The note
+15. Click `End`, or let the timer expire, to generate a session note. The note
     is saved into the local room store automatically. Exporting the note from
     the left rail is optional, mainly for backup or transfer; casual reading is
     not recommended.
-15. Reopen Settings and use Diagnostics when a key, model, quota, or
+16. Reopen Settings and use Diagnostics when a key, model, quota, or
     connection fails.
 
 ## Local Persistence and Session Notes
