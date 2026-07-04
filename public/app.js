@@ -252,7 +252,10 @@ function onboardingComplete() {
 function showConsentGate() {
   els.consentGate.hidden = false;
   document.body.classList.add("isConsentOpen");
-  window.setTimeout(() => els.consentSignature.focus(), 80);
+  const consentMain = document.querySelector(".consentMain");
+  const consentAssistant = document.querySelector(".consentAssistant");
+  if (consentMain) consentMain.scrollTop = 0;
+  if (consentAssistant) consentAssistant.scrollTop = 0;
 }
 
 function hideConsentGate() {

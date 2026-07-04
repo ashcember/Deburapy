@@ -143,26 +143,28 @@ label {
   position: fixed;
   inset: 0;
   z-index: 80;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  overflow: auto;
-  background:
-    linear-gradient(135deg, rgba(238, 246, 236, 0.86), rgba(251, 249, 248, 0.96) 46%, rgba(255, 240, 234, 0.76)),
-    var(--background);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
+  padding: 88px 50px 28px;
+  overflow: hidden;
+  background: var(--background);
 }
 
 .consentDialog {
-  width: min(1180px, 100%);
-  max-height: min(880px, calc(100vh - 48px));
+  width: min(1500px, calc(100vw - 80px));
+  height: min(1104px, calc(100vh - 176px));
+  min-height: 620px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.42fr);
+  grid-template-columns: minmax(0, 1fr) 380px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.66);
-  box-shadow: 0 24px 90px rgba(74, 101, 74, 0.16);
-  backdrop-filter: blur(24px);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 18px 70px rgba(74, 101, 74, 0.12);
+  backdrop-filter: blur(20px);
 }
 
 .consentMain,
@@ -172,176 +174,210 @@ label {
 }
 
 .consentMain {
-  padding: 42px;
+  display: flex;
+  flex-direction: column;
+  padding: 64px 62px 48px;
 }
 
 .consentHero {
   display: grid;
-  gap: 14px;
+  gap: 16px;
+  margin-bottom: 34px;
 }
 
 .consentBrand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   color: var(--primary);
-  font-size: 18px;
+  font-size: 28px;
+  font-weight: 600;
 }
 
-.consentBrand span {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--primary-soft);
-  color: #ffffff;
+.consentBrandIcon {
+  width: 34px;
+  height: 34px;
+  color: var(--primary);
+}
+
+.consentBrandIcon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
 }
 
 .consentEyebrow {
-  width: fit-content;
-  min-height: 28px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: var(--primary-pale);
-  color: var(--primary);
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
+  display: none;
 }
 
 .consentHero h1 {
   color: var(--ink);
-  font-size: 36px;
-  line-height: 1.12;
+  font-size: clamp(30px, 3vw, 39px);
+  line-height: 1.18;
+  font-weight: 600;
 }
 
 .consentHero p {
-  max-width: 720px;
+  max-width: 850px;
   color: var(--muted);
-  font-size: 16px;
-  line-height: 1.65;
+  font-size: 18px;
+  line-height: 1.55;
 }
 
 .consentCopy {
-  max-height: 300px;
-  display: grid;
-  gap: 14px;
-  margin-top: 28px;
-  padding: 18px;
+  flex: 1 1 auto;
+  min-height: 170px;
+  max-height: min(480px, 38vh);
+  margin: 16px 0 26px;
+  padding: 30px 32px;
   overflow: auto;
-  border: 1px solid rgba(195, 200, 191, 0.36);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(195, 200, 191, 0.5);
+  border-radius: 40px;
+  background: rgba(255, 255, 255, 0.42);
 }
 
 .consentCopy section {
-  padding: 16px 18px;
-  border: 1px solid rgba(195, 200, 191, 0.28);
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.52);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.consentCopy section + section {
+  margin-top: 26px;
 }
 
 .consentCopy h2 {
   color: var(--primary);
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .consentCopy p {
-  margin-top: 7px;
+  margin-top: 10px;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.58;
+  font-size: 15px;
+  line-height: 1.65;
 }
 
 .consentForm {
   display: grid;
-  gap: 20px;
-  margin-top: 26px;
+  flex: 0 0 auto;
+  gap: 16px;
+  margin-top: auto;
 }
 
 .screeningGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 24px;
+}
+
+.screeningGrid label,
+.signatureRow label {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.screeningGrid select,
+.signatureRow input {
+  min-height: 58px;
+  border: 0;
+  background: rgba(246, 243, 242, 0.62);
+  box-shadow: inset 0 0 0 1px rgba(195, 200, 191, 0.26);
+  font-size: 15px;
 }
 
 .consentChecks {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .consentChecks .checkboxLabel {
-  min-height: 42px;
+  width: auto;
+  min-height: 34px;
   grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
+  gap: 8px;
+  padding: 7px 12px;
   border: 1px solid rgba(195, 200, 191, 0.35);
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.54);
-  font-size: 12px;
-  line-height: 1.45;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.46);
+  font-size: 11px;
+  line-height: 1.25;
 }
 
 .consentChecks input {
-  width: 18px;
-  min-height: 18px;
+  width: 14px;
+  min-height: 14px;
   accent-color: var(--primary);
 }
 
-.consentActions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding-top: 4px;
+.signatureRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.72fr);
+  align-items: end;
+  gap: 28px;
 }
 
-.consentActions p,
+.signatureRow button {
+  min-height: 58px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.consentStatus,
 .consentAssistantStatus {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.45;
 }
 
+.consentStatus {
+  font-style: italic;
+}
+
 .consentAssistant {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto auto;
-  gap: 18px;
-  padding: 36px 32px;
-  border-left: 1px solid rgba(195, 200, 191, 0.36);
-  background: rgba(246, 243, 242, 0.62);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 48px 42px 40px;
+  border-left: 1px solid rgba(195, 200, 191, 0.34);
+  background: rgba(246, 243, 242, 0.38);
 }
 
 .consentAssistant h2 {
   color: var(--ink);
-  font-size: 24px;
+  font-size: 29px;
+  font-weight: 600;
 }
 
 .consentAssistant p {
   margin-top: 8px;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.58;
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .consentAssistantHistory {
+  flex: 1 1 auto;
   min-height: 220px;
   display: grid;
   align-content: start;
-  gap: 12px;
+  gap: 18px;
   overflow: auto;
   padding-right: 4px;
 }
 
 .consentAssistantMessage {
   max-width: 92%;
-  padding: 13px 15px;
+  padding: 18px 20px;
   border: 1px solid rgba(195, 200, 191, 0.35);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.68);
@@ -349,7 +385,8 @@ label {
 
 .consentAssistantMessage p {
   margin: 0;
-  font-size: 13px;
+  font-size: 15px;
+  line-height: 1.42;
 }
 
 .consentAssistantMessage--user {
@@ -360,44 +397,65 @@ label {
 
 .consentAssistantMessage--assistant {
   justify-self: start;
-  background: rgba(238, 246, 236, 0.82);
+  background: rgba(240, 237, 237, 0.62);
   border-top-left-radius: 6px;
 }
 
 .consentQuickQuestions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .consentQuickQuestions button {
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 36px;
+  padding: 0 14px;
   background: var(--secondary-pale);
   color: var(--secondary);
   border-color: rgba(139, 78, 61, 0.2);
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .consentAssistantForm {
   position: relative;
+  margin-top: auto;
 }
 
 .consentAssistantForm input {
-  min-height: 48px;
-  padding-right: 54px;
-  background: rgba(255, 255, 255, 0.82);
+  min-height: 56px;
+  padding-right: 58px;
+  border-color: rgba(195, 200, 191, 0.42);
+  background: rgba(255, 255, 255, 0.86);
+  font-size: 14px;
 }
 
 .consentAssistantForm button {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 38px;
-  min-height: 38px;
+  top: 7px;
+  right: 7px;
+  width: 42px;
+  min-height: 42px;
   padding: 0;
   border-radius: 50%;
   font-size: 20px;
+  background: var(--primary-soft);
+  color: #163316;
+}
+
+#consentAssistantSettings {
+  justify-self: start;
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+
+.consentFooterMarks {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  color: rgba(115, 121, 113, 0.34);
+  font-size: 22px;
 }
 
 .consentAssistantStatus.isOk {
@@ -1169,6 +1227,35 @@ details textarea {
   font-size: 12px;
 }
 
+@media (max-height: 760px) {
+  .consentGate {
+    padding: 24px 40px 28px;
+  }
+
+  .consentDialog {
+    height: calc(100vh - 72px);
+    min-height: 0;
+  }
+
+  .consentMain {
+    padding-top: 44px;
+    padding-bottom: 34px;
+  }
+
+  .consentHero {
+    margin-bottom: 24px;
+  }
+
+  .consentHero p {
+    font-size: 16px;
+  }
+
+  .consentCopy {
+    max-height: 240px;
+    margin-bottom: 20px;
+  }
+}
+
 @media (max-width: 1180px) {
   body {
     overflow: auto;
@@ -1231,7 +1318,7 @@ details textarea {
 @media (max-width: 780px) {
   .topbar,
   .screeningGrid,
-  .consentActions,
+  .signatureRow,
   .manualTurnControls,
   .settingsGrid,
   .settingsActions {

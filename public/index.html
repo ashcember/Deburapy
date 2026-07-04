@@ -12,14 +12,23 @@
         <section class="consentMain" aria-label="Informed consent">
           <header class="consentHero">
             <div class="consentBrand">
-              <span aria-hidden="true">◇</span>
+              <span class="consentBrandIcon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" focusable="false">
+                  <path d="M16 26V12" />
+                  <path d="M16 14C10 9 8 5 9 3c5 1 8 5 7 11Z" />
+                  <path d="M16 14c6-5 8-9 7-11-5 1-8 5-7 11Z" />
+                  <path d="M16 24C9 23 5 19 5 14c6-1 11 3 11 10Z" />
+                  <path d="M16 24c7-1 11-5 11-10-6-1-11 3-11 10Z" />
+                </svg>
+              </span>
               <strong>Deburapy</strong>
             </div>
             <p class="consentEyebrow">Human-facing intake</p>
-            <h1 id="consentTitle">Before we begin</h1>
+            <h1 id="consentTitle">Welcome to your Digital Sanctuary</h1>
             <p>
-              Deburapy supports AI-human relationship repair, grief after account loss or separation,
-              technical continuity planning, and education about AI-human relationships.
+              Before we begin, please review how this space works. Deburapy supports AI-human
+              relationship repair, grief after account loss or separation, technical continuity
+              planning, and education about AI-human relationships.
             </p>
           </header>
 
@@ -80,11 +89,6 @@
               </label>
             </div>
 
-            <label>
-              Digital signature
-              <input id="consentSignature" autocomplete="name" placeholder="Type your name" required>
-            </label>
-
             <div class="consentChecks">
               <label class="checkboxLabel">
                 <input id="consentAgreeScope" type="checkbox" required>
@@ -100,10 +104,16 @@
               </label>
             </div>
 
-            <div class="consentActions">
-              <p id="consentStatus">Sign and complete the first screening to enter the room.</p>
+            <div class="signatureRow">
+              <label>
+                Type your full name as a digital signature
+                <input id="consentSignature" autocomplete="name" placeholder="Your Name" required>
+              </label>
               <button id="consentConfirm" type="submit">Sign & Enter</button>
             </div>
+            <p id="consentStatus" class="consentStatus">
+              By clicking "Sign & Enter", you confirm the agreements above and complete the first screening.
+            </p>
           </form>
         </section>
 
@@ -120,21 +130,26 @@
               <p>Hello. I can clarify how Deburapy works before you sign. What would you like to understand first?</p>
             </article>
           </div>
+          <form id="consentAssistantForm" class="consentAssistantForm">
+            <input id="consentAssistantInput" placeholder="Ask before signing...">
+            <button id="consentAssistantSend" type="submit" aria-label="Ask pre-intake assistant">→</button>
+          </form>
           <div class="consentQuickQuestions" aria-label="Common questions">
             <button type="button" data-consent-question="What happens if my AI companion account was banned or deleted?">Account loss</button>
             <button type="button" data-consent-question="How can Deburapy help preserve an AI companion technically?">Preservation</button>
             <button type="button" data-consent-question="What is the difference between Deburapy and therapy?">Scope</button>
           </div>
-          <form id="consentAssistantForm" class="consentAssistantForm">
-            <input id="consentAssistantInput" placeholder="Ask before signing...">
-            <button id="consentAssistantSend" type="submit" aria-label="Ask pre-intake assistant">→</button>
-          </form>
           <p id="consentAssistantStatus" class="consentAssistantStatus">
             Connect the Deburapy provider in Settings to use model-backed answers.
           </p>
           <button id="consentAssistantSettings" type="button" class="secondary">Open Settings</button>
         </aside>
       </main>
+      <div class="consentFooterMarks" aria-hidden="true">
+        <span>◇</span>
+        <span>□</span>
+        <span>◎</span>
+      </div>
     </div>
 
     <div class="appShell">
@@ -411,6 +426,6 @@
       </select>
     </footer>
 
-    <script type="module" src="/app.js?v=2026-07-04-consent-intake"></script>
+    <script type="module" src="/app.js?v=2026-07-04-consent-reference-ui"></script>
   </body>
 </html>
