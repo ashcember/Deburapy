@@ -5,8 +5,12 @@
   --muted: #62625f;
   --line: #d7d4ca;
   --panel: #ffffff;
+  --room: #fbfaf7;
   --accent: #176b5d;
   --accent-2: #8f3f2f;
+  --ok: #16804f;
+  --warn: #a76300;
+  --error: #b42318;
 }
 
 * {
@@ -48,15 +52,18 @@ h2 {
   color: var(--muted);
 }
 
-#tagline {
+#tagline,
+.roomHint,
+.connectionCard p {
   margin-top: 6px;
   color: var(--muted);
+  line-height: 1.35;
 }
 
 .layout {
   height: calc(100vh - 125px);
   display: grid;
-  grid-template-columns: minmax(240px, 300px) minmax(360px, 1fr) minmax(280px, 420px);
+  grid-template-columns: minmax(240px, 300px) minmax(380px, 1fr) minmax(320px, 460px);
 }
 
 .panel,
@@ -72,7 +79,9 @@ h2 {
 }
 
 .panel h2 + label,
-.panel button + h2 {
+.panel button + h2,
+.panel details + h2,
+.connectionCard + .connectionCard {
   margin-top: 16px;
 }
 
@@ -106,12 +115,6 @@ button {
   color: var(--ink);
 }
 
-button.secondary {
-  background: #fff;
-  color: var(--ink);
-  border-color: var(--line);
-}
-
 input,
 select,
 textarea {
@@ -120,6 +123,7 @@ textarea {
 
 textarea {
   resize: vertical;
+  line-height: 1.4;
 }
 
 button {
@@ -131,29 +135,136 @@ button {
   cursor: pointer;
 }
 
+button.secondary {
+  background: #fff;
+  color: var(--ink);
+  border-color: var(--line);
+}
+
 button:disabled {
   opacity: 0.55;
   cursor: default;
 }
 
+details {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+details textarea {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 8px 8px;
+  min-height: 150px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.connectionCard {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.connectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusDot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #9b9b95;
+}
+
+.statusDot--pending {
+  background: #3578c8;
+}
+
+.statusDot--ok {
+  background: var(--ok);
+}
+
+.statusDot--warn {
+  background: var(--warn);
+}
+
+.statusDot--error {
+  background: var(--error);
+}
+
+.diagnostics {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.logEntry {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.logEntry--ok {
+  border-color: #b7dcc9;
+  color: var(--ok);
+}
+
+.logEntry--warn {
+  border-color: #e6c27b;
+  color: var(--warn);
+}
+
+.logEntry--error {
+  border-color: #edb4ad;
+  color: var(--error);
+}
+
 .room {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  background: #fbfaf7;
+  background: var(--room);
 }
 
 .roomHeader {
   padding: 14px 16px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   border-bottom: 1px solid var(--line);
 }
 
-.roomHeader button {
+.roomActions {
+  display: flex;
+  gap: 8px;
+}
+
+.roomActions button {
   width: auto;
   margin: 0;
+  white-space: nowrap;
+}
+
+#askMediator {
   background: var(--accent-2);
   border-color: var(--accent-2);
 }
@@ -167,10 +278,28 @@ button:disabled {
 }
 
 .message {
+  max-width: 88%;
   border: 1px solid var(--line);
   background: #fff;
   border-radius: 8px;
   padding: 10px 12px;
+}
+
+.message--human {
+  justify-self: end;
+  border-color: #b9cec8;
+}
+
+.message--companion {
+  justify-self: start;
+  border-color: #d8c0b8;
+}
+
+.message--mediator {
+  justify-self: center;
+  max-width: 96%;
+  border-color: #c9b3a7;
+  background: #fffaf4;
 }
 
 .messageMeta {
@@ -190,7 +319,7 @@ button:disabled {
   border-top: 1px solid var(--line);
   padding: 12px;
   display: grid;
-  grid-template-columns: 150px 1fr 96px;
+  grid-template-columns: 1fr 96px;
   gap: 8px;
 }
 
@@ -198,13 +327,12 @@ button:disabled {
   margin: 0;
 }
 
-.promptPanel {
+.setupPanel {
   border-right: 0;
 }
 
-#systemPrompt {
-  width: 100%;
-  height: calc(100vh - 170px);
+#companionDocs {
+  min-height: 150px;
   margin-top: 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
@@ -225,7 +353,7 @@ button:disabled {
   color: var(--accent);
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1080px) {
   .layout {
     height: auto;
     grid-template-columns: 1fr;
@@ -239,6 +367,19 @@ button:disabled {
 
   .room {
     min-height: 70vh;
+  }
+
+  .roomHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .roomActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .roomActions button {
+    width: 100%;
   }
 
   .composer {

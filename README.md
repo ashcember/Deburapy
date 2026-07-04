@@ -11,9 +11,9 @@ Chinese name for the first prototype: **Deburapy 人机关系协调员**.
 
 ## What This MVP Includes
 
-- A simple browser UI inspired by character-chat tools: transcript, participant
-  controls, BYOK model settings, mediator prompt viewer, and channel push
-  simulator.
+- A simple browser UI inspired by character-chat tools: transcript, connection
+  health, BYOK model settings, mediator setup, AI companion setup, and
+  diagnostics.
 - BYOK model calls through OpenAI-compatible chat completions, OpenRouter, and
   Google AI Studio Gemini API keys.
 - A default Deburapy mediator system prompt with English and Simplified Chinese
@@ -91,10 +91,17 @@ Smoke test through the UI:
 
 1. Start `npm run dev`.
 2. Open `http://127.0.0.1:8787`.
-3. Add at least one room message.
-4. Select provider, base URL, model, and paste your API key.
-5. Click `Ask Deburapy`.
-6. Verify a mediator message appears in the transcript.
+3. Configure the Deburapy mediator provider, base URL, model, and API key.
+4. Configure the AI companion. For a browser-only smoke test, use `BYOK API
+   companion`; paste or upload companion markdown/system-prompt notes if useful.
+5. Click `Test mediator` and `Test companion`. A green dot means that endpoint
+   responded. MCP companion mode only verifies that the bridge is reachable;
+   it cannot prove an external Claude/Codex client is connected from the
+   browser.
+6. Add a human room message in the bottom composer. The composer is human-only;
+   the AI companion and mediator speak through their configured connections.
+7. Click `Ask AI companion`, then `Ask Deburapy`.
+8. Use Diagnostics when a key, model, quota, or connection fails.
 
 Smoke test through the API:
 
@@ -127,6 +134,23 @@ For Google AI Studio, switch the provider config:
   "model": "gemini-3.5-flash",
   "apiKey": "YOUR_GEMINI_API_KEY"
 }
+```
+
+The AI companion API path is separate from the mediator:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8787/api/companion/respond \
+  -H 'content-type: application/json' \
+  --data '{
+    "roomId": "default",
+    "provider": "google-ai-studio",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "model": "gemini-3.5-flash",
+    "apiKey": "YOUR_GEMINI_API_KEY",
+    "companionName": "AI Companion",
+    "systemPrompt": "You are the configured AI companion.",
+    "knowledge": "# Companion notes\nRelevant markdown context."
+  }'
 ```
 
 ## Generic Channel API

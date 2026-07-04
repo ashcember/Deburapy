@@ -4,9 +4,11 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildChatCompletionsRequest, providerDefaults } from "../src/core/openai-compatible.mjs";
+import { buildCompanionUserPrompt, defaultCompanionPrompt } from "../src/core/prompt.mjs";
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const prompt = await readFile(new URL("../prompts/deburapy-mediator.system.md", import.meta.url), "utf8");
+const indexHtml = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 const appJs = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
 
 assert.match(prompt, /not a therapist/i);
@@ -17,6 +19,28 @@ assert.doesNotMatch(prompt, /private chat platform/i);
 assert.match(appJs, /rememberApiKey/);
 assert.match(appJs, /google-ai-studio/);
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
+assert.match(indexHtml, /id="companionMode"/);
+assert.match(indexHtml, /id="testCompanion"/);
+assert.doesNotMatch(indexHtml, /id="authorRole"/);
+
+const companionSystem = defaultCompanionPrompt("Configured Companion");
+assert.match(companionSystem, /Configured Companion/);
+assert.match(companionSystem, /not the mediator/i);
+
+const companionUserPrompt = buildCompanionUserPrompt(
+  {
+    messages: [
+      { authorName: "Human", content: "I felt hurt when the AI sounded scripted." }
+    ]
+  },
+  {
+    companionName: "Configured Companion",
+    knowledge: "# Companion notes\nThe companion has explicit runtime constraints."
+  }
+);
+assert.match(companionUserPrompt, /Companion notes/);
+assert.match(companionUserPrompt, /I felt hurt/);
+assert.match(companionUserPrompt, /Configured Companion/);
 
 const request = buildChatCompletionsRequest({
   provider: "openrouter",

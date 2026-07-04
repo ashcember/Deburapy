@@ -21,6 +21,18 @@ requests for generic OpenAI-compatible providers, OpenRouter, and Google AI
 Studio's Gemini OpenAI compatibility endpoint. API keys are sent as headers
 only and are not stored by the server.
 
+The mediator and AI companion are separate runtime roles:
+
+- `/api/mediator/respond` uses the Deburapy mediator prompt and writes a
+  mediator message.
+- `/api/companion/respond` uses the configured AI companion prompt/documents
+  and writes an AI companion message.
+- `/api/connections/test` is the browser-facing diagnostics path for model
+  reachability checks.
+
+The browser composer is intentionally human-only. The other two roles speak
+through their configured connections instead of through a role selector.
+
 ## 4. Companion MCP Server
 
 `src/mcp-server.mjs` exposes a minimal stdio MCP server. It supports MCP clients

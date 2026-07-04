@@ -4,7 +4,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DeburapyStore } from "./core/store.mjs";
 import { loadEnvFile } from "./core/env.mjs";
-import { loadMediatorPrompt, buildMediatorUserPrompt } from "./core/prompt.mjs";
+import {
+  loadMediatorPrompt,
+  buildMediatorUserPrompt,
+  defaultCompanionPrompt,
+  buildCompanionUserPrompt
+} from "./core/prompt.mjs";
 import { generateChatCompletion } from "./core/openai-compatible.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -126,6 +131,56 @@ async function handleApi(req, res) {
       content
     });
     return sendJson(res, 200, { message: updated.messages.at(-1), room: updated });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/companion/respond") {
+    const input = await readJson(req);
+    requiredText(input, "apiKey");
+    const roomId = input.roomId || "default";
+    const room = store.getRoom(roomId);
+    const companionName = input.companionName || "AI Companion";
+    const systemPrompt = input.systemPrompt || defaultCompanionPrompt(companionName);
+    const userPrompt = buildCompanionUserPrompt(room, {
+      locale: input.locale || room.locale,
+      companionName,
+      knowledge: input.knowledge || ""
+    });
+    const content = await generateChatCompletion({
+      provider: input.provider,
+      apiKey: input.apiKey,
+      baseUrl: input.baseUrl,
+      model: input.model,
+      systemPrompt,
+      userPrompt,
+      temperature: input.temperature
+    });
+    const updated = store.addMessage(roomId, {
+      authorRole: "companion",
+      authorName: companionName,
+      content,
+      kind: "ai_companion_reply"
+    });
+    return sendJson(res, 200, { message: updated.messages.at(-1), room: updated });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/connections/test") {
+    const input = await readJson(req);
+    requiredText(input, "apiKey");
+    const target = input.target === "companion" ? "companion" : "mediator";
+    const content = await generateChatCompletion({
+      provider: input.provider,
+      apiKey: input.apiKey,
+      baseUrl: input.baseUrl,
+      model: input.model,
+      systemPrompt: input.systemPrompt || (target === "companion" ? defaultCompanionPrompt(input.companionName) : await loadMediatorPrompt()),
+      userPrompt: [
+        "Connection check only.",
+        "Reply with one short sentence confirming that this model endpoint is reachable for Deburapy.",
+        `Target role: ${target}.`
+      ].join("\n"),
+      temperature: 0
+    });
+    return sendJson(res, 200, { ok: true, target, content });
   }
 
   if (req.method === "POST" && parts[0] === "api" && parts[1] === "channels" && parts[3] === "push") {

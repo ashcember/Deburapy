@@ -19,11 +19,54 @@
     </header>
 
     <main class="layout">
-      <section class="panel config">
-        <h2>Model</h2>
+      <section class="panel statusPanel">
+        <h2>Connections</h2>
+
+        <article class="connectionCard" id="mediatorCard">
+          <div class="connectionTitle">
+            <span class="statusDot" id="mediatorDot"></span>
+            <strong>Deburapy mediator</strong>
+          </div>
+          <p id="mediatorStatus">Not tested.</p>
+          <button id="testMediator">Test mediator</button>
+        </article>
+
+        <article class="connectionCard" id="companionCard">
+          <div class="connectionTitle">
+            <span class="statusDot" id="companionDot"></span>
+            <strong>AI companion</strong>
+          </div>
+          <p id="companionStatus">Not tested.</p>
+          <button id="testCompanion">Test companion</button>
+        </article>
+
+        <h2>Diagnostics</h2>
+        <div id="diagnostics" class="diagnostics"></div>
+      </section>
+
+      <section class="room">
+        <div class="roomHeader">
+          <div>
+            <h2>Deburapy Room</h2>
+            <p class="roomHint">Human messages enter here. The AI companion and mediator respond through their configured connections.</p>
+          </div>
+          <div class="roomActions">
+            <button id="askCompanion">Ask AI companion</button>
+            <button id="askMediator">Ask Deburapy</button>
+          </div>
+        </div>
+        <div id="messages" class="messages"></div>
+        <form id="messageForm" class="composer">
+          <input id="messageInput" placeholder="Write as the human participant">
+          <button>Send</button>
+        </form>
+      </section>
+
+      <section class="panel setupPanel">
+        <h2>Mediator</h2>
         <label>
           Provider
-          <select id="provider">
+          <select id="mediatorProvider" data-provider-select>
             <option value="openai-compatible">OpenAI-compatible</option>
             <option value="openrouter">OpenRouter</option>
             <option value="google-ai-studio">Google AI Studio</option>
@@ -31,55 +74,74 @@
         </label>
         <label>
           Base URL
-          <input id="baseUrl" placeholder="https://api.openai.com/v1">
+          <input id="mediatorBaseUrl" data-base-url>
         </label>
         <label>
           Model
-          <input id="model" placeholder="gpt-4.1-mini">
+          <input id="mediatorModel" data-model>
         </label>
         <label>
           API key
-          <input id="apiKey" type="password" autocomplete="off" placeholder="Not saved by default">
+          <input id="mediatorApiKey" type="password" autocomplete="off" placeholder="Not saved by default">
         </label>
         <label class="checkboxLabel">
-          <input id="rememberApiKey" type="checkbox">
-          Remember API key in this browser profile
+          <input id="rememberMediatorApiKey" type="checkbox">
+          Remember mediator key
         </label>
-        <button id="saveConfig">Save locally</button>
-        <button id="clearApiKey" type="button" class="secondary">Clear API key</button>
+        <button id="saveConfig">Save settings</button>
+        <button id="clearMediatorKey" type="button" class="secondary">Clear mediator key</button>
+        <details>
+          <summary>Mediator system prompt</summary>
+          <textarea id="mediatorPrompt" spellcheck="false"></textarea>
+        </details>
 
-        <h2>Channel Push</h2>
+        <h2>AI Companion</h2>
         <label>
-          From
-          <input id="pushFrom" value="External Channel">
-        </label>
-        <label>
-          Message
-          <textarea id="pushContent" rows="4"></textarea>
-        </label>
-        <button id="sendPush">Push to companion</button>
-      </section>
-
-      <section class="room">
-        <div class="roomHeader">
-          <h2>Deburapy Room</h2>
-          <button id="askMediator">Ask Deburapy</button>
-        </div>
-        <div id="messages" class="messages"></div>
-        <form id="messageForm" class="composer">
-          <select id="authorRole">
-            <option value="human">Human</option>
-            <option value="companion">AI Companion</option>
-            <option value="mediator">Deburapy</option>
+          Connection mode
+          <select id="companionMode">
+            <option value="api">BYOK API companion</option>
+            <option value="mcp">External MCP companion</option>
           </select>
-          <input id="messageInput" placeholder="Write a room message">
-          <button>Send</button>
-        </form>
-      </section>
-
-      <section class="panel promptPanel">
-        <h2>System Prompt</h2>
-        <textarea id="systemPrompt" spellcheck="false"></textarea>
+        </label>
+        <label>
+          Companion name
+          <input id="companionName" value="AI Companion">
+        </label>
+        <label>
+          Provider
+          <select id="companionProvider" data-provider-select>
+            <option value="openai-compatible">OpenAI-compatible</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="google-ai-studio">Google AI Studio</option>
+          </select>
+        </label>
+        <label>
+          Base URL
+          <input id="companionBaseUrl" data-base-url>
+        </label>
+        <label>
+          Model
+          <input id="companionModel" data-model>
+        </label>
+        <label>
+          API key
+          <input id="companionApiKey" type="password" autocomplete="off" placeholder="Not saved by default">
+        </label>
+        <label class="checkboxLabel">
+          <input id="rememberCompanionApiKey" type="checkbox">
+          Remember companion key
+        </label>
+        <button id="copyMediatorConfig" type="button" class="secondary">Use mediator model settings</button>
+        <button id="clearCompanionKey" type="button" class="secondary">Clear companion key</button>
+        <details open>
+          <summary>Companion system prompt</summary>
+          <textarea id="companionPrompt" spellcheck="false"></textarea>
+        </details>
+        <label>
+          Companion documents
+          <input id="companionFiles" type="file" multiple accept=".md,.markdown,.txt,text/markdown,text/plain">
+        </label>
+        <textarea id="companionDocs" spellcheck="false" placeholder="Paste or upload markdown notes that describe the AI companion."></textarea>
       </section>
     </main>
 
