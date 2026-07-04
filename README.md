@@ -14,7 +14,8 @@ Chinese name for the first prototype: **Deburapy 人机关系协调员**.
 - A simple browser UI inspired by character-chat tools: transcript, participant
   controls, BYOK model settings, mediator prompt viewer, and channel push
   simulator.
-- BYOK model calls through OpenAI-compatible chat completions and OpenRouter.
+- BYOK model calls through OpenAI-compatible chat completions, OpenRouter, and
+  Google AI Studio Gemini API keys.
 - A default Deburapy mediator system prompt with English and Simplified Chinese
   behavior guidance.
 - A generic channel API, not tied to any one chat platform.
@@ -77,6 +78,15 @@ Use any provider with a `/chat/completions` endpoint:
 - base URL: `https://openrouter.ai/api/v1`
 - model: for example `openai/gpt-4.1-mini` or another OpenRouter model ID
 
+### Google AI Studio
+
+Use a Gemini API key from Google AI Studio:
+
+- provider: `google-ai-studio`
+- base URL: `https://generativelanguage.googleapis.com/v1beta/openai`
+- model: for example `gemini-3.5-flash` or another Gemini chat model available
+  to your key
+
 Smoke test through the UI:
 
 1. Start `npm run dev`.
@@ -106,6 +116,17 @@ curl -sS -X POST http://127.0.0.1:8787/api/mediator/respond \
     "model": "gpt-4.1-mini",
     "apiKey": "YOUR_API_KEY"
   }'
+```
+
+For Google AI Studio, switch the provider config:
+
+```json
+{
+  "provider": "google-ai-studio",
+  "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+  "model": "gemini-3.5-flash",
+  "apiKey": "YOUR_GEMINI_API_KEY"
+}
 ```
 
 ## Generic Channel API

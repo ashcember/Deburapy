@@ -1,4 +1,11 @@
 export function providerDefaults(provider) {
+  if (provider === "google-ai-studio") {
+    return {
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+      model: "gemini-3.5-flash"
+    };
+  }
+
   if (provider === "openrouter") {
     return {
       baseUrl: "https://openrouter.ai/api/v1",

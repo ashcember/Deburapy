@@ -34,6 +34,23 @@ const copy = {
   }
 };
 
+const providerDefaults = {
+  "openai-compatible": {
+    baseUrl: "https://api.openai.com/v1",
+    model: "gpt-4.1-mini"
+  },
+  openrouter: {
+    baseUrl: "https://openrouter.ai/api/v1",
+    model: "openai/gpt-4.1-mini"
+  },
+  "google-ai-studio": {
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    model: "gemini-3.5-flash"
+  }
+};
+
+let lastProvider = els.provider.value;
+
 function config() {
   return {
     provider: els.provider.value,
@@ -41,6 +58,23 @@ function config() {
     model: els.model.value.trim(),
     apiKey: els.apiKey.value.trim()
   };
+}
+
+function applyProviderDefaults({ force = false } = {}) {
+  const defaults = providerDefaults[els.provider.value] || providerDefaults["openai-compatible"];
+  const previous = providerDefaults[lastProvider] || providerDefaults["openai-compatible"];
+
+  els.baseUrl.placeholder = defaults.baseUrl;
+  els.model.placeholder = defaults.model;
+
+  if (force || !els.baseUrl.value.trim() || els.baseUrl.value.trim() === previous.baseUrl) {
+    els.baseUrl.value = defaults.baseUrl;
+  }
+  if (force || !els.model.value.trim() || els.model.value.trim() === previous.model) {
+    els.model.value = defaults.model;
+  }
+
+  lastProvider = els.provider.value;
 }
 
 function saveConfig() {
@@ -123,6 +157,7 @@ function setLocale(locale) {
 }
 
 els.locale.addEventListener("change", () => setLocale(els.locale.value));
+els.provider.addEventListener("change", () => applyProviderDefaults());
 els.saveConfig.addEventListener("click", saveConfig);
 els.clearApiKey.addEventListener("click", clearApiKey);
 
@@ -183,6 +218,7 @@ els.askMediator.addEventListener("click", async () => {
 });
 
 loadConfig();
+applyProviderDefaults();
 setLocale(els.locale.value);
 await loadPrompt();
 await refreshRoom();

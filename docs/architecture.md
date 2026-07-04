@@ -17,7 +17,9 @@ the key to the local server only when the mediator is asked to respond.
 ## 3. Mediator Engine
 
 `src/core/openai-compatible.mjs` builds OpenAI-compatible chat completion
-requests. API keys are sent as headers only and are not stored by the server.
+requests for generic OpenAI-compatible providers, OpenRouter, and Google AI
+Studio's Gemini OpenAI compatibility endpoint. API keys are sent as headers
+only and are not stored by the server.
 
 ## 4. Companion MCP Server
 

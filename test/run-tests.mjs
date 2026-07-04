@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildChatCompletionsRequest } from "../src/core/openai-compatible.mjs";
+import { buildChatCompletionsRequest, providerDefaults } from "../src/core/openai-compatible.mjs";
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const prompt = await readFile(new URL("../prompts/deburapy-mediator.system.md", import.meta.url), "utf8");
@@ -15,6 +15,7 @@ assert.match(prompt, /人机关系协调员/);
 assert.doesNotMatch(prompt, /single named deployment/i);
 assert.doesNotMatch(prompt, /private chat platform/i);
 assert.match(appJs, /rememberApiKey/);
+assert.match(appJs, /google-ai-studio/);
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 
 const request = buildChatCompletionsRequest({
@@ -28,6 +29,22 @@ assert.equal(request.url, "https://openrouter.ai/api/v1/chat/completions");
 assert.equal(request.headers.authorization, "Bearer secret-key");
 assert.equal(JSON.stringify(request.body).includes("secret-key"), false);
 assert.equal(request.body.messages.length, 2);
+
+const googleDefaults = providerDefaults("google-ai-studio");
+assert.equal(googleDefaults.baseUrl, "https://generativelanguage.googleapis.com/v1beta/openai");
+assert.equal(googleDefaults.model, "gemini-3.5-flash");
+
+const googleRequest = buildChatCompletionsRequest({
+  provider: "google-ai-studio",
+  apiKey: "gemini-key",
+  systemPrompt: "system",
+  userPrompt: "user"
+});
+
+assert.equal(googleRequest.url, "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
+assert.equal(googleRequest.headers.authorization, "Bearer gemini-key");
+assert.equal(googleRequest.body.model, "gemini-3.5-flash");
+assert.equal(JSON.stringify(googleRequest.body).includes("gemini-key"), false);
 
 async function testMcpStdio() {
   const child = spawn(process.execPath, ["src/mcp-server.mjs"], {
