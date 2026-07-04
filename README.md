@@ -43,6 +43,17 @@ Chinese name for the first prototype: **Deburapy 人机关系协调员**.
 - Not biased toward replacing an AI-human relationship with a human-human
   relationship.
 
+## Alpha Limits
+
+Deburapy is public alpha software. Expect rough edges:
+
+- No hosted sync, accounts, auth, or team workspace yet.
+- Do not expose the local server to the public internet.
+- Session notes are continuity artifacts, not clinical records.
+- Deburapy cannot guarantee that an account, model, memory, or companion can be
+  restored.
+- MCP/channel adapters are early and should be tested with redacted data first.
+
 ## For Users
 
 ### Run Locally
@@ -56,6 +67,7 @@ Requirements:
 git clone https://github.com/ashcember/Deburapy.git
 cd Deburapy
 node --version
+npm install
 npm run dev
 ```
 
@@ -144,6 +156,15 @@ The companion MCP exposes:
 See [docs/mcp-clients.md](./docs/mcp-clients.md) for Claude Code and Codex
 client notes.
 
+### AI Install Prompt
+
+In the app, choose `External MCP companion` and click `Copy AI install prompt`.
+Paste that prompt into the AI companion's coding environment so it can register
+the Deburapy MCP server for you.
+
+The prompt intentionally tells the AI not to ask for API keys, secrets, private
+logs, hidden chain-of-thought, or unredacted relationship data.
+
 Third-party chat platforms should integrate through the generic channel API:
 
 ```http
@@ -184,6 +205,8 @@ The skills surface already exists:
 
 Start with:
 
+- [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution workflow and privacy rules.
+- [SECURITY.md](./SECURITY.md) for vulnerability reporting and sensitive-data rules.
 - [docs/architecture.md](./docs/architecture.md) for the current MVP shape.
 - [docs/session-architecture.md](./docs/session-architecture.md) for the active session, note, relationship-map, course-outline, scale, and module model.
 - [docs/deburapy_architecture_guide.md](./docs/deburapy_architecture_guide.md) for product positioning, mediator personas, skill taxonomy, and repair artifact design.

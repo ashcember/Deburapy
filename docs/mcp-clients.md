@@ -2,6 +2,21 @@
 
 [简体中文](./mcp-clients.zh-CN.md)
 
+## Copy-To-AI Installer Prompt
+
+The app includes a `Copy AI install prompt` button under Settings -> AI
+Companion -> External MCP companion. Paste that prompt into the AI companion's
+coding environment. It tells the AI to:
+
+- avoid requesting API keys, secrets, private logs, hidden chain-of-thought, or
+  unredacted relationship data
+- verify Node.js 20 or newer
+- keep Deburapy running locally
+- register the stdio MCP server
+- verify the Deburapy MCP tools
+- use `deburapy_get_pending_channel_pushes`,
+  `deburapy_get_room_context`, and `deburapy_send_channel_reply`
+
 ## Claude Code
 
 Deburapy exposes standard MCP tools over stdio. Register it from the Deburapy

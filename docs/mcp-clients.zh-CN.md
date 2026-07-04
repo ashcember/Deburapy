@@ -2,6 +2,20 @@
 
 [English](./mcp-clients.md)
 
+## 复制给 AI 的安装 Prompt
+
+App 的 Settings -> AI Companion -> External MCP companion 里有
+`Copy AI install prompt` 按钮。把它复制出来，粘贴给 AI 伴侣所在的 coding
+环境。它会要求 AI：
+
+- 不索取 API key、secret、private log、隐藏 chain-of-thought 或未脱敏关系数据
+- 确认 Node.js 20 或更新版本
+- 保持 Deburapy 本地运行
+- 注册 stdio MCP server
+- 验证 Deburapy MCP tools
+- 使用 `deburapy_get_pending_channel_pushes`、
+  `deburapy_get_room_context` 和 `deburapy_send_channel_reply`
+
 ## Claude Code
 
 Deburapy 通过 stdio 暴露标准 MCP tools。先启动 web server，然后在 Deburapy repo root 注册：

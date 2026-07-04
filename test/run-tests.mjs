@@ -25,8 +25,16 @@ const localTesting = await readFile(new URL("../docs/local-testing.md", import.m
 const localTestingZh = await readFile(new URL("../docs/local-testing.zh-CN.md", import.meta.url), "utf8");
 const configuration = await readFile(new URL("../docs/configuration.md", import.meta.url), "utf8");
 const configurationZh = await readFile(new URL("../docs/configuration.zh-CN.md", import.meta.url), "utf8");
+const mcpClients = await readFile(new URL("../docs/mcp-clients.md", import.meta.url), "utf8");
+const mcpClientsZh = await readFile(new URL("../docs/mcp-clients.zh-CN.md", import.meta.url), "utf8");
 const thirdPartyNotices = await readFile(new URL("../docs/third-party-notices.md", import.meta.url), "utf8");
 const thirdPartyNoticesZh = await readFile(new URL("../docs/third-party-notices.zh-CN.md", import.meta.url), "utf8");
+const security = await readFile(new URL("../SECURITY.md", import.meta.url), "utf8");
+const contributing = await readFile(new URL("../CONTRIBUTING.md", import.meta.url), "utf8");
+const issueConfig = await readFile(new URL("../.github/ISSUE_TEMPLATE/config.yml", import.meta.url), "utf8");
+const bugIssueTemplate = await readFile(new URL("../.github/ISSUE_TEMPLATE/bug_report.yml", import.meta.url), "utf8");
+const skillIssueTemplate = await readFile(new URL("../.github/ISSUE_TEMPLATE/skill_proposal.yml", import.meta.url), "utf8");
+const pluginIssueTemplate = await readFile(new URL("../.github/ISSUE_TEMPLATE/plugin_module_proposal.yml", import.meta.url), "utf8");
 const envExample = await readFile(new URL("../.env.example", import.meta.url), "utf8");
 const skillsReadme = await readFile(new URL("../skills/README.md", import.meta.url), "utf8");
 const skillsReadmeZh = await readFile(new URL("../skills/README.zh-CN.md", import.meta.url), "utf8");
@@ -49,7 +57,12 @@ const zhDocs = await Promise.all([
 assert.match(readme, /\*\*English\*\* \| \[简体中文\]\(\.\/README\.zh-CN\.md\)/);
 assert.match(readme, /## For Users/);
 assert.match(readme, /## For Contributors/);
+assert.match(readme, /## Alpha Limits/);
 assert.match(readme, /### Version 2 Direction/);
+assert.match(readme, /Copy AI install prompt/);
+assert.match(readme, /CONTRIBUTING\.md/);
+assert.match(readme, /SECURITY\.md/);
+assert.match(readme, /npm install/);
 assert.match(readme, /JSON plugins/);
 assert.match(readme, /skills\/templates/);
 assert.match(readme, /docs\/local-testing\.md/);
@@ -63,7 +76,12 @@ assert.doesNotMatch(readme, /Smoke test through the UI/);
 assert.match(readmeZh, /\[English\]\(\.\/README\.md\) \| \*\*简体中文\*\*/);
 assert.match(readmeZh, /## 给使用者/);
 assert.match(readmeZh, /## 给贡献者/);
+assert.match(readmeZh, /## Alpha 限制/);
 assert.match(readmeZh, /### 第二版方向/);
+assert.match(readmeZh, /Copy AI install prompt/);
+assert.match(readmeZh, /CONTRIBUTING\.md/);
+assert.match(readmeZh, /SECURITY\.md/);
+assert.match(readmeZh, /npm install/);
 assert.match(readmeZh, /JSON plugins/);
 assert.match(readmeZh, /skills\/templates/);
 assert.match(readmeZh, /docs\/local-testing\.zh-CN\.md/);
@@ -87,14 +105,38 @@ assert.match(localTestingZh, /## API 冒烟检查/);
 assert.match(localTestingZh, /## MCP 检查/);
 assert.match(thirdPartyNotices, /Lucide Icons/);
 assert.match(thirdPartyNotices, /ISC License/);
+assert.match(thirdPartyNotices, /UI Reference Artifacts/);
+assert.match(thirdPartyNotices, /ui-reference/);
 assert.match(thirdPartyNoticesZh, /第三方声明/);
 assert.match(thirdPartyNoticesZh, /Lucide Icons/);
+assert.match(thirdPartyNoticesZh, /UI 参考 artifact/);
+assert.match(mcpClients, /Copy-To-AI Installer Prompt/);
+assert.match(mcpClients, /Copy AI install prompt/);
+assert.match(mcpClients, /deburapy_send_channel_reply/);
+assert.match(mcpClientsZh, /复制给 AI 的安装 Prompt/);
+assert.match(mcpClientsZh, /Copy AI install prompt/);
+assert.match(mcpClientsZh, /deburapy_send_channel_reply/);
+assert.match(security, /Security Policy/);
+assert.match(security, /Do not bind Deburapy outside loopback/);
+assert.match(security, /Do not paste or upload/);
+assert.match(contributing, /Contributing to Deburapy/);
+assert.match(contributing, /Pull Request Checklist/);
+assert.match(contributing, /npm run visual:check/);
+assert.match(issueConfig, /blank_issues_enabled: false/);
+assert.match(issueConfig, /security\/advisories\/new/);
+assert.match(bugIssueTemplate, /Do not include API keys/);
+assert.match(skillIssueTemplate, /Skill proposal/);
+assert.match(skillIssueTemplate, /private relationship data/);
+assert.match(pluginIssueTemplate, /Plugin or module proposal/);
+assert.match(pluginIssueTemplate, /provider preset/);
 assert.equal(packageJson.scripts["visual:check"], "node scripts/visual-check.mjs");
 assert.equal(packageJson.devDependencies.playwright, "1.60.0");
 assert.match(visualCheck, /PLAYWRIGHT_PACKAGE_PATH/);
 assert.match(visualCheck, /deburapy\.onboarding\.v1/);
 assert.match(visualCheck, /exportTranscript/);
 assert.match(visualCheck, /settingsStorage/);
+assert.match(visualCheck, /mcpGuide/);
+assert.match(visualCheck, /copyMcpInstallPrompt/);
 assert.match(visualCheck, /room-dark\.png/);
 assert.match(visualCheck, /deburapy\.theme/);
 assert.match(visualCheck, /mediatorDotLabel/);
@@ -140,8 +182,17 @@ assert.doesNotMatch(prompt, /private chat platform/i);
 assert.match(appJs, /rememberApiKey/);
 assert.match(appJs, /themeStorageKey/);
 assert.match(appJs, /themeToggle:\s*document\.querySelector\("#themeToggle"\)/);
+assert.match(appJs, /copyMcpInstallPrompt:\s*document\.querySelector\("#copyMcpInstallPrompt"\)/);
 assert.match(appJs, /function setTheme/);
 assert.match(appJs, /function toggleTheme/);
+assert.match(appJs, /function buildMcpInstallPrompt/);
+assert.match(appJs, /function copyMcpInstallPrompt/);
+assert.match(appJs, /navigator\.clipboard/);
+assert.match(appJs, /document\.execCommand\("copy"\)/);
+assert.match(appJs, /Do not ask for API keys/);
+assert.match(appJs, /deburapy_get_pending_channel_pushes/);
+assert.match(appJs, /deburapy_send_channel_reply/);
+assert.match(appJs, /installPromptCopied/);
 assert.match(appJs, /deburapy\.theme/);
 assert.match(appJs, /google-ai-studio/);
 assert.match(appJs, /testCompanion:\s*document\.querySelector\("#testCompanion"\)/);
@@ -196,6 +247,9 @@ assert.match(indexHtml, /id="sessionProgress"/);
 assert.match(indexHtml, /class="iconSprite"/);
 assert.match(indexHtml, /data-theme="light"/);
 assert.match(indexHtml, /id="themeToggle"/);
+assert.match(indexHtml, /id="copyMcpInstallPrompt"/);
+assert.match(indexHtml, /data-i18n="copyInstallPrompt"/);
+assert.match(indexHtml, /data-i18n="mcpInstallPromptHint"/);
 assert.match(indexHtml, /id="icon-sun"/);
 assert.match(indexHtml, /id="icon-moon"/);
 assert.match(indexHtml, /id="icon-activity"/);
@@ -595,6 +649,149 @@ async function testSessionLifecycleApi() {
 }
 
 await testSessionLifecycleApi();
+
+async function testMcpStdioAgainstLocalServer() {
+  const apiDataDir = mkdtempSync(join(tmpdir(), "deburapy-mcp-integration-test-"));
+  const port = 29000 + Math.floor(Math.random() * 10000);
+  const env = {
+    ...process.env,
+    DEBURAPY_HOST: "127.0.0.1",
+    DEBURAPY_PORT: String(port),
+    DEBURAPY_DATA_DIR: apiDataDir
+  };
+  const server = spawn(process.execPath, ["src/server.mjs"], {
+    cwd: rootDir,
+    env,
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  let serverStderr = "";
+  server.stderr.setEncoding("utf8");
+  server.stderr.on("data", (chunk) => {
+    serverStderr += chunk;
+  });
+
+  let mcp;
+  try {
+    await waitForServer(port, server);
+    const baseUrl = `http://127.0.0.1:${port}`;
+    const pushResponse = await fetch(`${baseUrl}/api/channels/local/push`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        roomId: "default",
+        from: "Human",
+        content: "Please answer through the MCP bridge.",
+        targetParticipantId: "companion"
+      })
+    });
+    assert.equal(pushResponse.status, 201);
+
+    mcp = spawn(process.execPath, ["src/mcp-server.mjs"], {
+      cwd: rootDir,
+      env: {
+        ...process.env,
+        DEBURAPY_URL: baseUrl,
+        DEBURAPY_ROOM_ID: "default",
+        DEBURAPY_PARTICIPANT_ID: "companion"
+      },
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+
+    let rawStdout = "";
+    let lineBuffer = "";
+    const messages = [];
+    mcp.stdout.setEncoding("utf8");
+    mcp.stdout.on("data", (chunk) => {
+      rawStdout += chunk;
+      lineBuffer += chunk;
+      while (lineBuffer.includes("\n")) {
+        const index = lineBuffer.indexOf("\n");
+        const line = lineBuffer.slice(0, index).trim();
+        lineBuffer = lineBuffer.slice(index + 1);
+        if (line) messages.push(JSON.parse(line));
+      }
+    });
+
+    function send(message) {
+      mcp.stdin.write(`${JSON.stringify(message)}\n`);
+    }
+
+    async function waitFor(predicate) {
+      const started = Date.now();
+      while (Date.now() - started < 3000) {
+        const found = messages.find(predicate);
+        if (found) return found;
+        await new Promise((resolveWait) => setTimeout(resolveWait, 25));
+      }
+      throw new Error(`Timed out waiting for MCP response. stdout=${rawStdout}`);
+    }
+
+    function parseToolJson(message) {
+      return JSON.parse(message.result.content[0].text);
+    }
+
+    send({ jsonrpc: "2.0", id: 11, method: "initialize", params: { protocolVersion: "2025-03-26" } });
+    const init = await waitFor((message) => message.id === 11);
+    assert.equal(init.result.serverInfo.name, "deburapy-companion");
+
+    send({
+      jsonrpc: "2.0",
+      id: 12,
+      method: "tools/call",
+      params: {
+        name: "deburapy_set_participant_state",
+        arguments: { roomId: "default", state: { status: "connected-by-test" } }
+      }
+    });
+    const stateResult = parseToolJson(await waitFor((message) => message.id === 12));
+    assert.equal(stateResult.room.participantState.companion.status, "connected-by-test");
+
+    send({
+      jsonrpc: "2.0",
+      id: 13,
+      method: "tools/call",
+      params: { name: "deburapy_get_pending_channel_pushes", arguments: { roomId: "default", claim: true } }
+    });
+    const pending = parseToolJson(await waitFor((message) => message.id === 13));
+    assert.equal(pending.pushes.length, 1);
+    assert.equal(pending.pushes[0].content, "Please answer through the MCP bridge.");
+
+    send({
+      jsonrpc: "2.0",
+      id: 14,
+      method: "tools/call",
+      params: {
+        name: "deburapy_send_channel_reply",
+        arguments: {
+          roomId: "default",
+          channelId: "local",
+          from: "AI Companion",
+          content: "MCP bridge reply received."
+        }
+      }
+    });
+    const reply = parseToolJson(await waitFor((message) => message.id === 14));
+    assert.equal(reply.room.messages.at(-1).content, "MCP bridge reply received.");
+
+    send({
+      jsonrpc: "2.0",
+      id: 15,
+      method: "tools/call",
+      params: { name: "deburapy_get_room_context", arguments: { roomId: "default" } }
+    });
+    const context = parseToolJson(await waitFor((message) => message.id === 15));
+    assert.equal(context.room.messages.at(-1).authorRole, "companion");
+    assert.equal(rawStdout.includes("Content-Length"), false);
+  } catch (err) {
+    throw new Error(`${err instanceof Error ? err.message : String(err)} server_stderr=${serverStderr}`);
+  } finally {
+    if (mcp && mcp.exitCode === null) mcp.kill();
+    await stopServer(server);
+    rmSync(apiDataDir, { recursive: true, force: true });
+  }
+}
+
+await testMcpStdioAgainstLocalServer();
 
 async function testMcpStdio() {
   const child = spawn(process.execPath, ["src/mcp-server.mjs"], {

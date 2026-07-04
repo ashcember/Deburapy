@@ -97,6 +97,14 @@ const settingsStorage = await page.evaluate(() => ({
   envExample: document.querySelector("#storageEnvExample")?.textContent,
   transcriptExportText: document.querySelector("#localStorageSection #exportTranscript")?.textContent?.trim()
 }));
+await page.selectOption("#companionMode", "mcp");
+await page.waitForFunction(() => document.querySelector("#companionMcpGuide")?.hidden === false);
+const mcpGuide = await page.evaluate(() => ({
+  visible: document.querySelector("#companionMcpGuide")?.hidden === false,
+  copyInstallPrompt: Boolean(document.querySelector("#copyMcpInstallPrompt")),
+  copyInstallPromptText: document.querySelector("#copyMcpInstallPrompt")?.textContent?.trim(),
+  guideText: document.querySelector("#companionMcpGuide")?.textContent || ""
+}));
 await page.evaluate(() => {
   document.querySelector("#localStorageSection")?.scrollIntoView({ block: "start" });
 });
@@ -155,6 +163,10 @@ assertCondition(Boolean(settingsStorage.dataDir), "Storage data directory was no
 assertCondition(settingsStorage.storePath.endsWith("store.json"), "Storage store path was not rendered.");
 assertCondition(settingsStorage.envExample.includes("DEBURAPY_DATA_DIR="), "Storage env example is missing.");
 assertCondition(settingsStorage.transcriptExportText.includes("Export"), "Transcript export is not tucked into Settings.");
+assertCondition(mcpGuide.visible === true, "MCP companion guide did not open.");
+assertCondition(mcpGuide.copyInstallPrompt === true, "AI install prompt copy button is missing.");
+assertCondition(mcpGuide.copyInstallPromptText.includes("install prompt"), "AI install prompt button text is wrong.");
+assertCondition(mcpGuide.guideText.includes("deburapy_send_channel_reply"), "MCP guide is missing reply tool guidance.");
 assertCondition(mobileBefore.openSessionRail !== "none", "Mobile session button is hidden.");
 assertCondition(mobileBefore.persistedTheme === "dark", "Theme preference did not persist across reload.");
 assertCondition(mobileBefore.buttonText.includes("Session"), "Mobile session button label is missing.");
@@ -172,6 +184,7 @@ console.log(JSON.stringify({
   ui,
   darkTheme,
   settingsStorage,
+  mcpGuide,
   mobileBefore,
   mobileAfter,
   screenshots: [
