@@ -7,6 +7,8 @@ const els = {
   closeSettings: document.querySelector("#closeSettings"),
   settingsBackdrop: document.querySelector("#settingsBackdrop"),
   settingsDrawer: document.querySelector("#settingsDrawer"),
+  turnBadge: document.querySelector("#turnBadge"),
+  turnHelp: document.querySelector("#turnHelp"),
   sessionTitle: document.querySelector("#sessionTitle"),
   sessionNumber: document.querySelector("#sessionNumber"),
   sessionDuration: document.querySelector("#sessionDuration"),
@@ -25,6 +27,8 @@ const els = {
   testMediator: document.querySelector("#testMediator"),
   companionMode: document.querySelector("#companionMode"),
   companionName: document.querySelector("#companionName"),
+  companionApiSettings: document.querySelector("#companionApiSettings"),
+  companionMcpGuide: document.querySelector("#companionMcpGuide"),
   companionProvider: document.querySelector("#companionProvider"),
   companionBaseUrl: document.querySelector("#companionBaseUrl"),
   companionModel: document.querySelector("#companionModel"),
@@ -98,7 +102,8 @@ const lastProvider = {
 const session = {
   running: false,
   startedAt: null,
-  endsAt: null
+  endsAt: null,
+  turnPhase: "mediator"
 };
 
 function providerControls(target) {
@@ -137,6 +142,7 @@ function modelConfig(target) {
 }
 
 function fullConfig() {
+  const companionApi = modelConfig("companion");
   return {
     mediator: {
       ...modelConfig("mediator"),
@@ -144,7 +150,7 @@ function fullConfig() {
       systemPrompt: els.mediatorPrompt.value
     },
     companion: {
-      ...modelConfig("companion"),
+      ...companionApi,
       mode: els.companionMode.value,
       name: els.companionName.value.trim() || "AI Companion",
       rememberApiKey: els.rememberCompanionApiKey.checked,
@@ -176,7 +182,9 @@ function saveConfig() {
     }
   };
   if (current.mediator.rememberApiKey) saved.mediator.apiKey = current.mediator.apiKey;
-  if (current.companion.rememberApiKey) saved.companion.apiKey = current.companion.apiKey;
+  if (current.companion.mode === "api" && current.companion.rememberApiKey) {
+    saved.companion.apiKey = current.companion.apiKey;
+  }
   localStorage.setItem("deburapy.config", JSON.stringify(saved));
   appendLog("Settings saved locally.");
 }
@@ -186,6 +194,7 @@ function saveSessionState() {
     running: session.running,
     startedAt: session.startedAt,
     endsAt: session.endsAt,
+    turnPhase: session.turnPhase,
     sessionNumber: els.sessionNumber.value,
     durationMinutes: els.sessionDuration.value
   }));
@@ -200,7 +209,9 @@ function loadSessionState() {
     session.startedAt = Number(saved.startedAt) || Date.now();
     session.endsAt = Number(saved.endsAt);
   }
+  if (saved.turnPhase) session.turnPhase = saved.turnPhase;
   updateSessionDisplay();
+  setTurnPhase(session.turnPhase, { persist: false });
 }
 
 function loadConfig() {
@@ -223,6 +234,7 @@ function loadConfig() {
   els.companionName.value = migrated.companion?.name || "AI Companion";
   els.companionPrompt.value = migrated.companion?.systemPrompt || defaultCompanionPrompt;
   els.companionDocs.value = migrated.companion?.documents || "";
+  updateCompanionMode();
 }
 
 function loadTargetConfig(target, saved = {}) {
@@ -269,6 +281,16 @@ function renderMessages(messages) {
 async function refreshRoom() {
   const payload = await json(`/api/rooms/${roomId}`);
   renderMessages(payload.room.messages);
+  syncTurnFromRoom(payload.room);
+  return payload.room;
+}
+
+function syncTurnFromRoom(room) {
+  const lastMessage = room.messages.at(-1);
+  if (session.turnPhase === "companion" && lastMessage?.authorRole === "companion") {
+    setTurnPhase("mediator", { silent: true });
+    appendLog("AI companion reply received. Turn returned to Deburapy.", "ok");
+  }
 }
 
 async function loadMediatorPrompt() {
@@ -278,8 +300,19 @@ async function loadMediatorPrompt() {
 
 function setLocale(locale) {
   els.tagline.textContent = copy[locale].tagline;
-  els.askCompanion.textContent = copy[locale].askCompanion;
-  els.askMediator.textContent = copy[locale].askMediator;
+  updateTurnUi();
+}
+
+function updateCompanionMode() {
+  const isMcp = els.companionMode.value === "mcp";
+  els.companionApiSettings.hidden = isMcp;
+  els.companionApiSettings.classList.toggle("isHidden", isMcp);
+  els.companionMcpGuide.hidden = !isMcp;
+  els.companionMcpGuide.classList.toggle("isHidden", !isMcp);
+  if (isMcp) {
+    setStatus("companion", "warn", "MCP bridge mode. No API key needed here.");
+  }
+  updateTurnUi();
 }
 
 function formatDuration(totalSeconds) {
@@ -314,13 +347,58 @@ function updateSessionDisplay() {
   els.sessionState.textContent = "Not started";
 }
 
+function setTurnPhase(phase, { persist = true, silent = false } = {}) {
+  session.turnPhase = phase;
+  if (persist) saveSessionState();
+  updateTurnUi();
+  if (!silent) appendLog(`Turn moved to ${phase}.`);
+}
+
+function updateTurnUi() {
+  const phase = session.turnPhase || "mediator";
+  const companionMode = els.companionMode?.value || "api";
+  const labels = {
+    mediator: {
+      badge: "Next: Deburapy",
+      help: "Deburapy receives the latest human and companion messages, then decides who should answer next."
+    },
+    human: {
+      badge: "Next: Human",
+      help: "The mediator has handed the turn to the human. After you send, Deburapy will route the turn to the AI companion."
+    },
+    companion: {
+      badge: "Next: AI Companion",
+      help: companionMode === "mcp"
+        ? "Deburapy will queue this turn for the external MCP companion."
+        : "Deburapy will send the mediator and human context to the configured AI companion."
+    }
+  };
+  const current = labels[phase] || labels.mediator;
+  els.turnBadge.textContent = current.badge;
+  els.turnHelp.textContent = current.help;
+
+  els.messageInput.disabled = phase !== "human";
+  els.messageInput.placeholder = phase === "human"
+    ? "Write as the human participant"
+    : "Waiting for Deburapy to hand the turn to the human";
+
+  els.askMediator.disabled = phase !== "mediator";
+  els.askCompanion.disabled = !(phase === "companion" || phase === "human");
+  els.askMediator.textContent = "Continue with Deburapy";
+  els.askCompanion.textContent = phase === "human"
+    ? "Route to AI companion now"
+    : "Send to AI companion";
+}
+
 function startSession() {
   const durationMinutes = Number(els.sessionDuration.value || 60);
   session.running = true;
   session.startedAt = Date.now();
   session.endsAt = session.startedAt + durationMinutes * 60 * 1000;
+  session.turnPhase = "mediator";
   saveSessionState();
   updateSessionDisplay();
+  updateTurnUi();
   appendLog(`Started session ${els.sessionNumber.value} for ${durationMinutes} minutes.`);
 }
 
@@ -426,8 +504,16 @@ async function runConnectionTest(target) {
 
 async function askCompanion() {
   if (els.companionMode.value === "mcp") {
-    appendLog("MCP companion mode waits for an external Claude/Codex client to read pending room context and reply.", "warn");
-    alert("MCP companion mode needs an external MCP client. Use BYOK API companion for this browser-only smoke test.");
+    const payload = await json("/api/companion/mcp-request", {
+      method: "POST",
+      body: JSON.stringify({
+        roomId,
+        targetParticipantId: "companion"
+      })
+    });
+    setStatus("companion", "warn", "Turn queued for external MCP companion.");
+    setTurnPhase("companion", { silent: true });
+    appendLog(`Queued MCP companion turn: ${payload.push.id}. Waiting for external client reply.`, "warn");
     return;
   }
 
@@ -446,22 +532,25 @@ async function askCompanion() {
   setStatus("companion", "ok", "AI companion responded through API.");
   appendLog("AI companion response added to room.", "ok");
   await refreshRoom();
+  setTurnPhase("mediator", { silent: true });
 }
 
 async function askMediator() {
   const cfg = requireApiConfig("mediator");
-  await json("/api/mediator/respond", {
+  const payload = await json("/api/mediator/respond", {
     method: "POST",
     body: JSON.stringify({
       ...cfg,
       roomId,
       locale: els.locale.value,
-      systemPrompt: els.mediatorPrompt.value
+      systemPrompt: els.mediatorPrompt.value,
+      turnInstruction: "You are managing a three-party turn. If the human should answer next, use `Next speaker: human`. If the AI companion should answer next, use `Next speaker: companion`."
     })
   });
   setStatus("mediator", "ok", "Deburapy mediator responded through API.");
   appendLog("Mediator response added to room.", "ok");
   await refreshRoom();
+  setTurnPhase(payload.nextSpeaker === "companion" ? "companion" : "human", { silent: true });
 }
 
 async function readCompanionFiles() {
@@ -490,6 +579,10 @@ els.startSession.addEventListener("click", startSession);
 els.endSession.addEventListener("click", endSession);
 els.mediatorProvider.addEventListener("change", () => applyProviderDefaults("mediator"));
 els.companionProvider.addEventListener("change", () => applyProviderDefaults("companion"));
+els.companionMode.addEventListener("change", () => {
+  updateCompanionMode();
+  saveConfig();
+});
 els.saveConfig.addEventListener("click", saveConfig);
 els.clearMediatorKey.addEventListener("click", () => {
   els.mediatorApiKey.value = "";
@@ -521,19 +614,27 @@ els.testCompanion.addEventListener("click", () => runAction(els.testCompanion, "
 
 els.messageForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (session.turnPhase !== "human") {
+    appendLog("Human input is locked until Deburapy hands the turn to the human.", "warn");
+    return;
+  }
   const content = els.messageInput.value.trim();
   if (!content) return;
-  await json(`/api/rooms/${roomId}/messages`, {
-    method: "POST",
-    body: JSON.stringify({
-      authorRole: "human",
-      authorName: "Human",
-      content
-    })
+  await runAction(els.messageForm.querySelector("button"), "Sending...", async () => {
+    await json(`/api/rooms/${roomId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({
+        authorRole: "human",
+        authorName: "Human",
+        content
+      })
+    });
+    els.messageInput.value = "";
+    appendLog("Human message added. Routing the turn to the AI companion.");
+    setTurnPhase("companion", { silent: true });
+    await refreshRoom();
+    await askCompanion();
   });
-  els.messageInput.value = "";
-  appendLog("Human message added.");
-  await refreshRoom();
 });
 
 els.askCompanion.addEventListener("click", () => {
@@ -552,7 +653,13 @@ applyProviderDefaults("companion");
 setLocale(els.locale.value);
 setStatus("mediator", "idle", "Not tested.");
 setStatus("companion", "idle", "Not tested.");
+updateCompanionMode();
 appendLog("Deburapy loaded. Test both connections before running a room.");
 await loadMediatorPrompt();
 await refreshRoom();
 window.setInterval(updateSessionDisplay, 1000);
+window.setInterval(() => {
+  if (els.companionMode.value === "mcp" && session.turnPhase === "companion") {
+    refreshRoom().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
+  }
+}, 4000);

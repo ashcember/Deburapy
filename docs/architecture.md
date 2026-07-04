@@ -27,11 +27,16 @@ The mediator and AI companion are separate runtime roles:
   mediator message.
 - `/api/companion/respond` uses the configured AI companion prompt/documents
   and writes an AI companion message.
+- `/api/companion/mcp-request` queues the current room context for an external
+  MCP companion without requiring a BYOK API key.
 - `/api/connections/test` is the browser-facing diagnostics path for model
   reachability checks.
 
 The browser composer is intentionally human-only. The other two roles speak
 through their configured connections instead of through a role selector.
+The guided turn flow is Deburapy -> Human -> AI Companion -> Deburapy. The
+mediator can choose `Next speaker: companion` when it needs the AI companion's
+runtime-side account before the human answers.
 
 The default web layout keeps the room uncluttered: session metadata and the
 60/90 minute countdown live in the left rail, connection status lives in compact

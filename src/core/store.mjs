@@ -83,7 +83,7 @@ export class DeburapyStore {
     });
   }
 
-  addChannelPush(roomId, channelId, input) {
+  addChannelPush(roomId, channelId, input, { visible = true } = {}) {
     const push = {
       id: newId("push"),
       createdAt: nowIso(),
@@ -97,15 +97,17 @@ export class DeburapyStore {
 
     this.updateRoom(roomId, (room) => {
       room.pendingPushes.push(push);
-      room.messages.push({
-        id: push.id,
-        createdAt: push.createdAt,
-        authorRole: "channel",
-        authorName: push.from,
-        content: push.content,
-        channelId,
-        kind: "channel_push"
-      });
+      if (visible) {
+        room.messages.push({
+          id: push.id,
+          createdAt: push.createdAt,
+          authorRole: "channel",
+          authorName: push.from,
+          content: push.content,
+          channelId,
+          kind: "channel_push"
+        });
+      }
     });
 
     return push;

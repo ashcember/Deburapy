@@ -23,7 +23,7 @@ export function formatRoomTranscript(room) {
     : "- No messages yet.";
 }
 
-export function buildMediatorUserPrompt(room, locale = "en") {
+export function buildMediatorUserPrompt(room, locale = "en", { turnInstruction = "" } = {}) {
   const language =
     locale === "zh-Hans"
       ? "Please answer primarily in Simplified Chinese."
@@ -34,7 +34,10 @@ export function buildMediatorUserPrompt(room, locale = "en") {
     formatRoomTranscript(room),
     "",
     language,
-    "Respond as Deburapy mediator. Keep it concise. Preserve turn-taking. End with one concrete question or next step."
+    "Respond as Deburapy mediator. Keep it concise. Preserve turn-taking. End with one concrete question or next step.",
+    "After your visible reply, add a final control line exactly `Next speaker: human` or `Next speaker: companion`.",
+    "Default to `Next speaker: human`. Use `Next speaker: companion` only when you need the AI companion's runtime-side account before the human answers.",
+    turnInstruction
   ].join("\n");
 }
 

@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildChatCompletionsRequest, providerDefaults } from "../src/core/openai-compatible.mjs";
-import { buildCompanionUserPrompt, defaultCompanionPrompt } from "../src/core/prompt.mjs";
+import { buildMediatorUserPrompt, buildCompanionUserPrompt, defaultCompanionPrompt } from "../src/core/prompt.mjs";
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const prompt = await readFile(new URL("../prompts/deburapy-mediator.system.md", import.meta.url), "utf8");
@@ -23,9 +23,19 @@ assert.match(indexHtml, /id="companionMode"/);
 assert.match(indexHtml, /id="testCompanion"/);
 assert.match(indexHtml, /id="settingsDrawer"/);
 assert.match(indexHtml, /id="sessionDuration"/);
+assert.match(indexHtml, /id="turnBadge"/);
+assert.match(indexHtml, /id="companionApiSettings"/);
+assert.match(indexHtml, /id="companionMcpGuide"/);
 assert.doesNotMatch(indexHtml, /id="authorRole"/);
 assert.match(appJs, /startSession/);
 assert.match(appJs, /openSettings/);
+assert.match(appJs, /updateCompanionMode/);
+assert.match(appJs, /setTurnPhase/);
+assert.match(appJs, /\/api\/companion\/mcp-request/);
+
+const mediatorUserPrompt = buildMediatorUserPrompt({ messages: [] });
+assert.match(mediatorUserPrompt, /Next speaker: human/);
+assert.match(mediatorUserPrompt, /Next speaker: companion/);
 
 const companionSystem = defaultCompanionPrompt("Configured Companion");
 assert.match(companionSystem, /Configured Companion/);

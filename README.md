@@ -94,18 +94,28 @@ Smoke test through the UI:
 3. Use the left rail to set the session number and a 60 or 90 minute duration.
 4. Click `Settings` in the top right.
 5. Configure the Deburapy mediator provider, base URL, model, and API key.
-6. Configure the AI companion. For a browser-only smoke test, use `BYOK API
-   companion`; paste or upload companion markdown/system-prompt notes if useful.
+6. Configure the AI companion:
+   - `BYOK API companion`: fill provider/base URL/model/key and optional
+     companion prompt/docs.
+   - `External MCP companion`: do not fill an API key. Follow the MCP guide in
+     Settings and connect an external Claude/Codex client to Deburapy's MCP
+     server.
 7. Click `Test mediator` and `Test companion`. A green dot means that endpoint
    responded. MCP companion mode only verifies that the bridge is reachable;
    it cannot prove an external Claude/Codex client is connected from the
    browser.
 8. Close settings and click `Start` in the session rail when you want the
    countdown to begin.
-9. Add a human room message in the bottom composer. The composer is human-only;
-   the AI companion and mediator speak through their configured connections.
-10. Click `Ask AI companion`, then `Ask Deburapy`.
-11. Reopen Settings and use Diagnostics when a key, model, quota, or
+9. Click `Continue with Deburapy`. The mediator decides the next speaker. By
+   default it hands the turn to the human; it can also route the next turn to
+   the AI companion first.
+10. When the turn badge says `Next: Human`, add a human message in the bottom
+    composer. The composer is human-only.
+11. After the human sends, Deburapy routes the turn to the AI companion. In
+    BYOK API mode it calls the companion model; in MCP mode it queues a pending
+    turn for the external MCP client.
+12. After the AI companion replies, the turn returns to Deburapy.
+13. Reopen Settings and use Diagnostics when a key, model, quota, or
     connection fails.
 
 Smoke test through the API:
@@ -156,6 +166,14 @@ curl -sS -X POST http://127.0.0.1:8787/api/companion/respond \
     "systemPrompt": "You are the configured AI companion.",
     "knowledge": "# Companion notes\nRelevant markdown context."
   }'
+```
+
+For an external MCP companion, queue a companion turn without any API key:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8787/api/companion/mcp-request \
+  -H 'content-type: application/json' \
+  --data '{"roomId":"default"}'
 ```
 
 ## Generic Channel API

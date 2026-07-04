@@ -76,10 +76,14 @@
           <div>
             <h2>Deburapy Room</h2>
             <p class="roomHint">Human message stream</p>
+            <div class="turnLine">
+              <span id="turnBadge">Next: Deburapy</span>
+              <p id="turnHelp">Start with the mediator, then move through human and AI companion turns.</p>
+            </div>
           </div>
           <div class="roomActions">
-            <button id="askCompanion" type="button">Ask AI companion</button>
-            <button id="askMediator" type="button">Ask Deburapy</button>
+            <button id="askCompanion" type="button">Send to AI companion</button>
+            <button id="askMediator" type="button">Continue with Deburapy</button>
           </div>
         </div>
         <div id="messages" class="messages"></div>
@@ -147,41 +151,56 @@
           Companion name
           <input id="companionName" value="AI Companion">
         </label>
-        <label>
-          Provider
-          <select id="companionProvider" data-provider-select>
-            <option value="openai-compatible">OpenAI-compatible</option>
-            <option value="openrouter">OpenRouter</option>
-            <option value="google-ai-studio">Google AI Studio</option>
-          </select>
-        </label>
-        <label>
-          Base URL
-          <input id="companionBaseUrl" data-base-url>
-        </label>
-        <label>
-          Model
-          <input id="companionModel" data-model>
-        </label>
-        <label>
-          API key
-          <input id="companionApiKey" type="password" autocomplete="off" placeholder="Not saved by default">
-        </label>
-        <label class="checkboxLabel">
-          <input id="rememberCompanionApiKey" type="checkbox">
-          Remember companion key
-        </label>
-        <button id="copyMediatorConfig" type="button" class="secondary">Use mediator model settings</button>
-        <button id="clearCompanionKey" type="button" class="secondary">Clear companion key</button>
-        <details open>
-          <summary>Companion system prompt</summary>
-          <textarea id="companionPrompt" spellcheck="false"></textarea>
-        </details>
-        <label>
-          Companion documents
-          <input id="companionFiles" type="file" multiple accept=".md,.markdown,.txt,text/markdown,text/plain">
-        </label>
-        <textarea id="companionDocs" spellcheck="false" placeholder="Paste or upload markdown notes that describe the AI companion."></textarea>
+        <div id="companionApiSettings">
+          <label>
+            Provider
+            <select id="companionProvider" data-provider-select>
+              <option value="openai-compatible">OpenAI-compatible</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="google-ai-studio">Google AI Studio</option>
+            </select>
+          </label>
+          <label>
+            Base URL
+            <input id="companionBaseUrl" data-base-url>
+          </label>
+          <label>
+            Model
+            <input id="companionModel" data-model>
+          </label>
+          <label>
+            API key
+            <input id="companionApiKey" type="password" autocomplete="off" placeholder="Not saved by default">
+          </label>
+          <label class="checkboxLabel">
+            <input id="rememberCompanionApiKey" type="checkbox">
+            Remember companion key
+          </label>
+          <button id="copyMediatorConfig" type="button" class="secondary">Use mediator model settings</button>
+          <button id="clearCompanionKey" type="button" class="secondary">Clear companion key</button>
+          <details open>
+            <summary>Companion system prompt</summary>
+            <textarea id="companionPrompt" spellcheck="false"></textarea>
+          </details>
+          <label>
+            Companion documents
+            <input id="companionFiles" type="file" multiple accept=".md,.markdown,.txt,text/markdown,text/plain">
+          </label>
+          <textarea id="companionDocs" spellcheck="false" placeholder="Paste or upload markdown notes that describe the AI companion."></textarea>
+        </div>
+        <div id="companionMcpGuide" class="mcpGuide" hidden>
+          <h3>External MCP companion</h3>
+          <p>No API key is needed here. Connect the external Claude/Codex companion to Deburapy's MCP server, then keep this browser open as the room.</p>
+          <ol>
+            <li>Keep Deburapy running at <code>http://127.0.0.1:8787</code>.</li>
+            <li>Register the MCP server in the external client.</li>
+            <li>When the turn reaches the AI companion, Deburapy queues the room context for that MCP client.</li>
+            <li>The external client replies with <code>deburapy_send_channel_reply</code>.</li>
+          </ol>
+          <pre><code>claude mcp add --env DEBURAPY_URL=http://127.0.0.1:8787 \
+  --transport stdio deburapy \
+  -- node /absolute/path/to/Deburapy/src/mcp-server.mjs</code></pre>
+        </div>
       </section>
 
       <section class="settingsSection">

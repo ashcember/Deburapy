@@ -65,6 +65,17 @@ function routeParts(req) {
   return { url, parts: url.pathname.split("/").filter(Boolean) };
 }
 
+function parseMediatorTurn(content) {
+  const match = content.match(/(?:^|\n)\s*Next speaker:\s*(human|companion|ai companion)\s*\.?\s*$/i);
+  const nextSpeaker = match
+    ? (match[1].toLowerCase().includes("companion") ? "companion" : "human")
+    : "human";
+  const visibleContent = match
+    ? content.slice(0, match.index).trim()
+    : content.trim();
+  return { visibleContent: visibleContent || content.trim(), nextSpeaker };
+}
+
 function serveStatic(req, res, pathname) {
   const target = pathname === "/" ? "/index.html" : pathname;
   const safePath = path.normalize(target).replace(/^(\.\.[/\\])+/, "");
@@ -115,8 +126,10 @@ async function handleApi(req, res) {
     const roomId = input.roomId || "default";
     const room = store.getRoom(roomId);
     const systemPrompt = input.systemPrompt || await loadMediatorPrompt();
-    const userPrompt = buildMediatorUserPrompt(room, input.locale || room.locale);
-    const content = await generateChatCompletion({
+    const userPrompt = buildMediatorUserPrompt(room, input.locale || room.locale, {
+      turnInstruction: input.turnInstruction || ""
+    });
+    const rawContent = await generateChatCompletion({
       provider: input.provider,
       apiKey: input.apiKey,
       baseUrl: input.baseUrl,
@@ -125,12 +138,13 @@ async function handleApi(req, res) {
       userPrompt,
       temperature: input.temperature
     });
+    const { visibleContent, nextSpeaker } = parseMediatorTurn(rawContent);
     const updated = store.addMessage(roomId, {
       authorRole: "mediator",
       authorName: "Deburapy",
-      content
+      content: visibleContent
     });
-    return sendJson(res, 200, { message: updated.messages.at(-1), room: updated });
+    return sendJson(res, 200, { message: updated.messages.at(-1), room: updated, nextSpeaker });
   }
 
   if (req.method === "POST" && url.pathname === "/api/companion/respond") {
@@ -161,6 +175,27 @@ async function handleApi(req, res) {
       kind: "ai_companion_reply"
     });
     return sendJson(res, 200, { message: updated.messages.at(-1), room: updated });
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/companion/mcp-request") {
+    const input = await readJson(req);
+    const roomId = input.roomId || "default";
+    const room = store.getRoom(roomId);
+    const content = String(input.content || [
+      "Deburapy turn request for the external AI companion.",
+      "",
+      "Please read the current room context and reply as the configured AI companion.",
+      "After replying, Deburapy will return the turn to the mediator.",
+      "",
+      "Current transcript:",
+      room.messages.map((message) => `- ${message.authorName || message.authorRole}: ${message.content}`).join("\n") || "- No messages yet."
+    ].join("\n")).trim();
+    const push = store.addChannelPush(roomId, "mcp-companion", {
+      from: "Deburapy",
+      content,
+      targetParticipantId: input.targetParticipantId || "companion"
+    }, { visible: false });
+    return sendJson(res, 201, { push });
   }
 
   if (req.method === "POST" && url.pathname === "/api/connections/test") {
