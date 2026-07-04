@@ -156,6 +156,28 @@ h2 {
   gap: 8px;
 }
 
+.sessionNotePanel {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.sessionNotePanel p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.sessionNotePanel p + p {
+  margin-top: 6px;
+}
+
+.sessionNotePanel button {
+  margin-top: 10px;
+}
+
 .courseList {
   margin-top: 10px;
   display: grid;

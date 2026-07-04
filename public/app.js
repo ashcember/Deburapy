@@ -14,6 +14,9 @@ const els = {
   sessionDuration: document.querySelector("#sessionDuration"),
   countdown: document.querySelector("#countdown"),
   sessionState: document.querySelector("#sessionState"),
+  sessionTimingHint: document.querySelector("#sessionTimingHint"),
+  sessionNoteStatus: document.querySelector("#sessionNoteStatus"),
+  downloadSessionNote: document.querySelector("#downloadSessionNote"),
   startSession: document.querySelector("#startSession"),
   endSession: document.querySelector("#endSession"),
   mediatorProvider: document.querySelector("#mediatorProvider"),
@@ -106,7 +109,11 @@ const session = {
   running: false,
   startedAt: null,
   endsAt: null,
-  turnPhase: "mediator"
+  turnPhase: "mediator",
+  wrapUpReminderSent: false,
+  ending: false,
+  noteStatus: "not_started",
+  noteId: null
 };
 
 function providerControls(target) {
@@ -235,6 +242,9 @@ function saveSessionState() {
     startedAt: session.startedAt,
     endsAt: session.endsAt,
     turnPhase: session.turnPhase,
+    wrapUpReminderSent: session.wrapUpReminderSent,
+    noteStatus: session.noteStatus,
+    noteId: session.noteId,
     sessionNumber: els.sessionNumber.value,
     durationMinutes: els.sessionDuration.value
   });
@@ -251,7 +261,11 @@ function loadSessionState() {
     session.endsAt = Number(saved.endsAt);
   }
   session.turnPhase = hasActiveSavedSession && saved.turnPhase ? saved.turnPhase : "mediator";
+  session.wrapUpReminderSent = Boolean(saved.wrapUpReminderSent);
+  session.noteStatus = saved.noteStatus || "not_started";
+  session.noteId = saved.noteId || null;
   updateSessionDisplay();
+  updateSessionNoteUi();
   setTurnPhase(session.turnPhase, { persist: false });
 }
 
@@ -364,8 +378,40 @@ function renderMessages(messages) {
 async function refreshRoom() {
   const payload = await json(`/api/rooms/${roomId}`);
   renderMessages(payload.room.messages);
+  syncSessionFromRoom(payload.room);
   syncTurnFromRoom(payload.room);
   return payload.room;
+}
+
+async function loadSessionNotes() {
+  const payload = await json(`/api/rooms/${roomId}/session-notes`);
+  const latest = payload.notes.at(-1);
+  if (latest && !session.running) {
+    session.noteStatus = "ready";
+    session.noteId = latest.id;
+    updateSessionDisplay();
+    updateSessionNoteUi();
+    saveSessionState();
+  }
+}
+
+function syncSessionFromRoom(room) {
+  const serverSession = room.session;
+  if (!serverSession) return;
+  if (serverSession.status === "running" && serverSession.endsAt && new Date(serverSession.endsAt).getTime() > Date.now()) {
+    session.running = true;
+    session.startedAt = new Date(serverSession.startedAt || Date.now()).getTime();
+    session.endsAt = new Date(serverSession.endsAt).getTime();
+  }
+  if (serverSession.status === "ended") {
+    session.running = false;
+  }
+  session.wrapUpReminderSent = Boolean(serverSession.wrapUpReminderSentAt);
+  session.noteStatus = serverSession.noteStatus || session.noteStatus || "not_started";
+  session.noteId = serverSession.currentNoteId || session.noteId || null;
+  updateSessionDisplay();
+  updateSessionNoteUi();
+  saveSessionState();
 }
 
 function syncTurnFromRoom(room) {
@@ -405,6 +451,17 @@ function formatDuration(totalSeconds) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+function updateSessionNoteUi() {
+  const noteText = {
+    not_started: "Session note not generated.",
+    generating: "Writing session note...",
+    ready: "Session note ready. Download for records; casual reading is not recommended.",
+    error: "Session ended, but note generation failed."
+  };
+  els.sessionNoteStatus.textContent = noteText[session.noteStatus] || noteText.not_started;
+  els.downloadSessionNote.disabled = !(session.noteStatus === "ready" && session.noteId);
+}
+
 function updateSessionDisplay() {
   const sessionNumber = Number(els.sessionNumber.value || 1);
   const durationMinutes = Number(els.sessionDuration.value || 60);
@@ -419,15 +476,31 @@ function updateSessionDisplay() {
       els.countdown.textContent = "00:00";
       els.sessionState.textContent = "Ended";
       saveSessionState();
+      if (!session.ending && session.noteStatus !== "ready") {
+        completeSession("timer").catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
+      }
       return;
     }
     els.countdown.textContent = formatDuration(remainingSeconds);
     els.sessionState.textContent = "In session";
+    els.sessionTimingHint.textContent = remainingSeconds <= 5 * 60
+      ? "Wrap-up window active. Deburapy and companion prompts include the closing reminder."
+      : "Deburapy and companion prompts include live remaining time.";
+    return;
+  }
+
+  if (!session.running && ["generating", "ready", "error"].includes(session.noteStatus)) {
+    els.countdown.textContent = "00:00";
+    els.sessionState.textContent = session.noteStatus === "generating" ? "Ending" : "Ended";
+    els.sessionTimingHint.textContent = session.noteStatus === "ready"
+      ? "Session note is saved for download."
+      : "Session has ended.";
     return;
   }
 
   els.countdown.textContent = formatDuration(durationMinutes * 60);
   els.sessionState.textContent = "Not started";
+  els.sessionTimingHint.textContent = "Deburapy receives live timing after Start.";
 }
 
 function setTurnPhase(phase, { persist = true, silent = false } = {}) {
@@ -435,6 +508,27 @@ function setTurnPhase(phase, { persist = true, silent = false } = {}) {
   if (persist) saveSessionState();
   updateTurnUi();
   if (!silent) appendLog(`Turn moved to ${phase}.`);
+}
+
+function remainingSessionMs() {
+  return session.running && session.endsAt ? session.endsAt - Date.now() : null;
+}
+
+async function sendWrapUpReminder() {
+  if (session.wrapUpReminderSent) return;
+  session.wrapUpReminderSent = true;
+  saveSessionState();
+  await json(`/api/rooms/${roomId}/session/wrap-up`, { method: "POST" });
+  appendLog("Five minutes remaining. Deburapy and companion prompts now include the wrap-up reminder.", "warn");
+}
+
+function checkSessionClock() {
+  updateSessionDisplay();
+  const remainingMs = remainingSessionMs();
+  if (remainingMs === null) return;
+  if (remainingMs <= 5 * 60 * 1000 && remainingMs > 0 && !session.wrapUpReminderSent) {
+    sendWrapUpReminder().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
+  }
 }
 
 function updateTurnUi() {
@@ -476,25 +570,78 @@ function updateTurnUi() {
 async function startSession() {
   reportClientEvent("click", { action: "startSession.before" });
   const durationMinutes = Number(els.sessionDuration.value || 60);
+  const startedAt = Date.now();
+  const endsAt = startedAt + durationMinutes * 60 * 1000;
   session.running = true;
-  session.startedAt = Date.now();
-  session.endsAt = session.startedAt + durationMinutes * 60 * 1000;
+  session.startedAt = startedAt;
+  session.endsAt = endsAt;
   session.turnPhase = "mediator";
+  session.wrapUpReminderSent = false;
+  session.ending = false;
+  session.noteStatus = "not_started";
+  session.noteId = null;
   saveSessionState();
   updateSessionDisplay();
+  updateSessionNoteUi();
   updateTurnUi();
+  await json(`/api/rooms/${roomId}/session/start`, {
+    method: "POST",
+    body: JSON.stringify({
+      sessionNumber: Number(els.sessionNumber.value || 1),
+      durationMinutes,
+      startedAt: new Date(startedAt).toISOString(),
+      endsAt: new Date(endsAt).toISOString()
+    })
+  });
   appendLog(`Started session ${els.sessionNumber.value} for ${durationMinutes} minutes.`);
   reportClientEvent("click", { action: "startSession.after" });
   await askMediator();
 }
 
-function endSession() {
+async function completeSession(reason = "manual") {
+  if (session.ending) return;
+  session.ending = true;
   session.running = false;
-  session.startedAt = null;
-  session.endsAt = null;
+  session.noteStatus = "generating";
   saveSessionState();
   updateSessionDisplay();
-  appendLog(`Ended session ${els.sessionNumber.value}.`);
+  updateSessionNoteUi();
+  appendLog("Ending session and writing session note.");
+
+  const cfg = modelConfig("mediator");
+  const payload = await json(`/api/rooms/${roomId}/session/end`, {
+    method: "POST",
+    body: JSON.stringify({
+      ...cfg,
+      roomId,
+      locale: els.locale.value,
+      systemPrompt: els.mediatorPrompt.value,
+      reason
+    })
+  });
+
+  if (payload.note) {
+    session.noteStatus = "ready";
+    session.noteId = payload.note.id;
+    appendLog("Session note saved. Download is available.", "ok");
+  } else {
+    session.noteStatus = payload.noteError ? "error" : "not_started";
+    appendLog(payload.noteError || "Session ended without a note.", payload.noteError ? "warn" : "info");
+  }
+  session.ending = false;
+  saveSessionState();
+  updateSessionDisplay();
+  updateSessionNoteUi();
+}
+
+function endSession() {
+  completeSession("manual").catch((err) => {
+    session.noteStatus = "error";
+    session.ending = false;
+    saveSessionState();
+    updateSessionNoteUi();
+    appendLog(err instanceof Error ? err.message : String(err), "error");
+  });
 }
 
 function openSettings() {
@@ -669,6 +816,10 @@ els.startSession.addEventListener("click", () => {
   runAction(els.startSession, "Starting...", startSession);
 });
 els.endSession.addEventListener("click", endSession);
+els.downloadSessionNote.addEventListener("click", () => {
+  if (!session.noteId) return;
+  window.location.href = `/api/rooms/${roomId}/session-notes/${session.noteId}/download`;
+});
 els.mediatorProvider.addEventListener("change", () => applyProviderDefaults("mediator"));
 els.companionProvider.addEventListener("change", () => applyProviderDefaults("companion"));
 els.companionMode.addEventListener("change", () => {
@@ -749,7 +900,7 @@ setStatus("mediator", "idle", "Not tested.");
 setStatus("companion", "idle", "Not tested.");
 updateCompanionMode();
 appendLog("Deburapy loaded. Test both connections before running a room.");
-window.setInterval(updateSessionDisplay, 1000);
+window.setInterval(checkSessionClock, 1000);
 window.setInterval(() => {
   if (els.companionMode.value === "mcp" && session.turnPhase === "companion") {
     refreshRoom().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
@@ -757,3 +908,4 @@ window.setInterval(() => {
 }, 4000);
 loadMediatorPrompt().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 refreshRoom().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
+loadSessionNotes().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));

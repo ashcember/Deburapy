@@ -31,6 +31,14 @@ The mediator and AI companion are separate runtime roles:
   MCP companion without requiring a BYOK API key.
 - `/api/connections/test` is the browser-facing diagnostics path for model
   reachability checks.
+- `/api/rooms/:roomId/session/start` stores server-side session start/end
+  timing.
+- `/api/rooms/:roomId/session/wrap-up` marks that the five-minute wrap-up cue
+  was sent.
+- `/api/rooms/:roomId/session/end` ends the session and asks the mediator model
+  to write a continuity note.
+- `/api/rooms/:roomId/session-notes/:noteId/download` downloads that note as
+  markdown.
 
 The browser composer is intentionally human-only. The other two roles speak
 through their configured connections instead of through a role selector.
@@ -38,6 +46,15 @@ The guided turn flow is Deburapy -> Human -> AI Companion -> Deburapy. The
 mediator can choose `Next speaker: companion` when it needs the AI companion's
 runtime-side account before the human answers. In the browser UI, `Start`
 begins the session countdown and triggers the first Deburapy mediator response.
+
+Session timing is part of the prompt context for Deburapy, the API companion,
+and the external MCP companion. When five minutes or less remain, the prompt
+context includes a wrap-up reminder to close loops rather than open a large new
+topic.
+
+Prototype persistence lives in `.deburapy-data/store.json`. Each room owns one
+current `session` object plus a `sessionNotes` array. Session notes are intended
+for continuity and export; the UI recommends download instead of casual reading.
 
 The default web layout keeps the room uncluttered: session metadata and the
 60/90 minute countdown live in the left rail, connection status lives in compact

@@ -9,6 +9,21 @@ function newId(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function defaultSessionState() {
+  return {
+    id: null,
+    status: "not_started",
+    sessionNumber: 1,
+    durationMinutes: 60,
+    startedAt: null,
+    endsAt: null,
+    endedAt: null,
+    wrapUpReminderSentAt: null,
+    noteStatus: "not_started",
+    currentNoteId: null
+  };
+}
+
 function defaultRoom(roomId = "default") {
   return {
     id: roomId,
@@ -25,8 +40,28 @@ function defaultRoom(roomId = "default") {
     },
     messages: [],
     pendingPushes: [],
-    participantState: {}
+    participantState: {},
+    session: defaultSessionState(),
+    sessionNotes: []
   };
+}
+
+function ensureRoomShape(room) {
+  if (!room.turn) {
+    room.turn = {
+      mode: "suggested",
+      nextParticipantId: "human"
+    };
+  }
+  if (!Array.isArray(room.messages)) room.messages = [];
+  if (!Array.isArray(room.pendingPushes)) room.pendingPushes = [];
+  if (!room.participantState) room.participantState = {};
+  room.session = {
+    ...defaultSessionState(),
+    ...(room.session || {})
+  };
+  if (!Array.isArray(room.sessionNotes)) room.sessionNotes = [];
+  return room;
 }
 
 export class DeburapyStore {
@@ -57,6 +92,7 @@ export class DeburapyStore {
       data.rooms[roomId] = defaultRoom(roomId);
       this.save(data);
     }
+    ensureRoomShape(data.rooms[roomId]);
     return data.rooms[roomId];
   }
 
@@ -64,9 +100,90 @@ export class DeburapyStore {
     const data = this.load();
     if (!data.rooms[roomId]) data.rooms[roomId] = defaultRoom(roomId);
     const room = data.rooms[roomId];
+    ensureRoomShape(room);
     updater(room);
+    ensureRoomShape(room);
     this.save(data);
     return room;
+  }
+
+  startSession(roomId, input = {}) {
+    const startedAt = input.startedAt || nowIso();
+    const durationMinutes = Number(input.durationMinutes || 60);
+    const endsAt = input.endsAt || new Date(new Date(startedAt).getTime() + durationMinutes * 60 * 1000).toISOString();
+    return this.updateRoom(roomId, (room) => {
+      room.session = {
+        ...defaultSessionState(),
+        id: input.sessionId || newId("session"),
+        status: "running",
+        sessionNumber: Number(input.sessionNumber || 1),
+        durationMinutes,
+        startedAt,
+        endsAt,
+        endedAt: null,
+        wrapUpReminderSentAt: null,
+        noteStatus: "not_started",
+        currentNoteId: null
+      };
+    });
+  }
+
+  markWrapUpReminderSent(roomId) {
+    return this.updateRoom(roomId, (room) => {
+      if (!room.session.wrapUpReminderSentAt) {
+        room.session.wrapUpReminderSentAt = nowIso();
+      }
+    });
+  }
+
+  endSession(roomId, input = {}) {
+    return this.updateRoom(roomId, (room) => {
+      room.session = {
+        ...defaultSessionState(),
+        ...room.session,
+        status: "ended",
+        endedAt: input.endedAt || nowIso(),
+        noteStatus: input.noteStatus || room.session.noteStatus || "not_started"
+      };
+    });
+  }
+
+  setSessionNoteStatus(roomId, noteStatus) {
+    return this.updateRoom(roomId, (room) => {
+      room.session.noteStatus = noteStatus;
+    });
+  }
+
+  addSessionNote(roomId, input = {}) {
+    let note;
+    const room = this.updateRoom(roomId, (draft) => {
+      const session = draft.session || defaultSessionState();
+      note = {
+        id: newId("note"),
+        roomId,
+        sessionId: session.id || null,
+        sessionNumber: session.sessionNumber || Number(input.sessionNumber || 1),
+        createdAt: nowIso(),
+        title: input.title || `Deburapy Session ${session.sessionNumber || 1} Note`,
+        content: String(input.content || "").trim(),
+        format: "markdown",
+        recommendedReader: "mediator_or_clinician"
+      };
+      draft.sessionNotes.push(note);
+      draft.session.currentNoteId = note.id;
+      draft.session.noteStatus = "ready";
+    });
+    return { room, note };
+  }
+
+  getSessionNotes(roomId) {
+    const room = this.getRoom(roomId);
+    return { room, notes: room.sessionNotes };
+  }
+
+  getSessionNote(roomId, noteId) {
+    const room = this.getRoom(roomId);
+    return room.sessionNotes.find((note) => note.id === noteId) || null;
   }
 
   addMessage(roomId, input) {

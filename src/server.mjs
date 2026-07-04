@@ -8,7 +8,9 @@ import {
   loadMediatorPrompt,
   buildMediatorUserPrompt,
   defaultCompanionPrompt,
-  buildCompanionUserPrompt
+  buildCompanionUserPrompt,
+  buildSessionClockBlock,
+  buildSessionNotePrompt
 } from "./core/prompt.mjs";
 import { generateChatCompletion } from "./core/openai-compatible.mjs";
 
@@ -99,6 +101,19 @@ function sendText(res, status, text, contentType = "text/plain; charset=utf-8") 
   res.end(text);
 }
 
+function sendMarkdownDownload(res, note) {
+  const safeName = String(note.title || note.id || "deburapy-session-note")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80) || "deburapy-session-note";
+  res.writeHead(200, {
+    "content-type": "text/markdown; charset=utf-8",
+    "content-disposition": `attachment; filename="${safeName}.md"`
+  });
+  res.end(note.content);
+}
+
 async function readJson(req) {
   let body = "";
   for await (const chunk of req) body += chunk;
@@ -130,6 +145,26 @@ function parseMediatorTurn(content) {
     ? content.slice(0, match.index).trim()
     : content.trim();
   return { visibleContent: visibleContent || content.trim(), nextSpeaker };
+}
+
+async function generateSessionNote(roomId, input) {
+  store.setSessionNoteStatus(roomId, "generating");
+  const room = store.getRoom(roomId);
+  const systemPrompt = input.systemPrompt || await loadMediatorPrompt();
+  const userPrompt = buildSessionNotePrompt(room, input.locale || room.locale);
+  const content = await generateChatCompletion({
+    provider: input.provider,
+    apiKey: input.apiKey,
+    baseUrl: input.baseUrl,
+    model: input.model,
+    systemPrompt,
+    userPrompt,
+    temperature: 0.2
+  });
+  return store.addSessionNote(roomId, {
+    title: `Deburapy Session ${room.session?.sessionNumber || 1} Note`,
+    content
+  });
 }
 
 function serveStatic(req, res, pathname) {
@@ -166,6 +201,68 @@ async function handleApi(req, res) {
       ...safeClientLog(input)
     });
     return sendJson(res, 200, { ok: true });
+  }
+
+  if (req.method === "POST" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "session" && parts[4] === "start") {
+    const input = await readJson(req);
+    const roomId = parts[2] || "default";
+    setRequestLog(req, {
+      action: "session_start",
+      roomId,
+      sessionNumber: input.sessionNumber,
+      durationMinutes: input.durationMinutes
+    });
+    const room = store.startSession(roomId, input);
+    return sendJson(res, 200, { room, session: room.session });
+  }
+
+  if (req.method === "POST" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "session" && parts[4] === "wrap-up") {
+    const roomId = parts[2] || "default";
+    setRequestLog(req, {
+      action: "session_wrap_up",
+      roomId
+    });
+    const room = store.markWrapUpReminderSent(roomId);
+    return sendJson(res, 200, { room, session: room.session });
+  }
+
+  if (req.method === "POST" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "session" && parts[4] === "end") {
+    const input = await readJson(req);
+    const roomId = parts[2] || "default";
+    setRequestLog(req, {
+      action: "session_end",
+      roomId,
+      provider: input.provider,
+      model: input.model,
+      baseUrl: safeBaseUrl(input.baseUrl)
+    });
+    const ended = store.endSession(roomId, { noteStatus: input.apiKey ? "generating" : "error" });
+    if (!input.apiKey) {
+      return sendJson(res, 200, {
+        room: ended,
+        session: ended.session,
+        note: null,
+        noteError: "Mediator API key is missing; session ended without a note."
+      });
+    }
+    try {
+      const { room, note } = await generateSessionNote(roomId, input);
+      return sendJson(res, 200, { room, session: room.session, note });
+    } catch (err) {
+      store.setSessionNoteStatus(roomId, "error");
+      throw err;
+    }
+  }
+
+  if (req.method === "GET" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "session-notes" && parts[5] === "download") {
+    const note = store.getSessionNote(parts[2] || "default", parts[4]);
+    if (!note) return sendJson(res, 404, { error: "Session note not found." });
+    return sendMarkdownDownload(res, note);
+  }
+
+  if (req.method === "GET" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "session-notes") {
+    const { room, notes } = store.getSessionNotes(parts[2] || "default");
+    return sendJson(res, 200, { room, notes });
   }
 
   if (req.method === "GET" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "messages") {
@@ -271,6 +368,8 @@ async function handleApi(req, res) {
       "",
       "Please read the current room context and reply as the configured AI companion.",
       "After replying, Deburapy will return the turn to the mediator.",
+      "",
+      buildSessionClockBlock(room),
       "",
       "Current transcript:",
       room.messages.map((message) => `- ${message.authorName || message.authorRole}: ${message.content}`).join("\n") || "- No messages yet."

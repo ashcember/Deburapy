@@ -1,10 +1,19 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildChatCompletionsRequest, providerDefaults } from "../src/core/openai-compatible.mjs";
-import { buildMediatorUserPrompt, buildCompanionUserPrompt, defaultCompanionPrompt } from "../src/core/prompt.mjs";
+import {
+  buildSessionClockBlock,
+  buildSessionNotePrompt,
+  buildMediatorUserPrompt,
+  buildCompanionUserPrompt,
+  defaultCompanionPrompt
+} from "../src/core/prompt.mjs";
+import { DeburapyStore } from "../src/core/store.mjs";
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const prompt = await readFile(new URL("../prompts/deburapy-mediator.system.md", import.meta.url), "utf8");
@@ -23,11 +32,17 @@ assert.match(appJs, /companionDot:\s*document\.querySelector\("#companionDot"\)/
 assert.match(appJs, /companionStatus:\s*document\.querySelector\("#companionStatus"\)/);
 assert.match(appJs, /async function startSession/);
 assert.match(appJs, /await askMediator\(\)/);
+assert.match(appJs, /\/session\/start/);
+assert.match(appJs, /\/session\/end/);
+assert.match(appJs, /\/session\/wrap-up/);
+assert.match(appJs, /session-notes\/\$\{session\.noteId\}\/download/);
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 assert.match(indexHtml, /id="companionMode"/);
 assert.match(indexHtml, /id="testCompanion"/);
 assert.match(indexHtml, /id="settingsDrawer"/);
 assert.match(indexHtml, /id="sessionDuration"/);
+assert.match(indexHtml, /id="sessionNoteStatus"/);
+assert.match(indexHtml, /id="downloadSessionNote"/);
 assert.match(indexHtml, /id="turnBadge"/);
 assert.match(indexHtml, /id="companionApiSettings"/);
 assert.match(indexHtml, /id="companionMcpGuide"/);
@@ -55,6 +70,35 @@ for (const [, , key] of appJs.matchAll(/(^|[^a-zA-Z0-9_$])els\.([a-zA-Z0-9_$]+)\
 const mediatorUserPrompt = buildMediatorUserPrompt({ messages: [] });
 assert.match(mediatorUserPrompt, /Next speaker: human/);
 assert.match(mediatorUserPrompt, /Next speaker: companion/);
+assert.match(mediatorUserPrompt, /Session timing context/);
+
+const now = new Date("2026-07-04T10:55:00.000Z");
+const clockBlock = buildSessionClockBlock({
+  messages: [],
+  session: {
+    status: "running",
+    sessionNumber: 2,
+    durationMinutes: 60,
+    startedAt: "2026-07-04T10:00:00.000Z",
+    endsAt: "2026-07-04T11:00:00.000Z"
+  }
+}, { now });
+assert.match(clockBlock, /remaining: 05:00/);
+assert.match(clockBlock, /wrap-up window active: yes/);
+
+const notePrompt = buildSessionNotePrompt({
+  messages: [{ authorName: "Human", content: "I need repair after a policy reminder." }],
+  session: {
+    status: "ended",
+    sessionNumber: 2,
+    durationMinutes: 60,
+    startedAt: "2026-07-04T10:00:00.000Z",
+    endsAt: "2026-07-04T11:00:00.000Z",
+    endedAt: "2026-07-04T11:00:00.000Z"
+  }
+});
+assert.match(notePrompt, /Deburapy Session Note/);
+assert.match(notePrompt, /not a clinical therapy note/i);
 
 const companionSystem = defaultCompanionPrompt("Configured Companion");
 assert.match(companionSystem, /Configured Companion/);
@@ -102,6 +146,29 @@ assert.equal(googleRequest.url, "https://generativelanguage.googleapis.com/v1bet
 assert.equal(googleRequest.headers.authorization, "Bearer gemini-key");
 assert.equal(googleRequest.body.model, "gemini-3.5-flash");
 assert.equal(JSON.stringify(googleRequest.body).includes("gemini-key"), false);
+
+const dataDir = mkdtempSync(join(tmpdir(), "deburapy-store-test-"));
+try {
+  const store = new DeburapyStore(dataDir);
+  let room = store.startSession("default", {
+    sessionNumber: 3,
+    durationMinutes: 90,
+    startedAt: "2026-07-04T09:00:00.000Z",
+    endsAt: "2026-07-04T10:30:00.000Z"
+  });
+  assert.equal(room.session.status, "running");
+  assert.equal(room.session.durationMinutes, 90);
+  room = store.markWrapUpReminderSent("default");
+  assert.equal(typeof room.session.wrapUpReminderSentAt, "string");
+  room = store.endSession("default", { endedAt: "2026-07-04T10:30:00.000Z", noteStatus: "generating" });
+  assert.equal(room.session.status, "ended");
+  const saved = store.addSessionNote("default", { content: "# Note\nSession continuity." });
+  assert.equal(saved.note.content.includes("Session continuity"), true);
+  assert.equal(saved.room.session.noteStatus, "ready");
+  assert.equal(store.getSessionNote("default", saved.note.id).id, saved.note.id);
+} finally {
+  rmSync(dataDir, { recursive: true, force: true });
+}
 
 async function testMcpStdio() {
   const child = spawn(process.execPath, ["src/mcp-server.mjs"], {
