@@ -4,7 +4,7 @@
 
 ## 让你的 AI 帮你安装
 
-对不懂技术的用户，最简单的安装方式是把仓库网址粘贴给 AI coding assistant：
+对不懂技术的用户，最简单的安装方式是把仓库网址粘贴给他们信任、并且能帮他们阅读安装说明和处理本地电脑环境的 AI：
 
 ```text
 https://github.com/ashcember/Deburapy

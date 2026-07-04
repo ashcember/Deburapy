@@ -5,7 +5,8 @@
 ## Ask Your AI To Install
 
 For non-technical users, the simplest install path is to paste the repository
-URL into an AI coding assistant:
+URL into an AI they trust to help read setup instructions and work with their
+local computer:
 
 ```text
 https://github.com/ashcember/Deburapy

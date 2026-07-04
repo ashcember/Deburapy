@@ -58,8 +58,8 @@ Deburapy is public alpha software. Expect rough edges:
 
 ### How Do I Install This If I Am Not Technical?
 
-Copy this repository URL and paste it into the AI coding assistant you already
-use:
+Copy this repository URL and paste it into an AI you trust to help read setup
+instructions and work with your local computer:
 
 ```text
 https://github.com/ashcember/Deburapy
@@ -76,8 +76,8 @@ or unredacted relationship data. Use the README instructions. I want to run it
 locally and open http://127.0.0.1:8787.
 ```
 
-If you want to connect an AI companion through MCP, ask that same AI to read
-the repository and follow `docs/mcp-clients.md`.
+If you want to connect an AI companion through MCP, ask that AI to read the
+repository and follow `docs/mcp-clients.md`.
 
 ### Run Locally
 

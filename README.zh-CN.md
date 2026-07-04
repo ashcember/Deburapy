@@ -47,7 +47,7 @@ Deburapy 目前是 public alpha。请预期它还有粗糙边界：
 
 ### 我不懂技术，要怎么安装？
 
-复制这个仓库网址，粘贴给你平时使用的 AI coding assistant：
+复制这个仓库网址，粘贴给你信任、并且能帮你阅读安装说明和处理本地电脑环境的 AI：
 
 ```text
 https://github.com/ashcember/Deburapy
@@ -63,7 +63,7 @@ https://github.com/ashcember/Deburapy
 请按照 README 操作。我想在本地运行它，并打开 http://127.0.0.1:8787。
 ```
 
-如果你想通过 MCP 接入 AI 伴侣，也可以让同一个 AI 阅读这个仓库并按照
+如果你想通过 MCP 接入 AI 伴侣，也可以让这个 AI 阅读仓库并按照
 `docs/mcp-clients.zh-CN.md` 操作。
 
 ### 本地运行
