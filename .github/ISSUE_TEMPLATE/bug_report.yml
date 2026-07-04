@@ -1,0 +1,55 @@
+name: Bug report
+description: Something in Deburapy is not working as expected.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please do **not** paste API keys, tokens, or
+        the contents of `.deburapy-data/` here. For security-sensitive reports,
+        please report privately via the repository's **Security** tab
+        ("Report a vulnerability") instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: When I click Test companion in MCP mode, ...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. npm run dev
+        2. Open http://127.0.0.1:8787
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Web UI (public/)
+        - Backend server (src/server.mjs)
+        - MCP companion server (src/mcp-server.mjs)
+        - Provider / BYOK
+        - Docs
+        - Other / not sure
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node version
+      placeholder: "output of `node --version`, e.g. v20.11.0"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste server or browser console output. Redact any keys first.
+      render: shell
