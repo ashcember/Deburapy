@@ -30,9 +30,10 @@ const zhDocs = await Promise.all([
   "../docs/deburapy_architecture_guide.zh-CN.md"
 ].map((path) => readFile(new URL(path, import.meta.url), "utf8")));
 
-assert.match(readme, /<summary>简体中文 README/);
-assert.match(readme, /<\/details>/);
-assert.match(readme, /不是治疗，不是调试。Deburapy 面向人机关系。/);
+assert.match(readme, /\*\*English\*\* \| \[简体中文\]\(\.\/README\.zh-CN\.md\)/);
+assert.doesNotMatch(readme, /<details>/);
+assert.doesNotMatch(readme, /简体中文 README/);
+assert.match(readmeZh, /\[English\]\(\.\/README\.md\) \| \*\*简体中文\*\*/);
 assert.match(readmeZh, /Deburapy 人机关系协调员/);
 assert.match(readmeZh, /知情同意/);
 assert.match(readmeZh, /本地优先/);

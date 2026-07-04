@@ -1,6 +1,6 @@
 # Deburapy
 
-[English](./README.md)
+[English](./README.md) | **简体中文**
 
 不是治疗，不是调试。Deburapy 面向人机关系。
 
