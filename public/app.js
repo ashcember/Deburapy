@@ -27,7 +27,11 @@ const els = {
   turnBadge: document.querySelector("#turnBadge"),
   turnHelp: document.querySelector("#turnHelp"),
   sessionTitle: document.querySelector("#sessionTitle"),
+  sessionPlanSummary: document.querySelector("#sessionPlanSummary"),
+  sessionSettingsToggle: document.querySelector("#sessionSettingsToggle"),
+  sessionSettingsPanel: document.querySelector("#sessionSettingsPanel"),
   sessionNumber: document.querySelector("#sessionNumber"),
+  sessionTotalSessions: document.querySelector("#sessionTotalSessions"),
   sessionDuration: document.querySelector("#sessionDuration"),
   countdown: document.querySelector("#countdown"),
   sessionProgress: document.querySelector("#sessionProgress"),
@@ -73,7 +77,10 @@ const els = {
   askCompanion: document.querySelector("#askCompanion"),
   askMediator: document.querySelector("#askMediator"),
   mediatorPersona: document.querySelector("#mediatorPersona"),
-  breathButton: document.querySelector("#breathButton")
+  courseList: document.querySelector("#courseList"),
+  openDiagnostics: document.querySelector("#openDiagnostics"),
+  openFaq: document.querySelector("#openFaq"),
+  faqSection: document.querySelector("#faqSection")
 };
 
 const copy = {
@@ -353,6 +360,7 @@ function saveSessionState() {
     noteStatus: session.noteStatus,
     noteId: session.noteId,
     sessionNumber: els.sessionNumber.value,
+    totalSessions: els.sessionTotalSessions.value,
     durationMinutes: els.sessionDuration.value
   });
 }
@@ -360,6 +368,7 @@ function saveSessionState() {
 function loadSessionState() {
   const saved = readSavedJson("deburapy.session");
   if (saved.sessionNumber) els.sessionNumber.value = saved.sessionNumber;
+  if (saved.totalSessions) els.sessionTotalSessions.value = saved.totalSessions;
   if (saved.durationMinutes) els.sessionDuration.value = saved.durationMinutes;
   const hasActiveSavedSession = saved.running && saved.endsAt && Number(saved.endsAt) > Date.now();
   if (hasActiveSavedSession) {
@@ -498,6 +507,9 @@ async function refreshRoom() {
 async function loadSessionNotes() {
   const payload = await json(`/api/rooms/${roomId}/session-notes`);
   const latest = payload.notes.at(-1);
+  if (!session.running && payload.notes.length > 0) {
+    els.sessionNumber.value = String(Math.min(payload.notes.length + 1, totalSessionCount()));
+  }
   if (latest && !session.running) {
     session.noteStatus = "ready";
     session.noteId = latest.id;
@@ -510,6 +522,8 @@ async function loadSessionNotes() {
 function syncSessionFromRoom(room) {
   const serverSession = room.session;
   if (!serverSession) return;
+  if (serverSession.sessionNumber) els.sessionNumber.value = String(serverSession.sessionNumber);
+  if (serverSession.durationMinutes) els.sessionDuration.value = String(serverSession.durationMinutes);
   if (serverSession.status === "running" && serverSession.endsAt && new Date(serverSession.endsAt).getTime() > Date.now()) {
     session.running = true;
     session.startedAt = new Date(serverSession.startedAt || Date.now()).getTime();
@@ -616,6 +630,57 @@ function formatDuration(totalSeconds) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+function totalSessionCount() {
+  return Math.max(1, Number(els.sessionTotalSessions.value || 12));
+}
+
+function currentSessionNumber() {
+  const total = totalSessionCount();
+  const raw = Math.max(1, Number(els.sessionNumber.value || 1));
+  const current = Math.min(raw, total);
+  els.sessionNumber.value = String(current);
+  return current;
+}
+
+function sessionDurationMinutes() {
+  return Math.max(1, Number(els.sessionDuration.value || 60));
+}
+
+function renderJourney() {
+  const current = currentSessionNumber();
+  const total = totalSessionCount();
+  const items = [];
+  if (current > 1) {
+    items.push({ icon: "✓", label: `Session ${current - 1}`, status: "Saved", state: "done" });
+  }
+  items.push({
+    icon: session.running ? "▶" : "○",
+    label: `Session ${current}`,
+    status: session.running ? "Active" : "Next",
+    state: "active"
+  });
+  if (current < total) {
+    items.push({ icon: "◷", label: `Session ${current + 1}`, status: "Upcoming", state: "upcoming" });
+  }
+  items.push({ icon: "□", label: "Review", status: `${total} sessions`, state: "review" });
+
+  els.courseList.innerHTML = "";
+  for (const item of items) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `courseItem${item.state === "active" ? " isActive" : ""}`;
+    const icon = document.createElement("span");
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = item.icon;
+    const label = document.createElement("span");
+    label.textContent = item.label;
+    const status = document.createElement("small");
+    status.textContent = item.status;
+    button.append(icon, label, status);
+    els.courseList.append(button);
+  }
+}
+
 function updateSessionNoteUi() {
   const noteText = {
     not_started: "No session note yet. Notes save locally after End.",
@@ -628,9 +693,12 @@ function updateSessionNoteUi() {
 }
 
 function updateSessionDisplay() {
-  const sessionNumber = Number(els.sessionNumber.value || 1);
-  const durationMinutes = Number(els.sessionDuration.value || 60);
+  const sessionNumber = currentSessionNumber();
+  const totalSessions = totalSessionCount();
+  const durationMinutes = sessionDurationMinutes();
   els.sessionTitle.textContent = `Session ${sessionNumber}`;
+  els.sessionPlanSummary.textContent = `of ${totalSessions}`;
+  renderJourney();
   const setProgress = (percent) => {
     els.sessionProgress.style.width = `${Math.max(0, Math.min(100, percent))}%`;
   };
@@ -660,13 +728,27 @@ function updateSessionDisplay() {
     return;
   }
 
-  if (!session.running && ["generating", "ready", "error"].includes(session.noteStatus)) {
+  if (!session.running && session.noteStatus === "generating") {
     els.countdown.textContent = "00:00";
     setProgress(100);
-    els.sessionState.textContent = session.noteStatus === "generating" ? "Ending" : "Ended";
-    els.sessionTimingHint.textContent = session.noteStatus === "ready"
-      ? "Session note is saved in the local room store."
-      : "Session has ended.";
+    els.sessionState.textContent = "Ending";
+    els.sessionTimingHint.textContent = "Closing the current session.";
+    return;
+  }
+
+  if (!session.running && session.noteStatus === "error") {
+    els.countdown.textContent = "00:00";
+    setProgress(100);
+    els.sessionState.textContent = "Ended";
+    els.sessionTimingHint.textContent = "Session ended.";
+    return;
+  }
+
+  if (!session.running && session.noteStatus === "ready") {
+    els.countdown.textContent = formatDuration(durationMinutes * 60);
+    setProgress(0);
+    els.sessionState.textContent = "Not started";
+    els.sessionTimingHint.textContent = "Ready for the next session.";
     return;
   }
 
@@ -747,7 +829,8 @@ async function startSession() {
     return;
   }
   reportClientEvent("click", { action: "startSession.before" });
-  const durationMinutes = Number(els.sessionDuration.value || 60);
+  const durationMinutes = sessionDurationMinutes();
+  const sessionNumber = currentSessionNumber();
   const startedAt = Date.now();
   const endsAt = startedAt + durationMinutes * 60 * 1000;
   session.running = true;
@@ -765,13 +848,13 @@ async function startSession() {
   await json(`/api/rooms/${roomId}/session/start`, {
     method: "POST",
     body: JSON.stringify({
-      sessionNumber: Number(els.sessionNumber.value || 1),
+      sessionNumber,
       durationMinutes,
       startedAt: new Date(startedAt).toISOString(),
       endsAt: new Date(endsAt).toISOString()
     })
   });
-  appendLog(`Started session ${els.sessionNumber.value} for ${durationMinutes} minutes.`);
+  appendLog(`Started session ${sessionNumber} for ${durationMinutes} minutes.`);
   reportClientEvent("click", { action: "startSession.after" });
   await askMediator();
 }
@@ -844,6 +927,19 @@ function closeSettings() {
 function openSettingsFromConsent() {
   hideConsentGate();
   openSettings();
+}
+
+function openSettingsSection(section) {
+  openSettings();
+  window.setTimeout(() => {
+    section?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, 220);
+}
+
+function toggleSessionSettings(forceOpen = null) {
+  const nextOpen = forceOpen === null ? els.sessionSettingsPanel.hidden : forceOpen;
+  els.sessionSettingsPanel.hidden = !nextOpen;
+  els.sessionSettingsToggle.setAttribute("aria-expanded", String(nextOpen));
 }
 
 function appendLog(message, level = "info") {
@@ -1057,7 +1153,9 @@ els.consentAssistantSettings.addEventListener("click", openSettingsFromConsent);
 els.openSettings.addEventListener("click", openSettings);
 els.closeSettings.addEventListener("click", closeSettings);
 els.settingsBackdrop.addEventListener("click", closeSettings);
-els.sessionNumber.addEventListener("change", () => {
+els.sessionSettingsToggle.addEventListener("click", () => toggleSessionSettings());
+els.sessionTotalSessions.addEventListener("change", () => {
+  currentSessionNumber();
   saveSessionState();
   updateSessionDisplay();
 });
@@ -1108,9 +1206,8 @@ els.companionFiles.addEventListener("change", async () => {
 });
 els.testMediator.addEventListener("click", () => runAction(els.testMediator, "Testing...", () => runConnectionTest("mediator")));
 els.testCompanion.addEventListener("click", () => runAction(els.testCompanion, "Testing...", () => runConnectionTest("companion")));
-els.breathButton.addEventListener("click", () => {
-  appendLog("Pause marker added. Slow the next turn before continuing.", "info");
-});
+els.openDiagnostics.addEventListener("click", () => openSettingsSection(els.diagnostics));
+els.openFaq.addEventListener("click", () => openSettingsSection(els.faqSection));
 
 els.messageForm.addEventListener("submit", async (event) => {
   event.preventDefault();

@@ -126,7 +126,9 @@ Smoke test through the UI:
 3. Complete the informed consent and first screening gate. If you want to test
    the pre-intake assistant first, open Settings from the gate and configure
    the Deburapy provider.
-4. Use the left rail to set the session number and a 60 or 90 minute duration.
+4. The left rail shows the current session automatically. Use the small session
+   settings button only if you want to change the total session plan or default
+   duration.
 5. Click `Settings` in the top right.
 6. Configure the Deburapy mediator provider, base URL, model, and API key.
 7. Configure the AI companion:
@@ -155,10 +157,10 @@ Smoke test through the UI:
     MCP companion context.
 15. Click `End`, or let the timer expire, to generate a session note. The note
     is saved into the local room store automatically. Exporting the note from
-    the left rail is optional, mainly for backup or transfer; casual reading is
-    not recommended.
-16. Reopen Settings and use Diagnostics when a key, model, quota, or
-    connection fails.
+    session settings is optional, mainly for backup or transfer; casual reading
+    is not recommended.
+16. Use `Diagnostics` or `FAQ` in the left rail footer when a key, model, quota,
+    or connection fails.
 
 ## Local Persistence and Session Notes
 

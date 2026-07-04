@@ -164,66 +164,50 @@
 
         <section class="sessionCard" aria-label="Current session">
           <div class="sessionCardTop">
-            <span id="sessionTitle">Session 1</span>
-            <strong id="countdown">60:00</strong>
+            <div>
+              <span id="sessionTitle">Session 1</span>
+              <small id="sessionPlanSummary">of 12</small>
+            </div>
+            <button id="sessionSettingsToggle" type="button" class="sessionIconButton" aria-expanded="false" aria-controls="sessionSettingsPanel" title="Session settings" aria-label="Session settings">⚙</button>
           </div>
+          <strong id="countdown">60:00</strong>
           <div class="sessionProgressTrack" aria-hidden="true">
             <div id="sessionProgress" class="sessionProgressBar"></div>
           </div>
           <p id="sessionTimingHint">Start stores timing in the local room.</p>
-        </section>
-
-        <section class="railControls" aria-label="Session controls">
-          <label>
-            Session number
-            <input id="sessionNumber" type="number" min="1" value="1">
-          </label>
-          <label>
-            Duration
-            <select id="sessionDuration">
-              <option value="60">60 minutes</option>
-              <option value="90">90 minutes</option>
-            </select>
-          </label>
           <div class="sessionButtons">
             <button id="startSession" type="button">Start</button>
             <button id="endSession" type="button" class="secondary">End</button>
           </div>
         </section>
 
-        <section class="sessionNotePanel" aria-label="Session note">
-          <p id="sessionNoteStatus">No session note yet. Notes save locally after End.</p>
-          <button id="downloadSessionNote" type="button" class="secondary" disabled>Export note</button>
+        <section id="sessionSettingsPanel" class="sessionSettingsPanel" aria-label="Session settings" hidden>
+          <input id="sessionNumber" type="hidden" value="1">
+          <label>
+            Total sessions
+            <input id="sessionTotalSessions" type="number" min="1" max="52" value="12">
+          </label>
+          <label>
+            Session duration
+            <select id="sessionDuration">
+              <option value="60">60 minutes</option>
+              <option value="90">90 minutes</option>
+            </select>
+          </label>
+          <div class="sessionNotePanel" aria-label="Session note">
+            <p id="sessionNoteStatus">No session note yet. Notes save locally after End.</p>
+            <button id="downloadSessionNote" type="button" class="secondary" disabled>Export note</button>
+          </div>
         </section>
 
         <section class="journeySection" aria-label="Journey">
           <h2>Journey</h2>
-          <div class="courseList">
-            <button type="button" class="courseItem">
-              <span aria-hidden="true">✓</span>
-              <span>Session 1</span>
-              <small>Saved</small>
-            </button>
-            <button type="button" class="courseItem isActive">
-              <span aria-hidden="true">▶</span>
-              <span>Session 2</span>
-              <small>Next</small>
-            </button>
-            <button type="button" class="courseItem">
-              <span aria-hidden="true">◷</span>
-              <span>Session 3</span>
-              <small>Upcoming</small>
-            </button>
-            <button type="button" class="courseItem">
-              <span aria-hidden="true">□</span>
-              <span>Review</span>
-              <small>Pattern</small>
-            </button>
-          </div>
+          <div id="courseList" class="courseList"></div>
         </section>
 
         <div class="railFooter">
-          <button id="breathButton" type="button" class="breathButton">Take a Breath</button>
+          <button id="openDiagnostics" type="button" class="railLink">Diagnostics</button>
+          <button id="openFaq" type="button" class="railLink">FAQ</button>
         </div>
       </aside>
 
@@ -405,6 +389,15 @@
       <section class="settingsSection">
         <h2>Diagnostics</h2>
         <div id="diagnostics" class="diagnostics"></div>
+      </section>
+
+      <section id="faqSection" class="settingsSection">
+        <h2>FAQ</h2>
+        <div class="faqList">
+          <p><strong>Where are session notes?</strong> They are saved locally. Export is optional and lives in session settings.</p>
+          <p><strong>What is Deburapy?</strong> It is for AI-human relationship repair and continuity planning, not clinical therapy.</p>
+          <p><strong>Where are model keys?</strong> Keys stay in this browser only if you choose to remember them.</p>
+        </div>
       </section>
 
       <div class="settingsActions">

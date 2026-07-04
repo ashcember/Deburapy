@@ -481,6 +481,8 @@ label {
   z-index: 2;
   min-width: 0;
   height: calc(100vh - 42px);
+  display: flex;
+  flex-direction: column;
   padding: 28px 24px;
   overflow: auto;
   border-right: 1px solid rgba(195, 200, 191, 0.45);
@@ -525,6 +527,8 @@ label {
 }
 
 .sessionCard {
+  display: grid;
+  gap: 10px;
   padding: 22px;
   border: 1px solid rgba(195, 200, 191, 0.34);
   border-radius: var(--radius-md);
@@ -534,10 +538,15 @@ label {
 
 .sessionCardTop {
   display: flex;
-  align-items: end;
+  align-items: start;
   justify-content: space-between;
   gap: 14px;
   color: var(--primary);
+}
+
+.sessionCardTop > div {
+  display: grid;
+  gap: 4px;
 }
 
 .sessionCardTop span {
@@ -545,7 +554,27 @@ label {
   font-weight: 800;
 }
 
-.sessionCardTop strong {
+.sessionCardTop small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sessionIconButton {
+  width: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-color: rgba(195, 200, 191, 0.36);
+  background: rgba(255, 255, 255, 0.56);
+  color: var(--primary);
+  font-size: 15px;
+  box-shadow: none;
+}
+
+.sessionCard > strong {
+  color: var(--primary);
   font-size: 28px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -568,8 +597,6 @@ label {
   transition: width 300ms ease;
 }
 
-.railControls,
-.sessionNotePanel,
 .journeySection {
   margin-top: 26px;
 }
@@ -585,13 +612,33 @@ label {
   width: 100%;
 }
 
-.sessionNotePanel {
+.sessionSettingsPanel {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  margin-top: 14px;
   padding: 18px;
   border: 1px solid rgba(195, 200, 191, 0.36);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.52);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.sessionSettingsPanel label {
+  font-size: 12px;
+}
+
+.sessionSettingsPanel input,
+.sessionSettingsPanel select {
+  min-height: 44px;
+}
+
+.sessionNotePanel {
+  display: grid;
+  gap: 12px;
+  padding-top: 14px;
+  border: 1px solid rgba(195, 200, 191, 0.36);
+  border-width: 1px 0 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .journeySection h2 {
@@ -640,25 +687,29 @@ label {
 }
 
 .railFooter {
+  position: sticky;
+  bottom: 0;
   display: grid;
-  gap: 16px;
-  margin-top: 72px;
-  padding-top: 18px;
+  gap: 10px;
+  margin-top: auto;
+  padding: 18px 0 4px;
   border-top: 1px solid rgba(195, 200, 191, 0.42);
-}
-
-.breathButton {
-  background: rgba(255, 255, 255, 0.56);
-  color: var(--primary);
-  border-color: rgba(195, 200, 191, 0.36);
+  background: linear-gradient(180deg, rgba(246, 243, 242, 0), rgba(246, 243, 242, 0.96) 18%);
 }
 
 .railLink {
-  background: transparent;
+  width: 100%;
+  justify-content: start;
+  background: rgba(255, 255, 255, 0.36);
   color: var(--ink);
   border-color: transparent;
-  justify-self: start;
-  padding: 0 4px;
+  text-align: left;
+  padding: 0 18px;
+  box-shadow: none;
+}
+
+.railLink:hover:not(:disabled) {
+  box-shadow: none;
 }
 
 .roomShell {
@@ -1171,6 +1222,26 @@ details textarea {
   display: grid;
   gap: 10px;
   margin-top: 18px;
+}
+
+.faqList {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.faqList p {
+  padding: 14px 16px;
+  border: 1px solid rgba(195, 200, 191, 0.42);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.faqList strong {
+  color: var(--primary);
 }
 
 .logEntry {
