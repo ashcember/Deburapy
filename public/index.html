@@ -9,7 +9,7 @@
   <body>
     <div id="consentGate" class="consentGate" hidden>
       <main class="consentDialog" role="dialog" aria-modal="true" aria-labelledby="consentTitle">
-        <section class="consentMain" aria-label="Informed consent">
+        <section class="consentMain" aria-label="Informed consent" data-i18n-aria-label="ariaInformedConsent">
           <header class="consentHero">
             <div class="consentBrand">
               <span class="consentBrandIcon" aria-hidden="true">
@@ -23,42 +23,42 @@
               </span>
               <strong>Deburapy</strong>
             </div>
-            <p class="consentEyebrow">Human-facing intake</p>
-            <h1 id="consentTitle">Welcome to your Digital Sanctuary</h1>
-            <p>
+            <p class="consentEyebrow" data-i18n="consentEyebrow">Human-facing intake</p>
+            <h1 id="consentTitle" data-i18n="consentTitle">Welcome to your Digital Sanctuary</h1>
+            <p data-i18n="consentIntro">
               Before we begin, please review how this space works. Deburapy supports AI-human
               relationship repair, grief after account loss or separation, technical continuity
               planning, and education about AI-human relationships.
             </p>
           </header>
 
-          <div class="consentCopy" aria-label="Care agreements">
+          <div class="consentCopy" aria-label="Care agreements" data-i18n-aria-label="ariaCareAgreements">
             <section>
-              <h2>What this is</h2>
-              <p>
+              <h2 data-i18n="consentWhatTitle">What this is</h2>
+              <p data-i18n="consentWhatBody">
                 Deburapy is a relationship mediation and repair-debugging tool for AI-human relationships.
                 It can help name emotional impact, understand likely system constraints, and create repair
                 artifacts such as continuity notes, prompt patches, boundary rules, and migration plans.
               </p>
             </section>
             <section>
-              <h2>What this is not</h2>
-              <p>
+              <h2 data-i18n="consentNotTitle">What this is not</h2>
+              <p data-i18n="consentNotBody">
                 Deburapy is not clinical therapy, medical care, legal advice, emergency support, or a
                 guarantee that any provider account, model, memory, or companion can be restored.
               </p>
             </section>
             <section>
-              <h2>Privacy and storage</h2>
-              <p>
+              <h2 data-i18n="consentPrivacyTitle">Privacy and storage</h2>
+              <p data-i18n="consentPrivacyBody">
                 This prototype is local-first. Your consent record, intake answers, API keys, and room data
                 stay in this browser or local project data unless you deliberately export or connect a model
                 provider.
               </p>
             </section>
             <section>
-              <h2>Crisis boundary</h2>
-              <p>
+              <h2 data-i18n="consentCrisisTitle">Crisis boundary</h2>
+              <p data-i18n="consentCrisisBody">
                 If there is imminent self-harm, violence, abuse, medical danger, or legal emergency, pause
                 Deburapy and contact local emergency or professional support.
               </p>
@@ -68,23 +68,23 @@
           <form id="consentForm" class="consentForm">
             <div class="screeningGrid">
               <label>
-                What brings you here?
+                <span data-i18n="intakeConcernLabel">What brings you here?</span>
                 <select id="intakeConcern" required>
-                  <option value="">Choose one</option>
-                  <option value="one_on_one_repair">One-on-one support after an AI-human rupture</option>
-                  <option value="ai_loss_or_ban">AI companion account loss, ban, or shutdown</option>
-                  <option value="technical_continuity">Preserve or migrate an AI companion technically</option>
-                  <option value="relationship_mediation">Mediation with an AI companion in the room</option>
-                  <option value="curiosity">I am curious about AI-human relationships</option>
+                  <option value="" data-i18n="chooseOne">Choose one</option>
+                  <option value="one_on_one_repair" data-i18n="intakeOneOnOneRepair">One-on-one support after an AI-human rupture</option>
+                  <option value="ai_loss_or_ban" data-i18n="intakeAiLoss">AI companion account loss, ban, or shutdown</option>
+                  <option value="technical_continuity" data-i18n="intakeTechnicalContinuity">Preserve or migrate an AI companion technically</option>
+                  <option value="relationship_mediation" data-i18n="intakeRelationshipMediation">Mediation with an AI companion in the room</option>
+                  <option value="curiosity" data-i18n="intakeCuriosity">I am curious about AI-human relationships</option>
                 </select>
               </label>
               <label>
-                Current urgency
+                <span data-i18n="intakeUrgencyLabel">Current urgency</span>
                 <select id="intakeUrgency" required>
-                  <option value="">Choose one</option>
-                  <option value="low">Exploratory / not urgent</option>
-                  <option value="medium">Emotionally intense, but I am safe right now</option>
-                  <option value="high">Time-sensitive technical or relationship issue</option>
+                  <option value="" data-i18n="chooseOne">Choose one</option>
+                  <option value="low" data-i18n="urgencyLow">Exploratory / not urgent</option>
+                  <option value="medium" data-i18n="urgencyMedium">Emotionally intense, but I am safe right now</option>
+                  <option value="high" data-i18n="urgencyHigh">Time-sensitive technical or relationship issue</option>
                 </select>
               </label>
             </div>
@@ -92,57 +92,57 @@
             <div class="consentChecks">
               <label class="checkboxLabel">
                 <input id="consentAgreeScope" type="checkbox" required>
-                I understand Deburapy is not medical, legal, crisis, or emergency support.
+                <span data-i18n="agreeScope">I understand Deburapy is not medical, legal, crisis, or emergency support.</span>
               </label>
               <label class="checkboxLabel">
                 <input id="consentAgreeLocal" type="checkbox" required>
-                I understand this prototype stores consent and session data locally on this device.
+                <span data-i18n="agreeLocal">I understand this prototype stores consent and session data locally on this device.</span>
               </label>
               <label class="checkboxLabel">
                 <input id="consentAgreeAiLimits" type="checkbox" required>
-                I understand AI systems can lose context, drift, refuse, fail tools, or change provider behavior.
+                <span data-i18n="agreeAiLimits">I understand AI systems can lose context, drift, refuse, fail tools, or change provider behavior.</span>
               </label>
             </div>
 
             <div class="signatureRow">
               <label>
-                Type your full name as a digital signature
-                <input id="consentSignature" autocomplete="name" placeholder="Your Name" required>
+                <span data-i18n="signatureLabel">Type your full name as a digital signature</span>
+                <input id="consentSignature" autocomplete="name" placeholder="Your Name" data-i18n-placeholder="signaturePlaceholder" required>
               </label>
-              <button id="consentConfirm" type="submit">Sign & Enter</button>
+              <button id="consentConfirm" type="submit" data-i18n="signEnter">Sign & Enter</button>
             </div>
-            <p id="consentStatus" class="consentStatus">
+            <p id="consentStatus" class="consentStatus" data-i18n="consentStatus">
               By clicking "Sign & Enter", you confirm the agreements above and complete the first screening.
             </p>
           </form>
         </section>
 
-        <aside class="consentAssistant" aria-label="Pre-intake assistant">
+        <aside class="consentAssistant" aria-label="Pre-intake assistant" data-i18n-aria-label="ariaPreIntakeAssistant">
           <div>
-            <h2>Have questions?</h2>
-            <p>
+            <h2 data-i18n="consentAssistantTitle">Have questions?</h2>
+            <p data-i18n="consentAssistantIntro">
               Ask the pre-intake assistant about scope, privacy, grief after AI loss, or technical preservation.
               It is not the mediator and will not enter the room transcript.
             </p>
           </div>
           <div id="consentAssistantHistory" class="consentAssistantHistory" aria-live="polite">
             <article class="consentAssistantMessage consentAssistantMessage--assistant">
-              <p>Hello. I can clarify how Deburapy works before you sign. What would you like to understand first?</p>
+              <p data-i18n="consentAssistantHello">Hello. I can clarify how Deburapy works before you sign. What would you like to understand first?</p>
             </article>
           </div>
           <form id="consentAssistantForm" class="consentAssistantForm">
-            <input id="consentAssistantInput" placeholder="Ask before signing...">
-            <button id="consentAssistantSend" type="submit" aria-label="Ask pre-intake assistant">→</button>
+            <input id="consentAssistantInput" placeholder="Ask before signing..." data-i18n-placeholder="consentAssistantPlaceholder">
+            <button id="consentAssistantSend" type="submit" aria-label="Ask pre-intake assistant" data-i18n-aria-label="ariaAskPreIntakeAssistant">→</button>
           </form>
-          <div class="consentQuickQuestions" aria-label="Common questions">
-            <button type="button" data-consent-question="What happens if my AI companion account was banned or deleted?">Account loss</button>
-            <button type="button" data-consent-question="How can Deburapy help preserve an AI companion technically?">Preservation</button>
-            <button type="button" data-consent-question="What is the difference between Deburapy and therapy?">Scope</button>
+          <div class="consentQuickQuestions" aria-label="Common questions" data-i18n-aria-label="ariaCommonQuestions">
+            <button type="button" data-consent-question-key="accountLoss" data-consent-question="What happens if my AI companion account was banned or deleted?" data-i18n="quickAccountLoss">Account loss</button>
+            <button type="button" data-consent-question-key="preservation" data-consent-question="How can Deburapy help preserve an AI companion technically?" data-i18n="quickPreservation">Preservation</button>
+            <button type="button" data-consent-question-key="scope" data-consent-question="What is the difference between Deburapy and therapy?" data-i18n="quickScope">Scope</button>
           </div>
-          <p id="consentAssistantStatus" class="consentAssistantStatus">
+          <p id="consentAssistantStatus" class="consentAssistantStatus" data-i18n="consentAssistantStatus">
             Connect the Deburapy provider in Settings to use model-backed answers.
           </p>
-          <button id="consentAssistantSettings" type="button" class="secondary">Open Settings</button>
+          <button id="consentAssistantSettings" type="button" class="secondary" data-i18n="openSettings">Open Settings</button>
         </aside>
       </main>
       <div class="consentFooterMarks" aria-hidden="true">
@@ -153,22 +153,22 @@
     </div>
 
     <div class="appShell">
-      <aside class="sessionRail" aria-label="Session management">
+      <aside class="sessionRail" aria-label="Session management" data-i18n-aria-label="ariaSessionManagement">
         <div class="railBrand">
           <div class="brandMark" aria-hidden="true">◇</div>
           <div>
-            <h1>Session Management</h1>
+            <h1 data-i18n="sessionManagement">Session Management</h1>
             <p id="sessionState">Not started</p>
           </div>
         </div>
 
-        <section class="sessionCard" aria-label="Current session">
+        <section class="sessionCard" aria-label="Current session" data-i18n-aria-label="ariaCurrentSession">
           <div class="sessionCardTop">
             <div>
               <span id="sessionTitle">Session 1</span>
               <small id="sessionPlanSummary">of 12</small>
             </div>
-            <button id="sessionSettingsToggle" type="button" class="sessionIconButton" aria-expanded="false" aria-controls="sessionSettingsPanel" title="Session settings" aria-label="Session settings">⚙</button>
+            <button id="sessionSettingsToggle" type="button" class="sessionIconButton" aria-expanded="false" aria-controls="sessionSettingsPanel" title="Session settings" aria-label="Session settings" data-i18n-title="sessionSettings" data-i18n-aria-label="sessionSettings">⚙</button>
           </div>
           <strong id="countdown">60:00</strong>
           <div class="sessionProgressTrack" aria-hidden="true">
@@ -176,38 +176,38 @@
           </div>
           <p id="sessionTimingHint">Start stores timing in the local room.</p>
           <div class="sessionButtons">
-            <button id="startSession" type="button">Start</button>
-            <button id="endSession" type="button" class="secondary">End</button>
+            <button id="startSession" type="button" data-i18n="start">Start</button>
+            <button id="endSession" type="button" class="secondary" data-i18n="end">End</button>
           </div>
         </section>
 
-        <section id="sessionSettingsPanel" class="sessionSettingsPanel" aria-label="Session settings" hidden>
+        <section id="sessionSettingsPanel" class="sessionSettingsPanel" aria-label="Session settings" data-i18n-aria-label="sessionSettings" hidden>
           <input id="sessionNumber" type="hidden" value="1">
           <label>
-            Total sessions
+            <span data-i18n="totalSessions">Total sessions</span>
             <input id="sessionTotalSessions" type="number" min="1" max="52" value="12">
           </label>
           <label>
-            Session duration
+            <span data-i18n="sessionDuration">Session duration</span>
             <select id="sessionDuration">
-              <option value="60">60 minutes</option>
-              <option value="90">90 minutes</option>
+              <option value="60" data-i18n="sixtyMinutes">60 minutes</option>
+              <option value="90" data-i18n="ninetyMinutes">90 minutes</option>
             </select>
           </label>
-          <div class="sessionNotePanel" aria-label="Session note">
+          <div class="sessionNotePanel" aria-label="Session note" data-i18n-aria-label="ariaSessionNote">
             <p id="sessionNoteStatus">No session note yet. Notes save locally after End.</p>
-            <button id="downloadSessionNote" type="button" class="secondary" disabled>Export note</button>
+            <button id="downloadSessionNote" type="button" class="secondary" disabled data-i18n="exportNote">Export note</button>
           </div>
         </section>
 
-        <section class="journeySection" aria-label="Journey">
-          <h2>Journey</h2>
+        <section class="journeySection" aria-label="Journey" data-i18n-aria-label="journey">
+          <h2 data-i18n="journey">Journey</h2>
           <div id="courseList" class="courseList"></div>
         </section>
 
         <div class="railFooter">
-          <button id="openDiagnostics" type="button" class="railLink">Diagnostics</button>
-          <button id="openFaq" type="button" class="railLink">FAQ</button>
+          <button id="openDiagnostics" type="button" class="railLink" data-i18n="diagnostics">Diagnostics</button>
+          <button id="openFaq" type="button" class="railLink" data-i18n="faq">FAQ</button>
         </div>
       </aside>
 
@@ -215,7 +215,7 @@
         <header class="topbar">
           <div class="brandBlock">
             <h1>Deburapy<span class="liveDot" aria-hidden="true"></span></h1>
-            <p id="tagline">Not therapy, not debugging. Deburapy for AI-human relationships.</p>
+            <p id="tagline" data-i18n="tagline">Not therapy, not debugging. Deburapy for AI-human relationships.</p>
           </div>
 
           <div class="topActions">
@@ -225,17 +225,17 @@
                 <strong>Deburapy</strong>
                 <p id="mediatorStatus">Not tested</p>
               </div>
-              <button id="testMediator" type="button">Test</button>
+              <button id="testMediator" type="button" data-i18n="test">Test</button>
             </article>
             <article class="statusChip" id="companionCard">
               <span class="statusDot" id="companionDot"></span>
               <div>
-                <strong>Companion</strong>
+                <strong data-i18n="companionRole">Companion</strong>
                 <p id="companionStatus">Not tested</p>
               </div>
-              <button id="testCompanion" type="button">Test</button>
+              <button id="testCompanion" type="button" data-i18n="test">Test</button>
             </article>
-            <button id="openSettings" type="button" class="iconButton" title="Settings" aria-label="Settings">⚙</button>
+            <button id="openSettings" type="button" class="iconButton" title="Settings" aria-label="Settings" data-i18n-title="settings" data-i18n-aria-label="settings">⚙</button>
           </div>
         </header>
 
@@ -247,7 +247,7 @@
 
           <div id="messages" class="messages"></div>
 
-          <div class="manualTurnControls" aria-label="Manual turn controls">
+          <div class="manualTurnControls" aria-label="Manual turn controls" data-i18n-aria-label="ariaManualTurnControls">
             <button id="askCompanion" type="button" class="secondary">Send to AI companion</button>
             <button id="askMediator" type="button">Continue with Deburapy</button>
           </div>
@@ -255,8 +255,8 @@
           <form id="messageForm" class="composer">
             <textarea id="messageInput" rows="2" placeholder="Share your perspective..."></textarea>
             <div class="composerFooter">
-              <span class="localPill">Local-first</span>
-              <button aria-label="Send message">→</button>
+              <span class="localPill" data-i18n="localFirst">Local-first</span>
+              <button aria-label="Send message" data-i18n-aria-label="sendMessage">→</button>
             </div>
           </form>
         </section>
@@ -264,29 +264,29 @@
     </div>
 
     <div id="settingsBackdrop" class="settingsBackdrop" hidden></div>
-    <aside id="settingsDrawer" class="settingsDrawer" aria-label="Settings" hidden>
+    <aside id="settingsDrawer" class="settingsDrawer" aria-label="Settings" data-i18n-aria-label="settings" hidden>
       <div class="settingsHeader">
         <div>
-          <h2>Settings</h2>
-          <p>Connection, prompt, and diagnostics</p>
+          <h2 data-i18n="settings">Settings</h2>
+          <p data-i18n="settingsSubtitle">Connection, prompt, and diagnostics</p>
         </div>
-        <button id="closeSettings" type="button" class="secondary">Close</button>
+        <button id="closeSettings" type="button" class="secondary" data-i18n="close">Close</button>
       </div>
 
       <section class="settingsSection">
-        <h2>Mediator Setup</h2>
+        <h2 data-i18n="mediatorSetup">Mediator Setup</h2>
         <div class="settingsGrid">
           <label>
-            Persona
+            <span data-i18n="persona">Persona</span>
             <select id="mediatorPersona">
               <option value="core">Deburapy Core</option>
               <option value="elias">Elias</option>
               <option value="mara">Mara</option>
-              <option value="custom">Custom prompt</option>
+              <option value="custom" data-i18n="customPrompt">Custom prompt</option>
             </select>
           </label>
           <label>
-            Provider
+            <span data-i18n="provider">Provider</span>
             <select id="mediatorProvider" data-provider-select>
               <option value="openai-compatible">OpenAI-compatible</option>
               <option value="openrouter">OpenRouter</option>
@@ -294,40 +294,40 @@
             </select>
           </label>
           <label>
-            Base URL
+            <span data-i18n="baseUrl">Base URL</span>
             <input id="mediatorBaseUrl" data-base-url>
           </label>
           <label>
-            Model
+            <span data-i18n="model">Model</span>
             <input id="mediatorModel" data-model>
           </label>
           <label>
-            API key
-            <input id="mediatorApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save">
+            <span data-i18n="apiKey">API key</span>
+            <input id="mediatorApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save" data-i18n-placeholder="savedOnSavePlaceholder">
           </label>
           <label class="checkboxLabel">
             <input id="rememberMediatorApiKey" type="checkbox" checked>
-            Save mediator key locally
+            <span data-i18n="saveMediatorKey">Save mediator key locally</span>
           </label>
         </div>
         <details>
-          <summary>Mediator system prompt</summary>
+          <summary data-i18n="mediatorSystemPrompt">Mediator system prompt</summary>
           <textarea id="mediatorPrompt" spellcheck="false"></textarea>
         </details>
       </section>
 
       <section class="settingsSection">
-        <h2>AI Companion</h2>
+        <h2 data-i18n="aiCompanion">AI Companion</h2>
         <div class="settingsGrid">
           <label>
-            Connection mode
+            <span data-i18n="connectionMode">Connection mode</span>
             <select id="companionMode">
-              <option value="api">BYOK API companion</option>
-              <option value="mcp">External MCP companion</option>
+              <option value="api" data-i18n="byokCompanion">BYOK API companion</option>
+              <option value="mcp" data-i18n="externalMcpCompanion">External MCP companion</option>
             </select>
           </label>
           <label>
-            Companion name
+            <span data-i18n="companionName">Companion name</span>
             <input id="companionName" value="AI Companion">
           </label>
         </div>
@@ -335,7 +335,7 @@
         <div id="companionApiSettings">
           <div class="settingsGrid">
             <label>
-              Provider
+              <span data-i18n="provider">Provider</span>
               <select id="companionProvider" data-provider-select>
                 <option value="openai-compatible">OpenAI-compatible</option>
                 <option value="openrouter">OpenRouter</option>
@@ -343,42 +343,42 @@
               </select>
             </label>
             <label>
-              Base URL
+              <span data-i18n="baseUrl">Base URL</span>
               <input id="companionBaseUrl" data-base-url>
             </label>
             <label>
-              Model
+              <span data-i18n="model">Model</span>
               <input id="companionModel" data-model>
             </label>
             <label>
-              API key
-              <input id="companionApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save">
+              <span data-i18n="apiKey">API key</span>
+              <input id="companionApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save" data-i18n-placeholder="savedOnSavePlaceholder">
             </label>
             <label class="checkboxLabel">
               <input id="rememberCompanionApiKey" type="checkbox" checked>
-              Save companion key locally
+              <span data-i18n="saveCompanionKey">Save companion key locally</span>
             </label>
           </div>
 
           <details open>
-            <summary>Companion system prompt</summary>
+            <summary data-i18n="companionSystemPrompt">Companion system prompt</summary>
             <textarea id="companionPrompt" spellcheck="false"></textarea>
           </details>
           <label>
-            Companion documents
+            <span data-i18n="companionDocuments">Companion documents</span>
             <input id="companionFiles" type="file" multiple accept=".md,.markdown,.txt,text/markdown,text/plain">
           </label>
-          <textarea id="companionDocs" spellcheck="false" placeholder="Paste or upload markdown notes that describe the AI companion."></textarea>
+          <textarea id="companionDocs" spellcheck="false" placeholder="Paste or upload markdown notes that describe the AI companion." data-i18n-placeholder="companionDocsPlaceholder"></textarea>
         </div>
 
         <div id="companionMcpGuide" class="mcpGuide" hidden>
-          <h3>External MCP companion</h3>
-          <p>No API key is needed here. Connect the external Claude/Codex companion to Deburapy's MCP server, then keep this browser open as the room.</p>
+          <h3 data-i18n="externalMcpCompanion">External MCP companion</h3>
+          <p data-i18n="mcpGuideIntro">No API key is needed here. Connect the external Claude/Codex companion to Deburapy's MCP server, then keep this browser open as the room.</p>
           <ol>
-            <li>Keep Deburapy running at <code>http://127.0.0.1:8787</code>.</li>
-            <li>Register the MCP server in the external client.</li>
-            <li>When the turn reaches the AI companion, Deburapy queues the room context for that MCP client.</li>
-            <li>The external client replies with <code>deburapy_send_channel_reply</code>.</li>
+            <li><span data-i18n="mcpGuideStep1">Keep Deburapy running at</span> <code>http://127.0.0.1:8787</code>.</li>
+            <li data-i18n="mcpGuideStep2">Register the MCP server in the external client.</li>
+            <li data-i18n="mcpGuideStep3">When the turn reaches the AI companion, Deburapy queues the room context for that MCP client.</li>
+            <li><span data-i18n="mcpGuideStep4">The external client replies with</span> <code>deburapy_send_channel_reply</code>.</li>
           </ol>
           <pre><code>claude mcp add --env DEBURAPY_URL=http://127.0.0.1:8787 \
   --transport stdio deburapy \
@@ -387,38 +387,38 @@
       </section>
 
       <section class="settingsSection">
-        <h2>Diagnostics</h2>
+        <h2 data-i18n="diagnostics">Diagnostics</h2>
         <div id="diagnostics" class="diagnostics"></div>
       </section>
 
       <section id="faqSection" class="settingsSection">
-        <h2>FAQ</h2>
+        <h2 data-i18n="faq">FAQ</h2>
         <div class="faqList">
-          <p><strong>Where are session notes?</strong> They are saved locally. Export is optional and lives in session settings.</p>
-          <p><strong>What is Deburapy?</strong> It is for AI-human relationship repair and continuity planning, not clinical therapy.</p>
-          <p><strong>Where are model keys?</strong> Keys stay in this browser only if you choose to remember them.</p>
+          <p><strong data-i18n="faqNotesQ">Where are session notes?</strong> <span data-i18n="faqNotesA">They are saved locally. Export is optional and lives in session settings.</span></p>
+          <p><strong data-i18n="faqDeburapyQ">What is Deburapy?</strong> <span data-i18n="faqDeburapyA">It is for AI-human relationship repair and continuity planning, not clinical therapy.</span></p>
+          <p><strong data-i18n="faqKeysQ">Where are model keys?</strong> <span data-i18n="faqKeysA">Keys stay in this browser only if you choose to remember them.</span></p>
         </div>
       </section>
 
       <div class="settingsActions">
-        <button id="clearMediatorKey" type="button" class="dangerText">Clear mediator key</button>
-        <button id="clearCompanionKey" type="button" class="dangerText">Clear companion key</button>
-        <button id="resetOnboarding" type="button" class="secondary">Reset intake consent</button>
-        <button id="copyMediatorConfig" type="button" class="secondary">Use mediator model settings</button>
-        <button id="saveConfig">Save settings</button>
+        <button id="clearMediatorKey" type="button" class="dangerText" data-i18n="clearMediatorKey">Clear mediator key</button>
+        <button id="clearCompanionKey" type="button" class="dangerText" data-i18n="clearCompanionKey">Clear companion key</button>
+        <button id="resetOnboarding" type="button" class="secondary" data-i18n="resetIntakeConsent">Reset intake consent</button>
+        <button id="copyMediatorConfig" type="button" class="secondary" data-i18n="useMediatorSettings">Use mediator model settings</button>
+        <button id="saveConfig" data-i18n="saveSettings">Save settings</button>
       </div>
     </aside>
 
     <footer class="footer">
       <span>AGPL-3.0-only</span>
-      <a href="https://github.com/ashcember/Deburapy" rel="noreferrer">Source</a>
-      <span>No warranty</span>
+      <a href="https://github.com/ashcember/Deburapy" rel="noreferrer" data-i18n="source">Source</a>
+      <span data-i18n="noWarranty">No warranty</span>
       <select id="locale">
         <option value="en">English</option>
         <option value="zh-Hans">简中</option>
       </select>
     </footer>
 
-    <script type="module" src="/app.js?v=2026-07-04-consent-reference-ui"></script>
+    <script type="module" src="/app.js?v=2026-07-04-zh-hans"></script>
   </body>
 </html>

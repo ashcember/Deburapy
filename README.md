@@ -1,5 +1,7 @@
 # Deburapy
 
+[简体中文](./README.zh-CN.md)
+
 Not therapy, not debugging. Deburapy for AI-human relationships.
 
 Deburapy is a local-first room for a human, an AI companion, and a relationship

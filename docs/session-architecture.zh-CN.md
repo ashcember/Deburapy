@@ -1,20 +1,18 @@
-# Session Architecture
+# Session 架构
 
-[简体中文](./session-architecture.zh-CN.md)
+[English](./session-architecture.md)
 
-Deburapy should model recurring mediator work without using clinical product
-language. The core terms are:
+Deburapy 应该建模重复发生的协调员工作，但避免使用临床产品语言。核心术语是：
 
-- `session`: one bounded meeting, usually 60 or 90 minutes.
-- `mediator_note`: a structured end-of-session note.
-- `relationship_map`: a periodic synthesis of the recurring pattern.
-- `course_outline`: the planned arc, such as 12 sessions.
-- `pattern_review`: a review every 3 or 4 sessions.
-- `check_in_scale`: a lightweight non-diagnostic rating module.
-- `module`: a scenario-specific workflow.
+- `session`: 一次有边界的会面，通常为 60 或 90 分钟。
+- `mediator_note`: session 结束后的结构化 note。
+- `relationship_map`: 对重复模式的周期性综合。
+- `course_outline`: 计划中的工作弧线，例如 12 次 session。
+- `pattern_review`: 每 3 或 4 次 session 做一次回顾。
+- `check_in_scale`: 轻量、非诊断性的评分模块。
+- `module`: 场景特定 workflow。
 
-Avoid product/API terms such as diagnosis, treatment plan, clinical note,
-patient, or case conceptualization.
+避免使用 diagnosis、treatment plan、clinical note、patient 或 case conceptualization 等产品/API 术语。
 
 ## Data Model
 
@@ -79,7 +77,7 @@ patient, or case conceptualization.
 
 ## API Shape
 
-Suggested future endpoints:
+建议未来 endpoint：
 
 ```http
 POST /api/rooms/:roomId/sessions
@@ -94,13 +92,12 @@ POST /api/sessions/:sessionId/check-in-scale
 
 ## Prompt Context
 
-The mediator prompt should receive context in layers:
+协调员 prompt 应该分层接收 context：
 
-1. Current session transcript.
-2. Previous `mediator_note`.
-3. Open agreements and next-session focus.
-4. Latest `relationship_map` if the session number is 4, 8, or 12.
-5. Active module instructions and check-in scale results.
+1. 当前 session transcript。
+2. 上一次 `mediator_note`。
+3. 未关闭的 agreements 和 next-session focus。
+4. 如果 session number 是 4、8 或 12，则包含最新 `relationship_map`。
+5. 活跃 module instructions 和 check-in scale results。
 
-Do not rely on the full raw transcript as long-term memory. It becomes too
-large and makes the next-session focus ambiguous.
+不要把完整 raw transcript 当作长期记忆依赖。它会变得太大，并让下次 session 的焦点变得模糊。

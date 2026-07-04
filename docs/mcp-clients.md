@@ -1,5 +1,7 @@
 # MCP Client Notes
 
+[简体中文](./mcp-clients.zh-CN.md)
+
 ## Claude Code
 
 Deburapy exposes standard MCP tools over stdio. Register it from the Deburapy

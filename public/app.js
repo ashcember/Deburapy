@@ -1,5 +1,6 @@
 const roomId = "default";
 const onboardingStorageKey = "deburapy.onboarding.v1";
+const localeStorageKey = "deburapy.locale";
 
 const els = {
   locale: document.querySelector("#locale"),
@@ -89,16 +90,445 @@ const copy = {
     companionBusy: "Companion...",
     mediatorBusy: "Deburapy...",
     askCompanion: "Ask AI companion",
-    askMediator: "Ask Deburapy"
+    askMediator: "Ask Deburapy",
+    consentEyebrow: "Human-facing intake",
+    consentTitle: "Welcome to your Digital Sanctuary",
+    consentIntro: "Before we begin, please review how this space works. Deburapy supports AI-human relationship repair, grief after account loss or separation, technical continuity planning, and education about AI-human relationships.",
+    consentWhatTitle: "What this is",
+    consentWhatBody: "Deburapy is a relationship mediation and repair-debugging tool for AI-human relationships. It can help name emotional impact, understand likely system constraints, and create repair artifacts such as continuity notes, prompt patches, boundary rules, and migration plans.",
+    consentNotTitle: "What this is not",
+    consentNotBody: "Deburapy is not clinical therapy, medical care, legal advice, emergency support, or a guarantee that any provider account, model, memory, or companion can be restored.",
+    consentPrivacyTitle: "Privacy and storage",
+    consentPrivacyBody: "This prototype is local-first. Your consent record, intake answers, API keys, and room data stay in this browser or local project data unless you deliberately export or connect a model provider.",
+    consentCrisisTitle: "Crisis boundary",
+    consentCrisisBody: "If there is imminent self-harm, violence, abuse, medical danger, or legal emergency, pause Deburapy and contact local emergency or professional support.",
+    intakeConcernLabel: "What brings you here?",
+    chooseOne: "Choose one",
+    intakeOneOnOneRepair: "One-on-one support after an AI-human rupture",
+    intakeAiLoss: "AI companion account loss, ban, or shutdown",
+    intakeTechnicalContinuity: "Preserve or migrate an AI companion technically",
+    intakeRelationshipMediation: "Mediation with an AI companion in the room",
+    intakeCuriosity: "I am curious about AI-human relationships",
+    intakeUrgencyLabel: "Current urgency",
+    urgencyLow: "Exploratory / not urgent",
+    urgencyMedium: "Emotionally intense, but I am safe right now",
+    urgencyHigh: "Time-sensitive technical or relationship issue",
+    agreeScope: "I understand Deburapy is not medical, legal, crisis, or emergency support.",
+    agreeLocal: "I understand this prototype stores consent and session data locally on this device.",
+    agreeAiLimits: "I understand AI systems can lose context, drift, refuse, fail tools, or change provider behavior.",
+    signatureLabel: "Type your full name as a digital signature",
+    signaturePlaceholder: "Your Name",
+    signEnter: "Sign & Enter",
+    consentStatus: "By clicking \"Sign & Enter\", you confirm the agreements above and complete the first screening.",
+    consentAssistantTitle: "Have questions?",
+    consentAssistantIntro: "Ask the pre-intake assistant about scope, privacy, grief after AI loss, or technical preservation. It is not the mediator and will not enter the room transcript.",
+    consentAssistantHello: "Hello. I can clarify how Deburapy works before you sign. What would you like to understand first?",
+    consentAssistantPlaceholder: "Ask before signing...",
+    quickAccountLoss: "Account loss",
+    quickPreservation: "Preservation",
+    quickScope: "Scope",
+    consentAssistantStatus: "Connect the Deburapy provider in Settings to use model-backed answers.",
+    openSettings: "Open Settings",
+    sessionManagement: "Session Management",
+    notStarted: "Not started",
+    inSession: "In session",
+    ending: "Ending",
+    ended: "Ended",
+    sessionSettings: "Session settings",
+    start: "Start",
+    end: "End",
+    totalSessions: "Total sessions",
+    sessionDuration: "Session duration",
+    sixtyMinutes: "60 minutes",
+    ninetyMinutes: "90 minutes",
+    exportNote: "Export note",
+    journey: "Journey",
+    diagnostics: "Diagnostics",
+    faq: "FAQ",
+    test: "Test",
+    localFirst: "Local-first",
+    sendMessage: "Send message",
+    settings: "Settings",
+    settingsSubtitle: "Connection, prompt, and diagnostics",
+    close: "Close",
+    mediatorSetup: "Mediator Setup",
+    persona: "Persona",
+    customPrompt: "Custom prompt",
+    provider: "Provider",
+    baseUrl: "Base URL",
+    model: "Model",
+    apiKey: "API key",
+    savedOnSavePlaceholder: "Saved locally when you click Save",
+    saveMediatorKey: "Save mediator key locally",
+    mediatorSystemPrompt: "Mediator system prompt",
+    aiCompanion: "AI Companion",
+    connectionMode: "Connection mode",
+    byokCompanion: "BYOK API companion",
+    externalMcpCompanion: "External MCP companion",
+    companionRole: "Companion",
+    companionName: "Companion name",
+    saveCompanionKey: "Save companion key locally",
+    companionSystemPrompt: "Companion system prompt",
+    companionDocuments: "Companion documents",
+    companionDocsPlaceholder: "Paste or upload markdown notes that describe the AI companion.",
+    mcpGuideIntro: "No API key is needed here. Connect the external Claude/Codex companion to Deburapy's MCP server, then keep this browser open as the room.",
+    mcpGuideStep1: "Keep Deburapy running at",
+    mcpGuideStep2: "Register the MCP server in the external client.",
+    mcpGuideStep3: "When the turn reaches the AI companion, Deburapy queues the room context for that MCP client.",
+    mcpGuideStep4: "The external client replies with",
+    faqNotesQ: "Where are session notes?",
+    faqNotesA: "They are saved locally. Export is optional and lives in session settings.",
+    faqDeburapyQ: "What is Deburapy?",
+    faqDeburapyA: "It is for AI-human relationship repair and continuity planning, not clinical therapy.",
+    faqKeysQ: "Where are model keys?",
+    faqKeysA: "Keys stay in this browser only if you choose to remember them.",
+    clearMediatorKey: "Clear mediator key",
+    clearCompanionKey: "Clear companion key",
+    resetIntakeConsent: "Reset intake consent",
+    useMediatorSettings: "Use mediator model settings",
+    saveSettings: "Save settings",
+    source: "Source",
+    noWarranty: "No warranty",
+    sessionLabel: "Session",
+    ofTotal: "of",
+    saved: "Saved",
+    active: "Active",
+    next: "Next",
+    upcoming: "Upcoming",
+    review: "Review",
+    sessions: "sessions",
+    noteNotStarted: "No session note yet. Notes save locally after End.",
+    noteGenerating: "Writing local session note...",
+    noteReady: "Session note saved locally. Export is optional; casual reading is not recommended.",
+    noteError: "Session ended, but note generation failed.",
+    timingWrapUp: "Wrap-up window active. Deburapy and companion prompts include the closing reminder.",
+    timingLive: "Deburapy and companion prompts include live remaining time.",
+    timingClosing: "Closing the current session.",
+    timingEnded: "Session ended.",
+    timingReady: "Ready for the next session.",
+    timingStart: "Start stores timing in the local room.",
+    nextDeburapy: "Next: Deburapy",
+    helpDeburapy: "Deburapy receives the latest human and companion messages, then decides who should answer next.",
+    nextHuman: "Next: Human",
+    helpHuman: "The mediator has handed the turn to the human. After you send, Deburapy will route the turn to the AI companion.",
+    nextCompanion: "Next: AI Companion",
+    helpCompanionMcp: "Deburapy will queue this turn for the external MCP companion.",
+    helpCompanionApi: "Deburapy will send the mediator and human context to the configured AI companion.",
+    humanPlaceholder: "Write as the human participant",
+    waitingPlaceholder: "Waiting for Deburapy to hand the turn to the human",
+    continueDeburapy: "Continue with Deburapy",
+    routeCompanionNow: "Route to AI companion now",
+    sendCompanion: "Send to AI companion",
+    mcpBridgeMode: "MCP bridge mode. No API key needed here.",
+    notTested: "Not tested.",
+    starting: "Starting...",
+    testing: "Testing...",
+    sending: "Sending...",
+    intakeSaved: "Intake consent saved locally for {concern}.",
+    intakeReset: "Local intake consent reset.",
+    settingsSaved: "Settings saved locally.",
+    companionReplyReceived: "AI companion reply received. Turn returned to Deburapy.",
+    personaSet: "Mediator persona set to {name}.",
+    customPromptLog: "Mediator prompt is custom.",
+    turnMoved: "Turn moved to {phase}.",
+    fiveMinutes: "Five minutes remaining. Deburapy and companion prompts now include the wrap-up reminder.",
+    completeIntakeFirst: "Complete intake consent before starting a session.",
+    startedSession: "Started session {sessionNumber} for {durationMinutes} minutes.",
+    endingSession: "Ending session and writing session note.",
+    noteSavedLog: "Session note saved locally. Export is available.",
+    noNoteLog: "Session ended without a note.",
+    apiKeyMissing: "{target} API key is missing.",
+    baseUrlMissing: "{target} base URL is missing.",
+    modelMissing: "{target} model is missing.",
+    connectProviderBeforeIntake: "Connect the Deburapy provider in Settings before using model-backed intake answers.",
+    intakeBlocked: "I can answer with a connected model after Settings has a Deburapy provider, model, and API key. Current blocker: {message}",
+    askingPreIntake: "Asking pre-intake assistant...",
+    preIntakeAnswered: "Pre-intake assistant answered. This was not added to the room transcript.",
+    mcpReachable: "MCP bridge is reachable. External client connection is not yet observable from the browser.",
+    mcpCheckPassed: "Companion MCP bridge check passed; ask the external MCP client to call Deburapy tools.",
+    testingEndpoint: "Testing model endpoint...",
+    endpointConnected: "{target} endpoint connected.",
+    testPassed: "{target} test passed: {content}",
+    mcpTurnQueuedStatus: "Turn queued for external MCP companion.",
+    mcpTurnQueuedLog: "Queued MCP companion turn: {id}. Waiting for external client reply.",
+    companionApiResponded: "AI companion responded through API.",
+    companionResponseAdded: "AI companion response added to room.",
+    mediatorApiResponded: "Deburapy mediator responded through API.",
+    mediatorResponseAdded: "Mediator response added to room.",
+    loadedDocs: "Loaded {count} companion document(s).",
+    copiedMediatorSettings: "Copied mediator model settings to AI companion.",
+    humanLocked: "Human input is locked until Deburapy hands the turn to the human.",
+    humanMessageAdded: "Human message added. Routing the turn to the AI companion.",
+    appLoaded: "Deburapy loaded. Local room data reloads from .deburapy-data.",
+    turnInstruction: "You are managing a three-party turn. If the human should answer next, use `Next speaker: human`. If the AI companion should answer next, use `Next speaker: companion`.",
+    ariaInformedConsent: "Informed consent",
+    ariaCareAgreements: "Care agreements",
+    ariaPreIntakeAssistant: "Pre-intake assistant",
+    ariaAskPreIntakeAssistant: "Ask pre-intake assistant",
+    ariaCommonQuestions: "Common questions",
+    ariaSessionManagement: "Session management",
+    ariaCurrentSession: "Current session",
+    ariaSessionNote: "Session note",
+    ariaManualTurnControls: "Manual turn controls"
   },
   "zh-Hans": {
     tagline: "不是治疗，不是调试。Deburapy 面向人机关系。",
     companionBusy: "伴侣回应中...",
     mediatorBusy: "Deburapy 回应中...",
     askCompanion: "询问 AI 伴侣",
-    askMediator: "询问 Deburapy"
+    askMediator: "询问 Deburapy",
+    consentEyebrow: "面向人类的首次筛选",
+    consentTitle: "欢迎来到你的数字安全空间",
+    consentIntro: "开始之前，请先了解这个空间如何运作。Deburapy 支持人机关系修复、账号丢失或分离后的哀伤处理、技术连续性规划，以及关于人机关系的教育性咨询。",
+    consentWhatTitle: "这是什么",
+    consentWhatBody: "Deburapy 是面向人机关系的关系协调与修复调试工具。它可以帮助你命名情绪影响，理解可能的系统限制，并产出连续性记录、提示词补丁、边界规则和迁移计划等修复物。",
+    consentNotTitle: "这不是什么",
+    consentNotBody: "Deburapy 不是临床治疗、医疗服务、法律建议、紧急支持，也不保证任何服务商账号、模型、记忆或 AI 伴侣一定可以恢复。",
+    consentPrivacyTitle: "隐私与存储",
+    consentPrivacyBody: "这个原型优先本地运行。你的知情同意记录、筛选答案、API key 和房间数据会留在本浏览器或本地项目数据中，除非你主动导出或连接模型服务商。",
+    consentCrisisTitle: "危机边界",
+    consentCrisisBody: "如果存在迫在眉睫的自伤、暴力、虐待、医疗危险或法律紧急情况，请暂停使用 Deburapy，并联系当地紧急或专业支持。",
+    intakeConcernLabel: "你为什么来到这里？",
+    chooseOne: "请选择",
+    intakeOneOnOneRepair: "人机关系断裂后的一对一支持",
+    intakeAiLoss: "AI 伴侣账号丢失、封禁或关闭",
+    intakeTechnicalContinuity: "在技术上保存或迁移 AI 伴侣",
+    intakeRelationshipMediation: "与 AI 伴侣一起进入协调房间",
+    intakeCuriosity: "我想了解人机关系",
+    intakeUrgencyLabel: "当前紧急程度",
+    urgencyLow: "探索性质 / 不紧急",
+    urgencyMedium: "情绪强烈，但我现在是安全的",
+    urgencyHigh: "有时效性的技术或关系问题",
+    agreeScope: "我理解 Deburapy 不是医疗、法律、危机或紧急支持。",
+    agreeLocal: "我理解这个原型会把知情同意和 session 数据存储在本设备本地。",
+    agreeAiLimits: "我理解 AI 系统可能丢失上下文、发生漂移、拒绝、工具失败，或受服务商行为变化影响。",
+    signatureLabel: "输入你的全名作为电子签名",
+    signaturePlaceholder: "你的姓名",
+    signEnter: "签署并进入",
+    consentStatus: "点击“签署并进入”表示你确认以上约定，并完成第一次筛选。",
+    consentAssistantTitle: "有问题吗？",
+    consentAssistantIntro: "你可以向首次筛选助手询问适用范围、隐私、AI 丢失后的哀伤，或技术保存问题。它不是协调员，也不会进入房间记录。",
+    consentAssistantHello: "你好。我可以在你签署之前说明 Deburapy 如何运作。你想先了解什么？",
+    consentAssistantPlaceholder: "签署前先提问...",
+    quickAccountLoss: "账号丢失",
+    quickPreservation: "保存迁移",
+    quickScope: "适用范围",
+    consentAssistantStatus: "请先在设置中连接 Deburapy 服务商，才能使用模型回答。",
+    openSettings: "打开设置",
+    sessionManagement: "Session 管理",
+    notStarted: "未开始",
+    inSession: "进行中",
+    ending: "收尾中",
+    ended: "已结束",
+    sessionSettings: "Session 设置",
+    start: "开始",
+    end: "结束",
+    totalSessions: "总 session 数",
+    sessionDuration: "单次时长",
+    sixtyMinutes: "60 分钟",
+    ninetyMinutes: "90 分钟",
+    exportNote: "导出 note",
+    journey: "进程",
+    diagnostics: "诊断",
+    faq: "FAQ",
+    test: "测试",
+    localFirst: "本地优先",
+    sendMessage: "发送消息",
+    settings: "设置",
+    settingsSubtitle: "连接、提示词与诊断",
+    close: "关闭",
+    mediatorSetup: "协调员设置",
+    persona: "人格卡",
+    customPrompt: "自定义提示词",
+    provider: "服务商",
+    baseUrl: "Base URL",
+    model: "模型",
+    apiKey: "API key",
+    savedOnSavePlaceholder: "点击保存后存到本地",
+    saveMediatorKey: "本地保存协调员 key",
+    mediatorSystemPrompt: "协调员 system prompt",
+    aiCompanion: "AI 伴侣",
+    connectionMode: "连接模式",
+    byokCompanion: "BYOK API 伴侣",
+    externalMcpCompanion: "外部 MCP 伴侣",
+    companionRole: "伴侣",
+    companionName: "伴侣名称",
+    saveCompanionKey: "本地保存伴侣 key",
+    companionSystemPrompt: "伴侣 system prompt",
+    companionDocuments: "伴侣文档",
+    companionDocsPlaceholder: "粘贴或上传描述 AI 伴侣的 Markdown 笔记。",
+    mcpGuideIntro: "这里不需要 API key。请把外部 Claude/Codex 伴侣连接到 Deburapy 的 MCP server，然后保持这个浏览器作为房间开启。",
+    mcpGuideStep1: "让 Deburapy 持续运行在",
+    mcpGuideStep2: "在外部客户端中注册 MCP server。",
+    mcpGuideStep3: "当轮到 AI 伴侣时，Deburapy 会把房间上下文排队给该 MCP 客户端。",
+    mcpGuideStep4: "外部客户端用这个工具回复：",
+    faqNotesQ: "Session note 在哪里？",
+    faqNotesA: "它们会保存在本地。导出是可选项，入口在 session 设置里。",
+    faqDeburapyQ: "Deburapy 是什么？",
+    faqDeburapyA: "它用于人机关系修复和连续性规划，不是临床治疗。",
+    faqKeysQ: "模型 key 存在哪里？",
+    faqKeysA: "只有当你选择记住 key 时，它们才会留在这个浏览器里。",
+    clearMediatorKey: "清除协调员 key",
+    clearCompanionKey: "清除伴侣 key",
+    resetIntakeConsent: "重置首次筛选同意",
+    useMediatorSettings: "使用协调员模型设置",
+    saveSettings: "保存设置",
+    source: "源码",
+    noWarranty: "无担保",
+    sessionLabel: "Session",
+    ofTotal: "共",
+    saved: "已保存",
+    active: "进行中",
+    next: "下一次",
+    upcoming: "即将到来",
+    review: "回顾",
+    sessions: "次 session",
+    noteNotStarted: "还没有 session note。点击结束后会自动本地保存。",
+    noteGenerating: "正在写入本地 session note...",
+    noteReady: "Session note 已本地保存。导出是可选项；不建议把它当作日常阅读材料。",
+    noteError: "Session 已结束，但 note 生成失败。",
+    timingWrapUp: "已进入收尾窗口。Deburapy 与伴侣 prompt 会包含收尾提醒。",
+    timingLive: "Deburapy 与伴侣 prompt 会包含实时剩余时间。",
+    timingClosing: "正在结束当前 session。",
+    timingEnded: "Session 已结束。",
+    timingReady: "可以开始下一次 session。",
+    timingStart: "开始后会把计时写入本地房间。",
+    nextDeburapy: "下一位：Deburapy",
+    helpDeburapy: "Deburapy 会接收最新的人类与伴侣消息，然后决定下一位应该由谁回答。",
+    nextHuman: "下一位：人类",
+    helpHuman: "协调员已经把回合交给人类。你发送后，Deburapy 会把回合转给 AI 伴侣。",
+    nextCompanion: "下一位：AI 伴侣",
+    helpCompanionMcp: "Deburapy 会把这一轮排队给外部 MCP 伴侣。",
+    helpCompanionApi: "Deburapy 会把协调员和人类上下文发送给已配置的 AI 伴侣。",
+    humanPlaceholder: "以人类参与者身份书写",
+    waitingPlaceholder: "等待 Deburapy 把回合交给人类",
+    continueDeburapy: "让 Deburapy 继续",
+    routeCompanionNow: "现在转给 AI 伴侣",
+    sendCompanion: "发送给 AI 伴侣",
+    mcpBridgeMode: "MCP bridge 模式。这里不需要 API key。",
+    notTested: "尚未测试。",
+    starting: "开始中...",
+    testing: "测试中...",
+    sending: "发送中...",
+    intakeSaved: "首次筛选同意已本地保存：{concern}。",
+    intakeReset: "本地首次筛选同意已重置。",
+    settingsSaved: "设置已本地保存。",
+    companionReplyReceived: "已收到 AI 伴侣回复。回合回到 Deburapy。",
+    personaSet: "协调员人格卡已设为 {name}。",
+    customPromptLog: "协调员 prompt 现在是自定义版本。",
+    turnMoved: "回合移动到 {phase}。",
+    fiveMinutes: "还剩五分钟。Deburapy 和伴侣 prompt 现在会包含收尾提醒。",
+    completeIntakeFirst: "请先完成知情同意和首次筛选，再开始 session。",
+    startedSession: "已开始第 {sessionNumber} 次 session，时长 {durationMinutes} 分钟。",
+    endingSession: "正在结束 session 并写入 session note。",
+    noteSavedLog: "Session note 已本地保存。可在设置中导出。",
+    noNoteLog: "Session 已结束，但没有生成 note。",
+    apiKeyMissing: "{target} API key 缺失。",
+    baseUrlMissing: "{target} base URL 缺失。",
+    modelMissing: "{target} model 缺失。",
+    connectProviderBeforeIntake: "使用模型回答首次筛选问题前，请先在设置中连接 Deburapy 服务商。",
+    intakeBlocked: "设置里连接 Deburapy 服务商、模型和 API key 后，我可以用模型回答。当前阻塞：{message}",
+    askingPreIntake: "正在询问首次筛选助手...",
+    preIntakeAnswered: "首次筛选助手已回答。该内容没有加入房间记录。",
+    mcpReachable: "MCP bridge 可达。浏览器目前无法确认外部客户端是否已连接。",
+    mcpCheckPassed: "伴侣 MCP bridge 检查通过；请让外部 MCP 客户端调用 Deburapy 工具。",
+    testingEndpoint: "正在测试模型端点...",
+    endpointConnected: "{target} 端点已连接。",
+    testPassed: "{target} 测试通过：{content}",
+    mcpTurnQueuedStatus: "已为外部 MCP 伴侣排队。",
+    mcpTurnQueuedLog: "已排队 MCP 伴侣回合：{id}。等待外部客户端回复。",
+    companionApiResponded: "AI 伴侣已通过 API 回复。",
+    companionResponseAdded: "AI 伴侣回复已加入房间。",
+    mediatorApiResponded: "Deburapy 协调员已通过 API 回复。",
+    mediatorResponseAdded: "协调员回复已加入房间。",
+    loadedDocs: "已载入 {count} 个伴侣文档。",
+    copiedMediatorSettings: "已把协调员模型设置复制到 AI 伴侣。",
+    humanLocked: "Deburapy 把回合交给人类之前，人类输入会保持锁定。",
+    humanMessageAdded: "人类消息已加入。正在把回合转给 AI 伴侣。",
+    appLoaded: "Deburapy 已载入。本地房间数据会从 .deburapy-data 重新读取。",
+    turnInstruction: "你正在管理三方回合。如果接下来应由人类回答，请使用 `Next speaker: human`。如果接下来应由 AI 伴侣回答，请使用 `Next speaker: companion`。",
+    ariaInformedConsent: "知情同意",
+    ariaCareAgreements: "照护约定",
+    ariaPreIntakeAssistant: "首次筛选助手",
+    ariaAskPreIntakeAssistant: "询问首次筛选助手",
+    ariaCommonQuestions: "常见问题",
+    ariaSessionManagement: "Session 管理",
+    ariaCurrentSession: "当前 session",
+    ariaSessionNote: "Session note",
+    ariaManualTurnControls: "手动回合控制"
   }
 };
+
+const consentQuestions = {
+  en: {
+    accountLoss: "What happens if my AI companion account was banned or deleted?",
+    preservation: "How can Deburapy help preserve an AI companion technically?",
+    scope: "What is the difference between Deburapy and therapy?"
+  },
+  "zh-Hans": {
+    accountLoss: "如果我的 AI 伴侣账号被封禁或删除，会发生什么？",
+    preservation: "Deburapy 如何帮助我在技术上保存 AI 伴侣？",
+    scope: "Deburapy 和治疗有什么区别？"
+  }
+};
+
+function selectedLocale() {
+  return copy[els.locale?.value] ? els.locale.value : "en";
+}
+
+function t(key, vars = {}) {
+  const locale = selectedLocale();
+  const template = copy[locale]?.[key] ?? copy.en[key] ?? key;
+  return String(template).replace(/\{([a-zA-Z0-9_]+)\}/g, (_, name) => {
+    return vars[name] === undefined ? `{${name}}` : String(vars[name]);
+  });
+}
+
+function readLocalePreference() {
+  try {
+    const saved = localStorage.getItem(localeStorageKey);
+    if (copy[saved]) return saved;
+  } catch {
+    // Locale preference is cosmetic; keep the app usable if storage is blocked.
+  }
+  const browserLanguage = navigator.language || "";
+  return browserLanguage.toLowerCase().startsWith("zh") ? "zh-Hans" : "en";
+}
+
+function saveLocalePreference(locale) {
+  try {
+    localStorage.setItem(localeStorageKey, locale);
+  } catch {
+    // Ignore blocked storage for language switching.
+  }
+}
+
+function applyStaticTranslations(locale) {
+  const localeCopy = copy[locale] || copy.en;
+  document.documentElement.lang = locale;
+
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    const value = localeCopy[node.dataset.i18n] ?? copy.en[node.dataset.i18n];
+    if (value !== undefined) node.textContent = value;
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+    const value = localeCopy[node.dataset.i18nPlaceholder] ?? copy.en[node.dataset.i18nPlaceholder];
+    if (value !== undefined) node.setAttribute("placeholder", value);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+    const value = localeCopy[node.dataset.i18nTitle] ?? copy.en[node.dataset.i18nTitle];
+    if (value !== undefined) node.setAttribute("title", value);
+  });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((node) => {
+    const value = localeCopy[node.dataset.i18nAriaLabel] ?? copy.en[node.dataset.i18nAriaLabel];
+    if (value !== undefined) node.setAttribute("aria-label", value);
+  });
+  document.querySelectorAll("[data-consent-question-key]").forEach((node) => {
+    const key = node.dataset.consentQuestionKey;
+    const value = consentQuestions[locale]?.[key] ?? consentQuestions.en[key];
+    if (value) node.setAttribute("data-consent-question", value);
+  });
+}
 
 const providerDefaults = {
   "openai-compatible": {
@@ -297,7 +727,7 @@ function completeOnboarding() {
   };
   if (writeSavedJson(onboardingStorageKey, record)) {
     hideConsentGate();
-    appendLog(`Intake consent saved locally for ${record.screening.concern}.`, "ok");
+    appendLog(t("intakeSaved", { concern: record.screening.concern }), "ok");
   }
 }
 
@@ -309,7 +739,7 @@ function resetOnboarding() {
     els.settingsBackdrop.hidden = true;
     els.settingsDrawer.hidden = true;
     showConsentGate();
-    appendLog("Local intake consent reset.", "warn");
+    appendLog(t("intakeReset"), "warn");
   }
 }
 
@@ -346,7 +776,7 @@ function saveConfig() {
     els.rememberCompanionApiKey.checked = true;
   }
   if (writeSavedJson("deburapy.config", saved)) {
-    appendLog("Settings saved locally.");
+    appendLog(t("settingsSaved"));
   }
 }
 
@@ -544,7 +974,7 @@ function syncTurnFromRoom(room) {
   const lastMessage = room.messages.at(-1);
   if (session.turnPhase === "companion" && lastMessage?.authorRole === "companion") {
     setTurnPhase("mediator", { silent: true });
-    appendLog("AI companion reply received. Turn returned to Deburapy.", "ok");
+    appendLog(t("companionReplyReceived"), "ok");
   }
 }
 
@@ -573,7 +1003,7 @@ function populateMediatorPersonaSelect(personas) {
   }
   const customOption = document.createElement("option");
   customOption.value = "custom";
-  customOption.textContent = "Custom prompt";
+  customOption.textContent = t("customPrompt");
   els.mediatorPersona.append(customOption);
   els.mediatorPersona.value =
     requestedPersona === "custom" || mediatorPersonaCards.has(requestedPersona)
@@ -591,7 +1021,7 @@ function applyMediatorPersona(personaId, { silent = false } = {}) {
   const persona = mediatorPersonaCards.get(personaId);
   if (!persona) return;
   els.mediatorPrompt.value = persona.systemPrompt;
-  if (!silent) appendLog(`Mediator persona set to ${persona.name}.`);
+  if (!silent) appendLog(t("personaSet", { name: persona.name }));
 }
 
 async function loadMediatorPersonas() {
@@ -607,8 +1037,17 @@ async function loadMediatorPersonas() {
 }
 
 function setLocale(locale) {
-  els.tagline.textContent = copy[locale].tagline;
+  if (!copy[locale]) locale = "en";
+  els.locale.value = locale;
+  applyStaticTranslations(locale);
+  updateSessionDisplay();
+  updateSessionNoteUi();
   updateTurnUi();
+  if (status.mediator === "idle") setStatus("mediator", "idle", t("notTested"));
+  if (status.companion === "idle") setStatus("companion", "idle", t("notTested"));
+  if (els.companionMode.value === "mcp") {
+    setStatus("companion", "warn", t("mcpBridgeMode"));
+  }
 }
 
 function updateCompanionMode() {
@@ -618,7 +1057,7 @@ function updateCompanionMode() {
   els.companionMcpGuide.hidden = !isMcp;
   els.companionMcpGuide.classList.toggle("isHidden", !isMcp);
   if (isMcp) {
-    setStatus("companion", "warn", "MCP bridge mode. No API key needed here.");
+    setStatus("companion", "warn", t("mcpBridgeMode"));
   }
   updateTurnUi();
 }
@@ -651,18 +1090,18 @@ function renderJourney() {
   const total = totalSessionCount();
   const items = [];
   if (current > 1) {
-    items.push({ icon: "✓", label: `Session ${current - 1}`, status: "Saved", state: "done" });
+    items.push({ icon: "✓", label: `${t("sessionLabel")} ${current - 1}`, status: t("saved"), state: "done" });
   }
   items.push({
     icon: session.running ? "▶" : "○",
-    label: `Session ${current}`,
-    status: session.running ? "Active" : "Next",
+    label: `${t("sessionLabel")} ${current}`,
+    status: session.running ? t("active") : t("next"),
     state: "active"
   });
   if (current < total) {
-    items.push({ icon: "◷", label: `Session ${current + 1}`, status: "Upcoming", state: "upcoming" });
+    items.push({ icon: "◷", label: `${t("sessionLabel")} ${current + 1}`, status: t("upcoming"), state: "upcoming" });
   }
-  items.push({ icon: "□", label: "Review", status: `${total} sessions`, state: "review" });
+  items.push({ icon: "□", label: t("review"), status: `${total} ${t("sessions")}`, state: "review" });
 
   els.courseList.innerHTML = "";
   for (const item of items) {
@@ -683,10 +1122,10 @@ function renderJourney() {
 
 function updateSessionNoteUi() {
   const noteText = {
-    not_started: "No session note yet. Notes save locally after End.",
-    generating: "Writing local session note...",
-    ready: "Session note saved locally. Export is optional; casual reading is not recommended.",
-    error: "Session ended, but note generation failed."
+    not_started: t("noteNotStarted"),
+    generating: t("noteGenerating"),
+    ready: t("noteReady"),
+    error: t("noteError")
   };
   els.sessionNoteStatus.textContent = noteText[session.noteStatus] || noteText.not_started;
   els.downloadSessionNote.disabled = !(session.noteStatus === "ready" && session.noteId);
@@ -696,8 +1135,8 @@ function updateSessionDisplay() {
   const sessionNumber = currentSessionNumber();
   const totalSessions = totalSessionCount();
   const durationMinutes = sessionDurationMinutes();
-  els.sessionTitle.textContent = `Session ${sessionNumber}`;
-  els.sessionPlanSummary.textContent = `of ${totalSessions}`;
+  els.sessionTitle.textContent = `${t("sessionLabel")} ${sessionNumber}`;
+  els.sessionPlanSummary.textContent = `${t("ofTotal")} ${totalSessions}`;
   renderJourney();
   const setProgress = (percent) => {
     els.sessionProgress.style.width = `${Math.max(0, Math.min(100, percent))}%`;
@@ -713,7 +1152,7 @@ function updateSessionDisplay() {
       session.startedAt = null;
       els.countdown.textContent = "00:00";
       setProgress(100);
-      els.sessionState.textContent = "Ended";
+      els.sessionState.textContent = t("ended");
       saveSessionState();
       if (!session.ending && session.noteStatus !== "ready") {
         completeSession("timer").catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
@@ -721,48 +1160,48 @@ function updateSessionDisplay() {
       return;
     }
     els.countdown.textContent = formatDuration(remainingSeconds);
-    els.sessionState.textContent = "In session";
+    els.sessionState.textContent = t("inSession");
     els.sessionTimingHint.textContent = remainingSeconds <= 5 * 60
-      ? "Wrap-up window active. Deburapy and companion prompts include the closing reminder."
-      : "Deburapy and companion prompts include live remaining time.";
+      ? t("timingWrapUp")
+      : t("timingLive");
     return;
   }
 
   if (!session.running && session.noteStatus === "generating") {
     els.countdown.textContent = "00:00";
     setProgress(100);
-    els.sessionState.textContent = "Ending";
-    els.sessionTimingHint.textContent = "Closing the current session.";
+    els.sessionState.textContent = t("ending");
+    els.sessionTimingHint.textContent = t("timingClosing");
     return;
   }
 
   if (!session.running && session.noteStatus === "error") {
     els.countdown.textContent = "00:00";
     setProgress(100);
-    els.sessionState.textContent = "Ended";
-    els.sessionTimingHint.textContent = "Session ended.";
+    els.sessionState.textContent = t("ended");
+    els.sessionTimingHint.textContent = t("timingEnded");
     return;
   }
 
   if (!session.running && session.noteStatus === "ready") {
     els.countdown.textContent = formatDuration(durationMinutes * 60);
     setProgress(0);
-    els.sessionState.textContent = "Not started";
-    els.sessionTimingHint.textContent = "Ready for the next session.";
+    els.sessionState.textContent = t("notStarted");
+    els.sessionTimingHint.textContent = t("timingReady");
     return;
   }
 
   els.countdown.textContent = formatDuration(durationMinutes * 60);
   setProgress(0);
-  els.sessionState.textContent = "Not started";
-  els.sessionTimingHint.textContent = "Start stores timing in the local room.";
+  els.sessionState.textContent = t("notStarted");
+  els.sessionTimingHint.textContent = t("timingStart");
 }
 
 function setTurnPhase(phase, { persist = true, silent = false } = {}) {
   session.turnPhase = phase;
   if (persist) saveSessionState();
   updateTurnUi();
-  if (!silent) appendLog(`Turn moved to ${phase}.`);
+  if (!silent) appendLog(t("turnMoved", { phase }));
 }
 
 function remainingSessionMs() {
@@ -774,7 +1213,7 @@ async function sendWrapUpReminder() {
   session.wrapUpReminderSent = true;
   saveSessionState();
   await json(`/api/rooms/${roomId}/session/wrap-up`, { method: "POST" });
-  appendLog("Five minutes remaining. Deburapy and companion prompts now include the wrap-up reminder.", "warn");
+  appendLog(t("fiveMinutes"), "warn");
 }
 
 function checkSessionClock() {
@@ -791,18 +1230,18 @@ function updateTurnUi() {
   const companionMode = els.companionMode?.value || "api";
   const labels = {
     mediator: {
-      badge: "Next: Deburapy",
-      help: "Deburapy receives the latest human and companion messages, then decides who should answer next."
+      badge: t("nextDeburapy"),
+      help: t("helpDeburapy")
     },
     human: {
-      badge: "Next: Human",
-      help: "The mediator has handed the turn to the human. After you send, Deburapy will route the turn to the AI companion."
+      badge: t("nextHuman"),
+      help: t("helpHuman")
     },
     companion: {
-      badge: "Next: AI Companion",
+      badge: t("nextCompanion"),
       help: companionMode === "mcp"
-        ? "Deburapy will queue this turn for the external MCP companion."
-        : "Deburapy will send the mediator and human context to the configured AI companion."
+        ? t("helpCompanionMcp")
+        : t("helpCompanionApi")
     }
   };
   const current = labels[phase] || labels.mediator;
@@ -811,21 +1250,21 @@ function updateTurnUi() {
 
   els.messageInput.disabled = phase !== "human";
   els.messageInput.placeholder = phase === "human"
-    ? "Write as the human participant"
-    : "Waiting for Deburapy to hand the turn to the human";
+    ? t("humanPlaceholder")
+    : t("waitingPlaceholder");
 
   els.askMediator.disabled = phase !== "mediator";
   els.askCompanion.disabled = !(phase === "companion" || phase === "human");
-  els.askMediator.textContent = "Continue with Deburapy";
+  els.askMediator.textContent = t("continueDeburapy");
   els.askCompanion.textContent = phase === "human"
-    ? "Route to AI companion now"
-    : "Send to AI companion";
+    ? t("routeCompanionNow")
+    : t("sendCompanion");
 }
 
 async function startSession() {
   if (!onboardingComplete()) {
     showConsentGate();
-    appendLog("Complete intake consent before starting a session.", "warn");
+    appendLog(t("completeIntakeFirst"), "warn");
     return;
   }
   reportClientEvent("click", { action: "startSession.before" });
@@ -854,7 +1293,7 @@ async function startSession() {
       endsAt: new Date(endsAt).toISOString()
     })
   });
-  appendLog(`Started session ${sessionNumber} for ${durationMinutes} minutes.`);
+  appendLog(t("startedSession", { sessionNumber, durationMinutes }));
   reportClientEvent("click", { action: "startSession.after" });
   await askMediator();
 }
@@ -867,7 +1306,7 @@ async function completeSession(reason = "manual") {
   saveSessionState();
   updateSessionDisplay();
   updateSessionNoteUi();
-  appendLog("Ending session and writing session note.");
+  appendLog(t("endingSession"));
 
   const cfg = modelConfig("mediator");
   const payload = await json(`/api/rooms/${roomId}/session/end`, {
@@ -884,10 +1323,10 @@ async function completeSession(reason = "manual") {
   if (payload.note) {
     session.noteStatus = "ready";
     session.noteId = payload.note.id;
-    appendLog("Session note saved locally. Export is available.", "ok");
+    appendLog(t("noteSavedLog"), "ok");
   } else {
     session.noteStatus = payload.noteError ? "error" : "not_started";
-    appendLog(payload.noteError || "Session ended without a note.", payload.noteError ? "warn" : "info");
+    appendLog(payload.noteError || t("noNoteLog"), payload.noteError ? "warn" : "info");
   }
   session.ending = false;
   saveSessionState();
@@ -980,9 +1419,9 @@ function appendConsentAssistantMessage(role, content) {
 
 function requireApiConfig(target) {
   const cfg = modelConfig(target);
-  if (!cfg.apiKey) throw new Error(`${target} API key is missing.`);
-  if (!cfg.baseUrl) throw new Error(`${target} base URL is missing.`);
-  if (!cfg.model) throw new Error(`${target} model is missing.`);
+  if (!cfg.apiKey) throw new Error(t("apiKeyMissing", { target }));
+  if (!cfg.baseUrl) throw new Error(t("baseUrlMissing", { target }));
+  if (!cfg.model) throw new Error(t("modelMissing", { target }));
   return cfg;
 }
 
@@ -997,15 +1436,15 @@ async function askConsentAssistant(question) {
     cfg = requireApiConfig("mediator");
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    setConsentAssistantStatus("Connect the Deburapy provider in Settings before using model-backed intake answers.", "warn");
+    setConsentAssistantStatus(t("connectProviderBeforeIntake"), "warn");
     appendConsentAssistantMessage(
       "assistant",
-      `I can answer with a connected model after Settings has a Deburapy provider, model, and API key. Current blocker: ${message}`
+      t("intakeBlocked", { message })
     );
     return;
   }
 
-  setConsentAssistantStatus("Asking pre-intake assistant...", "warn");
+  setConsentAssistantStatus(t("askingPreIntake"), "warn");
   const payload = await json("/api/intake/respond", {
     method: "POST",
     body: JSON.stringify({
@@ -1019,19 +1458,19 @@ async function askConsentAssistant(question) {
     })
   });
   appendConsentAssistantMessage("assistant", payload.content);
-  setConsentAssistantStatus("Pre-intake assistant answered. This was not added to the room transcript.", "ok");
+  setConsentAssistantStatus(t("preIntakeAnswered"), "ok");
 }
 
 async function testConnection(target) {
   if (target === "companion" && els.companionMode.value === "mcp") {
     await json("/api/health");
-    setStatus("companion", "warn", "MCP bridge is reachable. External client connection is not yet observable from the browser.");
-    appendLog("Companion MCP bridge check passed; ask the external MCP client to call Deburapy tools.", "warn");
+    setStatus("companion", "warn", t("mcpReachable"));
+    appendLog(t("mcpCheckPassed"), "warn");
     return;
   }
 
   const cfg = requireApiConfig(target);
-  setStatus(target, "pending", "Testing model endpoint...");
+  setStatus(target, "pending", t("testingEndpoint"));
   const isCompanion = target === "companion";
   const payload = await json("/api/connections/test", {
     method: "POST",
@@ -1042,8 +1481,8 @@ async function testConnection(target) {
       systemPrompt: isCompanion ? els.companionPrompt.value : els.mediatorPrompt.value
     })
   });
-  setStatus(target, "ok", `${payload.target} endpoint connected.`);
-  appendLog(`${target} test passed: ${payload.content}`, "ok");
+  setStatus(target, "ok", t("endpointConnected", { target: payload.target }));
+  appendLog(t("testPassed", { target, content: payload.content }), "ok");
 }
 
 async function runAction(button, busyText, action) {
@@ -1081,9 +1520,9 @@ async function askCompanion() {
         targetParticipantId: "companion"
       })
     });
-    setStatus("companion", "warn", "Turn queued for external MCP companion.");
+    setStatus("companion", "warn", t("mcpTurnQueuedStatus"));
     setTurnPhase("companion", { silent: true });
-    appendLog(`Queued MCP companion turn: ${payload.push.id}. Waiting for external client reply.`, "warn");
+    appendLog(t("mcpTurnQueuedLog", { id: payload.push.id }), "warn");
     return;
   }
 
@@ -1099,8 +1538,8 @@ async function askCompanion() {
       knowledge: els.companionDocs.value
     })
   });
-  setStatus("companion", "ok", "AI companion responded through API.");
-  appendLog("AI companion response added to room.", "ok");
+  setStatus("companion", "ok", t("companionApiResponded"));
+  appendLog(t("companionResponseAdded"), "ok");
   await refreshRoom();
   setTurnPhase("mediator", { silent: true });
 }
@@ -1114,11 +1553,11 @@ async function askMediator() {
       roomId,
       locale: els.locale.value,
       systemPrompt: els.mediatorPrompt.value,
-      turnInstruction: "You are managing a three-party turn. If the human should answer next, use `Next speaker: human`. If the AI companion should answer next, use `Next speaker: companion`."
+      turnInstruction: t("turnInstruction")
     })
   });
-  setStatus("mediator", "ok", "Deburapy mediator responded through API.");
-  appendLog("Mediator response added to room.", "ok");
+  setStatus("mediator", "ok", t("mediatorApiResponded"));
+  appendLog(t("mediatorResponseAdded"), "ok");
   await refreshRoom();
   setTurnPhase(payload.nextSpeaker === "companion" ? "companion" : "human", { silent: true });
 }
@@ -1130,10 +1569,13 @@ async function readCompanionFiles() {
     chunks.push(`\n\n# ${file.name}\n${text}`);
   }
   els.companionDocs.value = `${els.companionDocs.value}${chunks.join("")}`.trim();
-  appendLog(`Loaded ${els.companionFiles.files.length} companion document(s).`);
+  appendLog(t("loadedDocs", { count: els.companionFiles.files.length }));
 }
 
-els.locale.addEventListener("change", () => setLocale(els.locale.value));
+els.locale.addEventListener("change", () => {
+  saveLocalePreference(els.locale.value);
+  setLocale(els.locale.value);
+});
 els.consentForm.addEventListener("submit", (event) => {
   event.preventDefault();
   completeOnboarding();
@@ -1164,7 +1606,7 @@ els.sessionDuration.addEventListener("change", () => {
   saveSessionState();
 });
 els.startSession.addEventListener("click", () => {
-  runAction(els.startSession, "Starting...", startSession);
+  runAction(els.startSession, t("starting"), startSession);
 });
 els.endSession.addEventListener("click", endSession);
 els.downloadSessionNote.addEventListener("click", () => {
@@ -1195,7 +1637,7 @@ els.copyMediatorConfig.addEventListener("click", () => {
   els.companionModel.value = els.mediatorModel.value;
   if (els.mediatorApiKey.value) els.companionApiKey.value = els.mediatorApiKey.value;
   applyProviderDefaults("companion");
-  appendLog("Copied mediator model settings to AI companion.");
+  appendLog(t("copiedMediatorSettings"));
 });
 els.companionFiles.addEventListener("change", async () => {
   try {
@@ -1204,20 +1646,20 @@ els.companionFiles.addEventListener("change", async () => {
     appendLog(err instanceof Error ? err.message : String(err), "error");
   }
 });
-els.testMediator.addEventListener("click", () => runAction(els.testMediator, "Testing...", () => runConnectionTest("mediator")));
-els.testCompanion.addEventListener("click", () => runAction(els.testCompanion, "Testing...", () => runConnectionTest("companion")));
+els.testMediator.addEventListener("click", () => runAction(els.testMediator, t("testing"), () => runConnectionTest("mediator")));
+els.testCompanion.addEventListener("click", () => runAction(els.testCompanion, t("testing"), () => runConnectionTest("companion")));
 els.openDiagnostics.addEventListener("click", () => openSettingsSection(els.diagnostics));
 els.openFaq.addEventListener("click", () => openSettingsSection(els.faqSection));
 
 els.messageForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (session.turnPhase !== "human") {
-    appendLog("Human input is locked until Deburapy hands the turn to the human.", "warn");
+    appendLog(t("humanLocked"), "warn");
     return;
   }
   const content = els.messageInput.value.trim();
   if (!content) return;
-  await runAction(els.messageForm.querySelector("button"), "Sending...", async () => {
+  await runAction(els.messageForm.querySelector("button"), t("sending"), async () => {
     await json(`/api/rooms/${roomId}/messages`, {
       method: "POST",
       body: JSON.stringify({
@@ -1227,7 +1669,7 @@ els.messageForm.addEventListener("submit", async (event) => {
       })
     });
     els.messageInput.value = "";
-    appendLog("Human message added. Routing the turn to the AI companion.");
+    appendLog(t("humanMessageAdded"));
     setTurnPhase("companion", { silent: true });
     await refreshRoom();
     await askCompanion();
@@ -1237,16 +1679,16 @@ els.messageForm.addEventListener("submit", async (event) => {
 els.askCompanion.addEventListener("click", () => {
   reportClientEvent("click", { action: "askCompanion" });
   saveConfig();
-  runAction(els.askCompanion, copy[els.locale.value].companionBusy, askCompanion);
+  runAction(els.askCompanion, t("companionBusy"), askCompanion);
 });
 els.askMediator.addEventListener("click", () => {
   reportClientEvent("click", { action: "askMediator" });
   saveConfig();
-  runAction(els.askMediator, copy[els.locale.value].mediatorBusy, askMediator);
+  runAction(els.askMediator, t("mediatorBusy"), askMediator);
 });
 els.mediatorPersona.addEventListener("change", () => {
   if (els.mediatorPersona.value === "custom") {
-    appendLog("Mediator prompt is custom.");
+    appendLog(t("customPromptLog"));
     saveConfig();
     return;
   }
@@ -1255,15 +1697,16 @@ els.mediatorPersona.addEventListener("change", () => {
 });
 els.mediatorPrompt.addEventListener("input", syncMediatorPersonaFromPrompt);
 
+els.locale.value = readLocalePreference();
 loadConfig();
 loadSessionState();
 applyProviderDefaults("mediator");
 applyProviderDefaults("companion");
 setLocale(els.locale.value);
-setStatus("mediator", "idle", "Not tested.");
-setStatus("companion", "idle", "Not tested.");
+setStatus("mediator", "idle", t("notTested"));
+setStatus("companion", "idle", t("notTested"));
 updateCompanionMode();
-appendLog("Deburapy loaded. Local room data reloads from .deburapy-data.");
+appendLog(t("appLoaded"));
 syncConsentGate();
 window.setInterval(checkSessionClock, 1000);
 window.setInterval(() => {

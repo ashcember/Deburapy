@@ -18,10 +18,30 @@ import {
 import { DeburapyStore } from "../src/core/store.mjs";
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+const readmeZh = await readFile(new URL("../README.zh-CN.md", import.meta.url), "utf8");
 const prompt = await readFile(new URL("../prompts/deburapy-mediator.system.md", import.meta.url), "utf8");
 const indexHtml = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 const appJs = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+const zhDocs = await Promise.all([
+  "../docs/architecture.zh-CN.md",
+  "../docs/session-architecture.zh-CN.md",
+  "../docs/mcp-clients.zh-CN.md",
+  "../docs/deburapy_architecture_guide.zh-CN.md"
+].map((path) => readFile(new URL(path, import.meta.url), "utf8")));
 
+assert.match(readme, /README\.zh-CN\.md/);
+assert.match(readmeZh, /Deburapy 人机关系协调员/);
+assert.match(readmeZh, /知情同意/);
+assert.match(readmeZh, /本地优先/);
+for (const doc of zhDocs) {
+  assert.match(doc, /\[English\]/);
+  assert.match(doc, /Deburapy/);
+}
+assert.match(zhDocs[0], /Deburapy 架构/);
+assert.match(zhDocs[1], /Session 架构/);
+assert.match(zhDocs[2], /MCP Client 说明/);
+assert.match(zhDocs[3], /核心定位/);
 assert.match(prompt, /not a therapist/i);
 assert.match(prompt, /AI-human relationship/i);
 assert.match(prompt, /人机关系协调员/);
@@ -52,6 +72,11 @@ assert.match(appJs, /deburapy\.onboarding\.v1/);
 assert.match(appJs, /syncConsentGate/);
 assert.match(appJs, /\/api\/intake\/respond/);
 assert.match(appJs, /not added to the room transcript/);
+assert.match(appJs, /deburapy\.locale/);
+assert.match(appJs, /applyStaticTranslations/);
+assert.match(appJs, /欢迎来到你的数字安全空间/);
+assert.match(appJs, /Session note 已本地保存/);
+assert.match(appJs, /turnInstruction/);
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 assert.match(indexHtml, /id="companionMode"/);
 assert.match(indexHtml, /id="testCompanion"/);
@@ -82,6 +107,10 @@ assert.match(indexHtml, /id="resetOnboarding"/);
 assert.match(indexHtml, /id="companionApiSettings"/);
 assert.match(indexHtml, /id="companionMcpGuide"/);
 assert.match(indexHtml, /src="\/app\.js\?v=/);
+assert.match(indexHtml, /data-i18n="consentTitle"/);
+assert.match(indexHtml, /data-i18n="settings"/);
+assert.match(indexHtml, /data-i18n-placeholder="companionDocsPlaceholder"/);
+assert.match(indexHtml, /data-consent-question-key="accountLoss"/);
 assert.doesNotMatch(indexHtml, /id="authorRole"/);
 const serverJs = await readFile(new URL("../src/server.mjs", import.meta.url), "utf8");
 assert.match(serverJs, /cache-control/);

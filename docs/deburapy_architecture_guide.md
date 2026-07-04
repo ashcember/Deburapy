@@ -1,5 +1,7 @@
 # Deburapy Architecture Guide
 
+[简体中文](./deburapy_architecture_guide.zh-CN.md)
+
 Deburapy is an AI-human relationship mediation framework for rooms where one participant is a human and another participant is an AI companion.
 
 This document defines the project structure, mediator personas, contributor rules, skill taxonomy, relationship case note design, and suggested MVP sequence.

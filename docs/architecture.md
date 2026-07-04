@@ -1,5 +1,7 @@
 # Deburapy Architecture
 
+[简体中文](./architecture.zh-CN.md)
+
 Deburapy has four small pieces in the MVP.
 
 ## 1. Local Web App
