@@ -2,8 +2,27 @@
 
 ## Claude Code
 
-Deburapy can expose standard MCP tools and can optionally emit a Claude
-Code-specific channel notification:
+Deburapy exposes standard MCP tools over stdio. Register it from the Deburapy
+repo root after the web server is running:
+
+```bash
+claude mcp add --env DEBURAPY_URL=http://127.0.0.1:8787 \
+  --transport stdio deburapy \
+  -- node "$(pwd)/src/mcp-server.mjs"
+```
+
+If your Claude Code build does not support that command shape, use the config
+shape in [../examples/claude-code.mcp.example.json](../examples/claude-code.mcp.example.json).
+
+Then verify from Claude Code with `/mcp` or:
+
+```bash
+claude mcp get deburapy
+```
+
+Standard MCP tools let the companion pull pending pushes and reply. Active
+Claude Code wake-ups are separate: they use a Claude Code-specific channel
+notification and require channel opt-in. When enabled, Deburapy emits:
 
 ```json
 {
@@ -22,7 +41,16 @@ Code-specific channel notification:
 ```
 
 This is host-specific. Keep it behind
-`DEBURAPY_CLAUDE_CHANNEL_NOTIFICATIONS=1`.
+`DEBURAPY_CLAUDE_CHANNEL_NOTIFICATIONS=1`, and start Claude Code with channel
+support for the registered server, for example:
+
+```bash
+claude --dangerously-load-development-channels server:deburapy
+```
+
+The channel path is for local development until Deburapy is packaged as a
+Claude Code channel/plugin. If channel wake-ups do not appear, use the standard
+pull-based tools first.
 
 ## Codex
 

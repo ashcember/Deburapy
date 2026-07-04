@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "deburapy": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/Deburapy/src/mcp-server.mjs"
+      ],
+      "env": {
+        "DEBURAPY_URL": "http://127.0.0.1:8787",
+        "DEBURAPY_ROOM_ID": "default",
+        "DEBURAPY_PARTICIPANT_ID": "companion"
+      }
+    }
+  }
+}

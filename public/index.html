@@ -38,9 +38,14 @@
         </label>
         <label>
           API key
-          <input id="apiKey" type="password" autocomplete="off" placeholder="Stored only in this browser">
+          <input id="apiKey" type="password" autocomplete="off" placeholder="Not saved by default">
+        </label>
+        <label class="checkboxLabel">
+          <input id="rememberApiKey" type="checkbox">
+          Remember API key in this browser profile
         </label>
         <button id="saveConfig">Save locally</button>
+        <button id="clearApiKey" type="button" class="secondary">Clear API key</button>
 
         <h2>Channel Push</h2>
         <label>
@@ -76,6 +81,12 @@
         <textarea id="systemPrompt" spellcheck="false"></textarea>
       </section>
     </main>
+
+    <footer class="footer">
+      <span>AGPL-3.0-only</span>
+      <a href="https://github.com/ashcember/Deburapy" rel="noreferrer">Source</a>
+      <span>No warranty</span>
+    </footer>
 
     <script type="module" src="/app.js"></script>
   </body>

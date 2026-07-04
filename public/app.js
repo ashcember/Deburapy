@@ -7,7 +7,9 @@ const els = {
   baseUrl: document.querySelector("#baseUrl"),
   model: document.querySelector("#model"),
   apiKey: document.querySelector("#apiKey"),
+  rememberApiKey: document.querySelector("#rememberApiKey"),
   saveConfig: document.querySelector("#saveConfig"),
+  clearApiKey: document.querySelector("#clearApiKey"),
   pushFrom: document.querySelector("#pushFrom"),
   pushContent: document.querySelector("#pushContent"),
   sendPush: document.querySelector("#sendPush"),
@@ -42,7 +44,17 @@ function config() {
 }
 
 function saveConfig() {
-  localStorage.setItem("deburapy.config", JSON.stringify(config()));
+  const current = config();
+  const saved = {
+    provider: current.provider,
+    baseUrl: current.baseUrl,
+    model: current.model,
+    rememberApiKey: els.rememberApiKey.checked
+  };
+  if (els.rememberApiKey.checked) {
+    saved.apiKey = current.apiKey;
+  }
+  localStorage.setItem("deburapy.config", JSON.stringify(saved));
 }
 
 function loadConfig() {
@@ -50,7 +62,19 @@ function loadConfig() {
   if (saved.provider) els.provider.value = saved.provider;
   if (saved.baseUrl) els.baseUrl.value = saved.baseUrl;
   if (saved.model) els.model.value = saved.model;
-  if (saved.apiKey) els.apiKey.value = saved.apiKey;
+  els.rememberApiKey.checked = saved.rememberApiKey === true;
+  if (saved.rememberApiKey === true && saved.apiKey) {
+    els.apiKey.value = saved.apiKey;
+  } else if (saved.apiKey) {
+    delete saved.apiKey;
+    localStorage.setItem("deburapy.config", JSON.stringify(saved));
+  }
+}
+
+function clearApiKey() {
+  els.apiKey.value = "";
+  els.rememberApiKey.checked = false;
+  saveConfig();
 }
 
 async function json(path, options = {}) {
@@ -100,6 +124,7 @@ function setLocale(locale) {
 
 els.locale.addEventListener("change", () => setLocale(els.locale.value));
 els.saveConfig.addEventListener("click", saveConfig);
+els.clearApiKey.addEventListener("click", clearApiKey);
 
 els.messageForm.addEventListener("submit", async (event) => {
   event.preventDefault();

@@ -10,8 +10,9 @@ rooms, messages, mediator generation, and generic channel pushes.
 ## 2. Local Store
 
 `src/core/store.mjs` writes room state to `.deburapy-data/store.json` by default.
-This is intentionally ignored by git so prototype transcripts and API keys do
-not enter the repository.
+This is intentionally ignored by git so local transcripts and channel pushes do
+not enter the repository. API keys are not stored server-side; the browser sends
+the key to the local server only when the mediator is asked to respond.
 
 ## 3. Mediator Engine
 
@@ -38,3 +39,6 @@ The room model is intentionally platform-neutral:
 
 Adapters for chat platforms should translate external messages into this shape
 instead of writing platform-specific logic into the mediator.
+
+See [session-architecture.md](./session-architecture.md) for the planned
+session, note, relationship-map, course-outline, scale, and module model.

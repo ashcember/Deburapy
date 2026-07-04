@@ -3,17 +3,30 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DeburapyStore } from "./core/store.mjs";
+import { loadEnvFile } from "./core/env.mjs";
 import { loadMediatorPrompt, buildMediatorUserPrompt } from "./core/prompt.mjs";
 import { generateChatCompletion } from "./core/openai-compatible.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
+loadEnvFile(path.join(rootDir, ".env"));
+
 const publicDir = path.join(rootDir, "public");
 const dataDir = path.resolve(rootDir, process.env.DEBURAPY_DATA_DIR || ".deburapy-data");
 const store = new DeburapyStore(dataDir);
 
 const host = process.env.DEBURAPY_HOST || "127.0.0.1";
 const port = Number(process.env.DEBURAPY_PORT || 8787);
+const loopbackHosts = new Set(["127.0.0.1", "localhost", "::1"]);
+
+if (!loopbackHosts.has(host) && process.env.DEBURAPY_ALLOW_UNSAFE_BIND !== "1") {
+  console.error(
+    `Refusing to bind unauthenticated API to ${host}. Set DEBURAPY_ALLOW_UNSAFE_BIND=1 only behind your own auth boundary.`
+  );
+  process.exit(1);
+}
+
+class BadRequestError extends Error {}
 
 function sendJson(res, status, payload) {
   res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
@@ -29,7 +42,17 @@ async function readJson(req) {
   let body = "";
   for await (const chunk of req) body += chunk;
   if (!body.trim()) return {};
-  return JSON.parse(body);
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new BadRequestError("Invalid JSON body.");
+  }
+}
+
+function requiredText(input, field) {
+  const value = String(input[field] || "").trim();
+  if (!value) throw new BadRequestError(`Missing required field: ${field}`);
+  return value;
 }
 
 function routeParts(req) {
@@ -76,12 +99,14 @@ async function handleApi(req, res) {
 
   if (req.method === "POST" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "messages") {
     const input = await readJson(req);
+    input.content = requiredText(input, "content");
     const room = store.addMessage(parts[2] || "default", input);
     return sendJson(res, 201, { room });
   }
 
   if (req.method === "POST" && url.pathname === "/api/mediator/respond") {
     const input = await readJson(req);
+    requiredText(input, "apiKey");
     const roomId = input.roomId || "default";
     const room = store.getRoom(roomId);
     const systemPrompt = input.systemPrompt || await loadMediatorPrompt();
@@ -105,12 +130,14 @@ async function handleApi(req, res) {
 
   if (req.method === "POST" && parts[0] === "api" && parts[1] === "channels" && parts[3] === "push") {
     const input = await readJson(req);
+    input.content = requiredText(input, "content");
     const push = store.addChannelPush(input.roomId || "default", parts[2], input);
     return sendJson(res, 201, { push });
   }
 
   if (req.method === "POST" && parts[0] === "api" && parts[1] === "channels" && parts[3] === "reply") {
     const input = await readJson(req);
+    input.content = requiredText(input, "content");
     const room = store.addMessage(input.roomId || "default", {
       authorRole: input.authorRole || "companion",
       authorName: input.from || "AI Companion",
@@ -150,6 +177,9 @@ const server = http.createServer(async (req, res) => {
     if (serveStatic(req, res, url.pathname)) return;
     sendJson(res, 404, { error: "Not found" });
   } catch (err) {
+    if (err instanceof BadRequestError) {
+      return sendJson(res, 400, { error: err.message });
+    }
     sendJson(res, 500, { error: err instanceof Error ? err.message : String(err) });
   }
 });

@@ -1,15 +1,27 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { loadEnvFile } from "./core/env.mjs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootDir = path.resolve(__dirname, "..");
+loadEnvFile(path.join(rootDir, ".env"));
+
 const serverName = "deburapy-companion";
 const serverVersion = "0.1.0";
+const supportedProtocolVersion = "2025-11-25";
+const supportedProtocolVersions = new Set(["2025-03-26", "2025-06-18", supportedProtocolVersion]);
 const deburapyUrl = (process.env.DEBURAPY_URL || "http://127.0.0.1:8787").replace(/\/$/, "");
 const defaultRoomId = process.env.DEBURAPY_ROOM_ID || "default";
 const participantId = process.env.DEBURAPY_PARTICIPANT_ID || "companion";
 const enableClaudeNotifications = process.env.DEBURAPY_CLAUDE_CHANNEL_NOTIFICATIONS === "1";
 
-let inputBuffer = Buffer.alloc(0);
+let inputBuffer = "";
+
+class UnknownToolError extends Error {}
 
 function sendJsonRpc(message) {
   const json = JSON.stringify(message);
-  process.stdout.write(`Content-Length: ${Buffer.byteLength(json)}\r\n\r\n${json}`);
+  process.stdout.write(`${json}\n`);
 }
 
 function result(id, value) {
@@ -18,6 +30,19 @@ function result(id, value) {
 
 function error(id, code, message) {
   sendJsonRpc({ jsonrpc: "2.0", id, error: { code, message } });
+}
+
+function toolResponse(value, isError = false) {
+  const response = {
+    content: [
+      {
+        type: "text",
+        text: typeof value === "string" ? value : JSON.stringify(value, null, 2)
+      }
+    ]
+  };
+  if (isError) response.isError = true;
+  return response;
 }
 
 async function api(path, options = {}) {
@@ -86,17 +111,6 @@ const tools = [
   }
 ];
 
-function toolResponse(value) {
-  return {
-    content: [
-      {
-        type: "text",
-        text: typeof value === "string" ? value : JSON.stringify(value, null, 2)
-      }
-    ]
-  };
-}
-
 async function callTool(name, args = {}) {
   if (name === "deburapy_get_pending_channel_pushes") {
     const params = new URLSearchParams({
@@ -134,16 +148,27 @@ async function callTool(name, args = {}) {
     }));
   }
 
-  throw new Error(`Unknown tool: ${name}`);
+  throw new UnknownToolError(`Unknown tool: ${name}`);
 }
 
 async function handle(message) {
   if (message.method === "initialize") {
+    const requestedVersion = message.params?.protocolVersion;
+    const protocolVersion = supportedProtocolVersions.has(requestedVersion)
+      ? requestedVersion
+      : supportedProtocolVersion;
+    const capabilities = {
+      tools: {}
+    };
+    if (enableClaudeNotifications) {
+      capabilities.experimental = {
+        "claude/channel": {}
+      };
+    }
+
     return result(message.id, {
-      protocolVersion: message.params?.protocolVersion || "2025-03-26",
-      capabilities: {
-        tools: {}
-      },
+      protocolVersion,
+      capabilities,
       serverInfo: {
         name: serverName,
         version: serverVersion
@@ -164,7 +189,11 @@ async function handle(message) {
       const value = await callTool(message.params?.name, message.params?.arguments || {});
       return result(message.id, value);
     } catch (err) {
-      return error(message.id, -32000, err instanceof Error ? err.message : String(err));
+      const messageText = err instanceof Error ? err.message : String(err);
+      if (err instanceof UnknownToolError) {
+        return error(message.id, -32602, messageText);
+      }
+      return result(message.id, toolResponse({ error: messageText }, true));
     }
   }
 
@@ -172,24 +201,24 @@ async function handle(message) {
   if (message.id !== undefined) return error(message.id, -32601, `Unknown method: ${message.method}`);
 }
 
-function parseFrames() {
+function parseLines() {
   while (true) {
-    const headerEnd = inputBuffer.indexOf("\r\n\r\n");
-    if (headerEnd === -1) return;
-    const header = inputBuffer.slice(0, headerEnd).toString("utf8");
-    const match = header.match(/content-length:\s*(\d+)/i);
-    if (!match) {
-      inputBuffer = Buffer.alloc(0);
-      return;
-    }
-    const length = Number(match[1]);
-    const bodyStart = headerEnd + 4;
-    const bodyEnd = bodyStart + length;
-    if (inputBuffer.length < bodyEnd) return;
+    const newlineIndex = inputBuffer.indexOf("\n");
+    if (newlineIndex === -1) return;
 
-    const body = inputBuffer.slice(bodyStart, bodyEnd).toString("utf8");
-    inputBuffer = inputBuffer.slice(bodyEnd);
-    handle(JSON.parse(body)).catch((err) => {
+    const line = inputBuffer.slice(0, newlineIndex).trim();
+    inputBuffer = inputBuffer.slice(newlineIndex + 1);
+    if (!line) continue;
+
+    let message;
+    try {
+      message = JSON.parse(line);
+    } catch {
+      error(null, -32700, "Parse error");
+      continue;
+    }
+
+    handle(message).catch((err) => {
       console.error(err);
     });
   }
@@ -226,8 +255,8 @@ async function pollClaudeChannelNotifications() {
 }
 
 process.stdin.on("data", (chunk) => {
-  inputBuffer = Buffer.concat([inputBuffer, chunk]);
-  parseFrames();
+  inputBuffer += chunk.toString("utf8");
+  parseLines();
 });
 
 if (enableClaudeNotifications) {
