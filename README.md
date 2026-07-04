@@ -181,6 +181,7 @@ Contributor guardrails:
 - [docs/configuration.md](./docs/configuration.md) / [简体中文](./docs/configuration.zh-CN.md)
 - [docs/local-testing.md](./docs/local-testing.md) / [简体中文](./docs/local-testing.zh-CN.md)
 - [docs/deburapy_architecture_guide.md](./docs/deburapy_architecture_guide.md) / [简体中文](./docs/deburapy_architecture_guide.zh-CN.md)
+- [docs/third-party-notices.md](./docs/third-party-notices.md) / [简体中文](./docs/third-party-notices.zh-CN.md)
 
 ## License
 

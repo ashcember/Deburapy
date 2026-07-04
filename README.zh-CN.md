@@ -151,6 +151,7 @@ npm test
 - [docs/configuration.zh-CN.md](./docs/configuration.zh-CN.md) / [English](./docs/configuration.md)
 - [docs/local-testing.zh-CN.md](./docs/local-testing.zh-CN.md) / [English](./docs/local-testing.md)
 - [docs/deburapy_architecture_guide.zh-CN.md](./docs/deburapy_architecture_guide.zh-CN.md) / [English](./docs/deburapy_architecture_guide.md)
+- [docs/third-party-notices.zh-CN.md](./docs/third-party-notices.zh-CN.md) / [English](./docs/third-party-notices.md)
 
 ## License
 

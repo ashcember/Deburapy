@@ -25,6 +25,9 @@ const els = {
   closeSettings: document.querySelector("#closeSettings"),
   settingsBackdrop: document.querySelector("#settingsBackdrop"),
   settingsDrawer: document.querySelector("#settingsDrawer"),
+  openSessionRail: document.querySelector("#openSessionRail"),
+  closeSessionRail: document.querySelector("#closeSessionRail"),
+  sessionRailBackdrop: document.querySelector("#sessionRailBackdrop"),
   turnBadge: document.querySelector("#turnBadge"),
   turnHelp: document.querySelector("#turnHelp"),
   sessionTitle: document.querySelector("#sessionTitle"),
@@ -279,7 +282,9 @@ const copy = {
     ariaSessionManagement: "Session management",
     ariaCurrentSession: "Current session",
     ariaSessionNote: "Session note",
-    ariaManualTurnControls: "Manual turn controls"
+    ariaManualTurnControls: "Manual turn controls",
+    openSessionPanel: "Open session panel",
+    closeSessionPanel: "Close session panel"
   },
   "zh-Hans": {
     tagline: "不是治疗，不是调试。Deburapy 面向人机关系。",
@@ -474,7 +479,9 @@ const copy = {
     ariaSessionManagement: "Session 管理",
     ariaCurrentSession: "当前 session",
     ariaSessionNote: "Session note",
-    ariaManualTurnControls: "手动回合控制"
+    ariaManualTurnControls: "手动回合控制",
+    openSessionPanel: "打开 session 面板",
+    closeSessionPanel: "关闭 session 面板"
   }
 };
 
@@ -547,6 +554,18 @@ function applyStaticTranslations(locale) {
     const value = consentQuestions[locale]?.[key] ?? consentQuestions.en[key];
     if (value) node.setAttribute("data-consent-question", value);
   });
+}
+
+function renderIconUse(iconId, className = "icon") {
+  const span = document.createElement("span");
+  span.className = className;
+  span.setAttribute("aria-hidden", "true");
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+  use.setAttribute("href", `#${iconId}`);
+  svg.append(use);
+  span.append(svg);
+  return span;
 }
 
 const providerDefaults = {
@@ -1170,19 +1189,19 @@ function renderJourney() {
   const total = totalSessionCount();
   const items = [];
   if (current > 1) {
-    items.push({ icon: "✓", label: `${t("sessionLabel")} ${current - 1}`, status: t("saved"), state: "done", sessionNumber: current - 1 });
+    items.push({ icon: "icon-check", label: `${t("sessionLabel")} ${current - 1}`, status: t("saved"), state: "done", sessionNumber: current - 1 });
   }
   items.push({
-    icon: session.running ? "▶" : "○",
+    icon: session.running ? "icon-activity" : "icon-circle",
     label: `${t("sessionLabel")} ${current}`,
     status: session.running ? t("active") : t("next"),
     state: "active",
     sessionNumber: current
   });
   if (current < total) {
-    items.push({ icon: "◷", label: `${t("sessionLabel")} ${current + 1}`, status: t("upcoming"), state: "upcoming", sessionNumber: current + 1 });
+    items.push({ icon: "icon-clock-3", label: `${t("sessionLabel")} ${current + 1}`, status: t("upcoming"), state: "upcoming", sessionNumber: current + 1 });
   }
-  items.push({ icon: "□", label: t("review"), status: `${total} ${t("sessions")}`, state: "review" });
+  items.push({ icon: "icon-clipboard-list", label: t("review"), status: `${total} ${t("sessions")}`, state: "review" });
 
   els.courseList.innerHTML = "";
   for (const item of items) {
@@ -1197,9 +1216,7 @@ function renderJourney() {
       }
       handleJourneySessionClick(item.sessionNumber, item.state);
     });
-    const icon = document.createElement("span");
-    icon.setAttribute("aria-hidden", "true");
-    icon.textContent = item.icon;
+    const icon = renderIconUse(item.icon, "icon courseIcon");
     const label = document.createElement("span");
     label.textContent = item.label;
     const status = document.createElement("small");
@@ -1434,6 +1451,7 @@ function endSession() {
 }
 
 function openSettings() {
+  closeSessionRail({ immediate: true });
   els.settingsBackdrop.hidden = false;
   els.settingsDrawer.hidden = false;
   requestAnimationFrame(() => {
@@ -1462,6 +1480,30 @@ function openSettingsSection(section) {
   window.setTimeout(() => {
     section?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, 220);
+}
+
+function openSessionRail() {
+  els.sessionRailBackdrop.hidden = false;
+  document.body.classList.add("isSessionRailOpen");
+  els.openSessionRail.setAttribute("aria-expanded", "true");
+  requestAnimationFrame(() => {
+    els.sessionRailBackdrop.classList.add("isOpen");
+  });
+}
+
+function closeSessionRail({ immediate = false } = {}) {
+  els.sessionRailBackdrop.classList.remove("isOpen");
+  document.body.classList.remove("isSessionRailOpen");
+  els.openSessionRail.setAttribute("aria-expanded", "false");
+  if (immediate) {
+    els.sessionRailBackdrop.hidden = true;
+    return;
+  }
+  window.setTimeout(() => {
+    if (!document.body.classList.contains("isSessionRailOpen")) {
+      els.sessionRailBackdrop.hidden = true;
+    }
+  }, 180);
 }
 
 function toggleSessionSettings(forceOpen = null) {
@@ -1688,6 +1730,9 @@ els.consentAssistantSettings.addEventListener("click", openSettingsFromConsent);
 els.openSettings.addEventListener("click", openSettings);
 els.closeSettings.addEventListener("click", closeSettings);
 els.settingsBackdrop.addEventListener("click", closeSettings);
+els.openSessionRail.addEventListener("click", openSessionRail);
+els.closeSessionRail.addEventListener("click", closeSessionRail);
+els.sessionRailBackdrop.addEventListener("click", closeSessionRail);
 els.sessionSettingsToggle.addEventListener("click", () => toggleSessionSettings());
 els.sessionTotalSessions.addEventListener("change", () => {
   currentSessionNumber();
@@ -1792,6 +1837,9 @@ els.mediatorPersona.addEventListener("change", () => {
   saveConfig();
 });
 els.mediatorPrompt.addEventListener("input", syncMediatorPersonaFromPrompt);
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeSessionRail();
+});
 
 els.locale.value = readLocalePreference();
 loadConfig();

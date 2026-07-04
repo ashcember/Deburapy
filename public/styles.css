@@ -100,6 +100,44 @@ button.secondary {
   border-color: rgba(74, 101, 74, 0.22);
 }
 
+.iconSprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  pointer-events: none;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon--sm {
+  width: 14px;
+  height: 14px;
+}
+
+.icon--lg {
+  width: 24px;
+  height: 24px;
+}
+
 input,
 select,
 textarea {
@@ -455,7 +493,11 @@ label {
   justify-content: center;
   gap: 30px;
   color: rgba(115, 121, 113, 0.34);
-  font-size: 22px;
+}
+
+.consentFooterMarks .icon {
+  width: 22px;
+  height: 22px;
 }
 
 .consentAssistantStatus.isOk {
@@ -492,6 +534,19 @@ label {
   box-shadow: 12px 0 44px rgba(74, 101, 74, 0.06);
 }
 
+.sessionRailBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(27, 28, 28, 0.18);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.sessionRailBackdrop.isOpen {
+  opacity: 1;
+}
+
 .railBrand {
   display: flex;
   align-items: center;
@@ -510,6 +565,11 @@ label {
   color: #ffffff;
   font-size: 24px;
   box-shadow: var(--soft-shadow);
+}
+
+.sessionRailClose,
+.mobileSessionButton {
+  display: none;
 }
 
 .railBrand h1 {
@@ -565,11 +625,12 @@ label {
   width: 34px;
   min-width: 34px;
   min-height: 34px;
+  display: inline-grid;
+  place-items: center;
   padding: 0;
   border-color: rgba(195, 200, 191, 0.36);
   background: rgba(255, 255, 255, 0.56);
   color: var(--primary);
-  font-size: 15px;
   box-shadow: none;
 }
 
@@ -641,6 +702,13 @@ label {
   background: transparent;
 }
 
+.sessionNotePanel button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 .journeySection h2 {
   color: var(--ink);
   font-size: 13px;
@@ -667,6 +735,12 @@ label {
   box-shadow: none;
   text-align: left;
   font-weight: 700;
+}
+
+.courseIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
 }
 
 .courseItem:hover:not(:disabled) {
@@ -699,6 +773,9 @@ label {
 
 .railLink {
   width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   justify-content: start;
   background: rgba(255, 255, 255, 0.36);
   color: var(--ink);
@@ -777,7 +854,9 @@ label {
 }
 
 .statusChip strong {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   overflow: hidden;
   font-size: 12px;
   line-height: 1.2;
@@ -809,12 +888,13 @@ label {
   width: 48px;
   min-width: 48px;
   min-height: 48px;
+  display: inline-grid;
+  place-items: center;
   padding: 0;
   border-color: rgba(195, 200, 191, 0.35);
   background: rgba(255, 255, 255, 0.62);
   color: var(--primary);
   box-shadow: var(--soft-shadow);
-  font-size: 22px;
 }
 
 .statusDot {
@@ -877,6 +957,9 @@ label {
 
 .transcriptButton {
   min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 0 14px;
   font-size: 12px;
 }
@@ -1051,9 +1134,10 @@ label {
 .composer button {
   width: 46px;
   min-height: 46px;
+  display: inline-grid;
+  place-items: center;
   padding: 0;
   border-radius: 50%;
-  font-size: 24px;
 }
 
 .settingsBackdrop {
@@ -1430,11 +1514,73 @@ details textarea {
 
   .topbar {
     padding: 18px 20px;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .mobileSessionButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 14px;
+    color: var(--primary);
+    background: rgba(255, 255, 255, 0.72);
+    border-color: rgba(74, 101, 74, 0.22);
+    box-shadow: var(--soft-shadow);
+  }
+
+  .brandBlock {
+    min-width: 0;
+  }
+
+  .brandBlock h1 {
+    font-size: 28px;
   }
 
   .topActions {
+    grid-column: 1 / -1;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+
+  .sessionRail {
+    position: fixed;
+    z-index: 60;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(340px, calc(100vw - 36px));
+    height: 100vh;
+    padding: 24px 20px;
+    border-right: 1px solid rgba(195, 200, 191, 0.45);
+    border-bottom: 0;
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    box-shadow: 18px 0 70px rgba(74, 101, 74, 0.16);
+    transform: translateX(-112%);
+    transition: transform 180ms ease;
+  }
+
+  body.isSessionRailOpen {
+    overflow: hidden;
+  }
+
+  body.isSessionRailOpen .sessionRail {
+    transform: translateX(0);
+  }
+
+  .sessionRailClose {
+    width: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    display: inline-grid;
+    place-items: center;
+    margin-left: auto;
+    padding: 0;
+    color: var(--primary);
+    background: rgba(255, 255, 255, 0.62);
+    border-color: rgba(74, 101, 74, 0.18);
+    box-shadow: none;
   }
 
   .statusChip {
