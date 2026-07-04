@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mediator Setup Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&amp;family=Quicksand:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "primary-fixed-dim": "#b0ceae",
+                "error": "#ba1a1a",
+                "error-container": "#ffdad6",
+                "surface-container": "#f0eded",
+                "secondary-fixed-dim": "#ffb5a1",
+                "on-secondary-fixed-variant": "#6f3728",
+                "primary": "#4a654a",
+                "on-primary": "#ffffff",
+                "secondary": "#8b4e3d",
+                "surface-variant": "#e4e2e1",
+                "surface-tint": "#4a654a",
+                "primary-fixed": "#ccebc8",
+                "on-secondary-container": "#783f2f",
+                "surface-dim": "#dcd9d9",
+                "outline-variant": "#c3c8bf",
+                "surface-container-highest": "#e4e2e1",
+                "on-background": "#1b1c1c",
+                "on-primary-fixed": "#07200b",
+                "on-error-container": "#93000a",
+                "on-tertiary-container": "#373735",
+                "tertiary-fixed": "#e4e2de",
+                "inverse-primary": "#b0ceae",
+                "on-tertiary-fixed-variant": "#474744",
+                "inverse-surface": "#303030",
+                "surface-container-high": "#eae8e7",
+                "on-surface": "#1b1c1c",
+                "secondary-container": "#fdad98",
+                "on-secondary-fixed": "#380d03",
+                "on-primary-container": "#243d25",
+                "primary-container": "#8ba889",
+                "secondary-fixed": "#ffdbd1",
+                "outline": "#737971",
+                "tertiary": "#5e5e5c",
+                "tertiary-fixed-dim": "#c8c6c3",
+                "surface": "#fbf9f8",
+                "surface-container-lowest": "#ffffff",
+                "on-primary-fixed-variant": "#334d34",
+                "on-secondary": "#ffffff",
+                "surface-bright": "#fbf9f8",
+                "surface-container-low": "#f6f3f2",
+                "on-error": "#ffffff",
+                "on-surface-variant": "#434841",
+                "on-tertiary": "#ffffff",
+                "tertiary-container": "#a1a09d",
+                "inverse-on-surface": "#f3f0f0",
+                "background": "#fbf9f8",
+                "on-tertiary-fixed": "#1b1c1a"
+        },
+        "borderRadius": {
+                "DEFAULT": "1rem",
+                "lg": "2rem",
+                "xl": "3rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "unit": "8px",
+                "gutter": "24px",
+                "container-padding-desktop": "40px",
+                "container-padding-mobile": "20px",
+                "section-gap": "64px"
+        },
+        "fontFamily": {
+                "headline-lg": [
+                        "Quicksand"
+                ],
+                "body-lg": [
+                        "Plus Jakarta Sans"
+                ],
+                "headline-lg-mobile": [
+                        "Quicksand"
+                ],
+                "headline-md": [
+                        "Quicksand"
+                ],
+                "body-md": [
+                        "Plus Jakarta Sans"
+                ],
+                "label-md": [
+                        "Plus Jakarta Sans"
+                ],
+                "label-sm": [
+                        "Plus Jakarta Sans"
+                ]
+        },
+        "fontSize": {
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "26px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "fontWeight": "500"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+  body {
+    background-color: theme('colors.background');
+    color: theme('colors.on-background');
+    font-family: theme('fontFamily.body-md');
+  }
+</style>
+</head>
+<body class="antialiased">
+<div class="relative flex h-auto min-h-screen w-full flex-col bg-background group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<div class="px-container-padding-mobile md:px-container-padding-desktop flex flex-1 justify-center py-5">
+<div class="layout-content-container flex flex-col w-full max-w-[960px] flex-1">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-outline-variant px-4 md:px-10 py-3 mb-8">
+<div class="flex items-center gap-4 text-on-background">
+<button aria-label="Go back" class="p-2 -ml-2 rounded-full hover:bg-surface-variant transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h2 class="text-headline-md font-headline-md">Settings</h2>
+</div>
+<div class="flex flex-1 justify-end gap-8"><div class="flex items-center gap-9"></div></div>
+</header>
+<main class="flex flex-col gap-8 px-4 md:px-0 pb-12">
+<!-- Mediator Setup Section -->
+<section class="flex flex-col gap-6">
+<h1 class="text-headline-lg font-headline-lg text-primary">Mediator Setup</h1>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<label class="flex flex-col">
+<span class="text-label-md font-label-md text-on-surface-variant mb-2">Mediator Name</span>
+<input class="form-input flex w-full rounded-xl text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant bg-surface-container-lowest h-14 placeholder:text-on-surface-variant/50 px-4 transition-shadow" placeholder="Enter Name" value="Mediator One"/>
+</label>
+<label class="flex flex-col">
+<span class="text-label-md font-label-md text-on-surface-variant mb-2">Mediator Model</span>
+<select class="form-select flex w-full rounded-xl text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant bg-surface-container-lowest h-14 px-4 transition-shadow appearance-none cursor-pointer">
+<option value="gpt4">GPT-4 Turbo</option>
+<option value="claude3">Claude 3 Opus</option>
+<option value="gemini">Gemini Pro</option>
+</select>
+</label>
+<label class="flex flex-col md:col-span-2">
+<span class="text-label-md font-label-md text-on-surface-variant mb-2">System Prompt</span>
+<textarea class="form-textarea flex w-full rounded-xl text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant bg-surface-container-lowest min-h-[160px] p-4 placeholder:text-on-surface-variant/50 resize-y transition-shadow" placeholder="Enter system instructions for the mediator..."></textarea>
+<p class="text-label-sm font-label-sm text-on-surface-variant mt-2 opacity-80">Define the core behavior and rules for the mediator AI.</p>
+</label>
+</div>
+</section>
+<hr class="border-outline-variant/50"/>
+<!-- AI Companion Section -->
+<section class="flex flex-col gap-6">
+<h1 class="text-headline-lg font-headline-lg text-primary">AI Companion</h1>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<label class="flex flex-col">
+<span class="text-label-md font-label-md text-on-surface-variant mb-2">Companion Name</span>
+<input class="form-input flex w-full rounded-xl text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant bg-surface-container-lowest h-14 placeholder:text-on-surface-variant/50 px-4 transition-shadow" placeholder="Enter Companion Name" value="Companion AI"/>
+</label>
+<label class="flex flex-col">
+<span class="text-label-md font-label-md text-on-surface-variant mb-2">Companion Model</span>
+<select class="form-select flex w-full rounded-xl text-body-md font-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant bg-surface-container-lowest h-14 px-4 transition-shadow appearance-none cursor-pointer">
+<option value="gpt35">GPT-3.5</option>
+<option value="claude3sonnet">Claude 3 Sonnet</option>
+<option value="llama3">Llama 3</option>
+</select>
+</label>
+</div>
+</section>
+<div class="mt-8 flex flex-col-reverse md:flex-row items-center justify-end gap-4 border-t border-outline-variant pt-6">
+<button class="w-full md:w-auto px-6 py-3 rounded-full text-label-md font-label-md text-error hover:bg-error-container transition-colors focus:ring-2 focus:ring-error focus:outline-none">
+            Clear Keys
+        </button>
+<button class="w-full md:w-auto px-8 py-3 rounded-full text-label-md font-label-md bg-primary text-on-primary hover:bg-primary/90 transition-colors shadow-sm focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background focus:outline-none">
+            Save Settings
+        </button>
+</div>
+</main>
+</div>
+</div>
+</div>
+</div>
+</body></html>

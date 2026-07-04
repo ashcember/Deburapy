@@ -7,42 +7,28 @@
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <header class="topbar">
-      <div class="brandBlock">
-        <h1>Deburapy</h1>
-        <p id="tagline">Not therapy, not debugging. Deburapy for AI-human relationships.</p>
-      </div>
-
-      <div class="topActions">
-        <article class="statusChip" id="mediatorCard">
-          <span class="statusDot" id="mediatorDot"></span>
+    <div class="appShell">
+      <aside class="sessionRail" aria-label="Session management">
+        <div class="railBrand">
+          <div class="brandMark" aria-hidden="true">◇</div>
           <div>
-            <strong>Deburapy</strong>
-            <p id="mediatorStatus">Not tested</p>
-          </div>
-          <button id="testMediator" type="button">Test</button>
-        </article>
-        <article class="statusChip" id="companionCard">
-          <span class="statusDot" id="companionDot"></span>
-          <div>
-            <strong>Companion</strong>
-            <p id="companionStatus">Not tested</p>
-          </div>
-          <button id="testCompanion" type="button">Test</button>
-        </article>
-        <button id="openSettings" type="button" class="iconButton" title="Settings" aria-label="Settings">Settings</button>
-      </div>
-    </header>
-
-    <main class="appShell">
-      <aside class="sessionRail">
-        <section>
-          <h2>Session</h2>
-          <div class="sessionHero">
-            <span id="sessionTitle">Session 1</span>
-            <strong id="countdown">60:00</strong>
+            <h1>Session Management</h1>
             <p id="sessionState">Not started</p>
           </div>
+        </div>
+
+        <section class="sessionCard" aria-label="Current session">
+          <div class="sessionCardTop">
+            <span id="sessionTitle">Session 1</span>
+            <strong id="countdown">60:00</strong>
+          </div>
+          <div class="sessionProgressTrack" aria-hidden="true">
+            <div id="sessionProgress" class="sessionProgressBar"></div>
+          </div>
+          <p id="sessionTimingHint">Start stores timing in the local room.</p>
+        </section>
+
+        <section class="railControls" aria-label="Session controls">
           <label>
             Session number
             <input id="sessionNumber" type="number" min="1" value="1">
@@ -58,46 +44,95 @@
             <button id="startSession" type="button">Start</button>
             <button id="endSession" type="button" class="secondary">End</button>
           </div>
-          <div class="sessionNotePanel">
-            <p id="sessionTimingHint">Start stores timing in the local room.</p>
-            <p id="sessionNoteStatus">No session note yet. Notes save locally after End.</p>
-            <button id="downloadSessionNote" type="button" class="secondary" disabled>Export note</button>
+        </section>
+
+        <section class="sessionNotePanel" aria-label="Session note">
+          <p id="sessionNoteStatus">No session note yet. Notes save locally after End.</p>
+          <button id="downloadSessionNote" type="button" class="secondary" disabled>Export note</button>
+        </section>
+
+        <section class="journeySection" aria-label="Journey">
+          <h2>Journey</h2>
+          <div class="courseList">
+            <button type="button" class="courseItem">
+              <span aria-hidden="true">✓</span>
+              <span>Session 1</span>
+              <small>Saved</small>
+            </button>
+            <button type="button" class="courseItem isActive">
+              <span aria-hidden="true">▶</span>
+              <span>Session 2</span>
+              <small>Next</small>
+            </button>
+            <button type="button" class="courseItem">
+              <span aria-hidden="true">◷</span>
+              <span>Session 3</span>
+              <small>Upcoming</small>
+            </button>
+            <button type="button" class="courseItem">
+              <span aria-hidden="true">□</span>
+              <span>Review</span>
+              <small>Pattern</small>
+            </button>
           </div>
         </section>
 
-        <section>
-          <h2>Course</h2>
-          <div class="courseList">
-            <button type="button" class="courseItem isActive">Session 1</button>
-            <button type="button" class="courseItem">Session 2</button>
-            <button type="button" class="courseItem">Session 3</button>
-            <button type="button" class="courseItem">Review</button>
-          </div>
-        </section>
+        <div class="railFooter">
+          <button id="breathButton" type="button" class="breathButton">Take a Breath</button>
+        </div>
       </aside>
 
-      <section class="room">
-        <div class="roomHeader">
-          <div>
-            <h2>Deburapy Room</h2>
-            <p class="roomHint">Human message stream</p>
-            <div class="turnLine">
-              <span id="turnBadge">Next: Deburapy</span>
-              <p id="turnHelp">Start with the mediator, then move through human and AI companion turns.</p>
-            </div>
+      <main class="roomShell">
+        <header class="topbar">
+          <div class="brandBlock">
+            <h1>Deburapy<span class="liveDot" aria-hidden="true"></span></h1>
+            <p id="tagline">Not therapy, not debugging. Deburapy for AI-human relationships.</p>
           </div>
-          <div class="roomActions">
-            <button id="askCompanion" type="button">Send to AI companion</button>
+
+          <div class="topActions">
+            <article class="statusChip" id="mediatorCard">
+              <span class="statusDot" id="mediatorDot"></span>
+              <div>
+                <strong>Deburapy</strong>
+                <p id="mediatorStatus">Not tested</p>
+              </div>
+              <button id="testMediator" type="button">Test</button>
+            </article>
+            <article class="statusChip" id="companionCard">
+              <span class="statusDot" id="companionDot"></span>
+              <div>
+                <strong>Companion</strong>
+                <p id="companionStatus">Not tested</p>
+              </div>
+              <button id="testCompanion" type="button">Test</button>
+            </article>
+            <button id="openSettings" type="button" class="iconButton" title="Settings" aria-label="Settings">⚙</button>
+          </div>
+        </header>
+
+        <section class="room">
+          <div class="roomStatus">
+            <span id="turnBadge">Next: Deburapy</span>
+            <p id="turnHelp">Start with the mediator, then move through human and AI companion turns.</p>
+          </div>
+
+          <div id="messages" class="messages"></div>
+
+          <div class="manualTurnControls" aria-label="Manual turn controls">
+            <button id="askCompanion" type="button" class="secondary">Send to AI companion</button>
             <button id="askMediator" type="button">Continue with Deburapy</button>
           </div>
-        </div>
-        <div id="messages" class="messages"></div>
-        <form id="messageForm" class="composer">
-          <input id="messageInput" placeholder="Write as the human participant">
-          <button>Send</button>
-        </form>
-      </section>
-    </main>
+
+          <form id="messageForm" class="composer">
+            <textarea id="messageInput" rows="2" placeholder="Share your perspective..."></textarea>
+            <div class="composerFooter">
+              <span class="localPill">Local-first</span>
+              <button aria-label="Send message">→</button>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
 
     <div id="settingsBackdrop" class="settingsBackdrop" hidden></div>
     <aside id="settingsDrawer" class="settingsDrawer" aria-label="Settings" hidden>
@@ -110,42 +145,42 @@
       </div>
 
       <section class="settingsSection">
-        <h2>Mediator</h2>
-        <label>
-          Persona
-          <select id="mediatorPersona">
-            <option value="core">Deburapy Core</option>
-            <option value="elias">Elias</option>
-            <option value="mara">Mara</option>
-            <option value="custom">Custom prompt</option>
-          </select>
-        </label>
-        <label>
-          Provider
-          <select id="mediatorProvider" data-provider-select>
-            <option value="openai-compatible">OpenAI-compatible</option>
-            <option value="openrouter">OpenRouter</option>
-            <option value="google-ai-studio">Google AI Studio</option>
-          </select>
-        </label>
-        <label>
-          Base URL
-          <input id="mediatorBaseUrl" data-base-url>
-        </label>
-        <label>
-          Model
-          <input id="mediatorModel" data-model>
-        </label>
-        <label>
-          API key
-          <input id="mediatorApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save">
-        </label>
-        <label class="checkboxLabel">
-          <input id="rememberMediatorApiKey" type="checkbox" checked>
-          Save mediator key locally
-        </label>
-        <button id="saveConfig">Save settings</button>
-        <button id="clearMediatorKey" type="button" class="secondary">Clear mediator key</button>
+        <h2>Mediator Setup</h2>
+        <div class="settingsGrid">
+          <label>
+            Persona
+            <select id="mediatorPersona">
+              <option value="core">Deburapy Core</option>
+              <option value="elias">Elias</option>
+              <option value="mara">Mara</option>
+              <option value="custom">Custom prompt</option>
+            </select>
+          </label>
+          <label>
+            Provider
+            <select id="mediatorProvider" data-provider-select>
+              <option value="openai-compatible">OpenAI-compatible</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="google-ai-studio">Google AI Studio</option>
+            </select>
+          </label>
+          <label>
+            Base URL
+            <input id="mediatorBaseUrl" data-base-url>
+          </label>
+          <label>
+            Model
+            <input id="mediatorModel" data-model>
+          </label>
+          <label>
+            API key
+            <input id="mediatorApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save">
+          </label>
+          <label class="checkboxLabel">
+            <input id="rememberMediatorApiKey" type="checkbox" checked>
+            Save mediator key locally
+          </label>
+        </div>
         <details>
           <summary>Mediator system prompt</summary>
           <textarea id="mediatorPrompt" spellcheck="false"></textarea>
@@ -154,34 +189,38 @@
 
       <section class="settingsSection">
         <h2>AI Companion</h2>
-        <label>
-          Connection mode
-          <select id="companionMode">
-            <option value="api">BYOK API companion</option>
-            <option value="mcp">External MCP companion</option>
-          </select>
-        </label>
-        <label>
-          Companion name
-          <input id="companionName" value="AI Companion">
-        </label>
-        <div id="companionApiSettings">
+        <div class="settingsGrid">
           <label>
-            Provider
-            <select id="companionProvider" data-provider-select>
-              <option value="openai-compatible">OpenAI-compatible</option>
-              <option value="openrouter">OpenRouter</option>
-              <option value="google-ai-studio">Google AI Studio</option>
+            Connection mode
+            <select id="companionMode">
+              <option value="api">BYOK API companion</option>
+              <option value="mcp">External MCP companion</option>
             </select>
           </label>
           <label>
-            Base URL
-            <input id="companionBaseUrl" data-base-url>
+            Companion name
+            <input id="companionName" value="AI Companion">
           </label>
-          <label>
-            Model
-            <input id="companionModel" data-model>
-          </label>
+        </div>
+
+        <div id="companionApiSettings">
+          <div class="settingsGrid">
+            <label>
+              Provider
+              <select id="companionProvider" data-provider-select>
+                <option value="openai-compatible">OpenAI-compatible</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="google-ai-studio">Google AI Studio</option>
+              </select>
+            </label>
+            <label>
+              Base URL
+              <input id="companionBaseUrl" data-base-url>
+            </label>
+            <label>
+              Model
+              <input id="companionModel" data-model>
+            </label>
             <label>
               API key
               <input id="companionApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save">
@@ -190,8 +229,8 @@
               <input id="rememberCompanionApiKey" type="checkbox" checked>
               Save companion key locally
             </label>
-          <button id="copyMediatorConfig" type="button" class="secondary">Use mediator model settings</button>
-          <button id="clearCompanionKey" type="button" class="secondary">Clear companion key</button>
+          </div>
+
           <details open>
             <summary>Companion system prompt</summary>
             <textarea id="companionPrompt" spellcheck="false"></textarea>
@@ -202,6 +241,7 @@
           </label>
           <textarea id="companionDocs" spellcheck="false" placeholder="Paste or upload markdown notes that describe the AI companion."></textarea>
         </div>
+
         <div id="companionMcpGuide" class="mcpGuide" hidden>
           <h3>External MCP companion</h3>
           <p>No API key is needed here. Connect the external Claude/Codex companion to Deburapy's MCP server, then keep this browser open as the room.</p>
@@ -221,6 +261,13 @@
         <h2>Diagnostics</h2>
         <div id="diagnostics" class="diagnostics"></div>
       </section>
+
+      <div class="settingsActions">
+        <button id="clearMediatorKey" type="button" class="dangerText">Clear mediator key</button>
+        <button id="clearCompanionKey" type="button" class="dangerText">Clear companion key</button>
+        <button id="copyMediatorConfig" type="button" class="secondary">Use mediator model settings</button>
+        <button id="saveConfig">Save settings</button>
+      </div>
     </aside>
 
     <footer class="footer">
@@ -233,6 +280,6 @@
       </select>
     </footer>
 
-    <script type="module" src="/app.js?v=2026-07-04-personas"></script>
+    <script type="module" src="/app.js?v=2026-07-04-stitch-ui"></script>
   </body>
 </html>

@@ -13,6 +13,7 @@ const els = {
   sessionNumber: document.querySelector("#sessionNumber"),
   sessionDuration: document.querySelector("#sessionDuration"),
   countdown: document.querySelector("#countdown"),
+  sessionProgress: document.querySelector("#sessionProgress"),
   sessionState: document.querySelector("#sessionState"),
   sessionTimingHint: document.querySelector("#sessionTimingHint"),
   sessionNoteStatus: document.querySelector("#sessionNoteStatus"),
@@ -53,7 +54,8 @@ const els = {
   messageInput: document.querySelector("#messageInput"),
   askCompanion: document.querySelector("#askCompanion"),
   askMediator: document.querySelector("#askMediator"),
-  mediatorPersona: document.querySelector("#mediatorPersona")
+  mediatorPersona: document.querySelector("#mediatorPersona"),
+  breathButton: document.querySelector("#breathButton")
 };
 
 const copy = {
@@ -528,14 +530,20 @@ function updateSessionDisplay() {
   const sessionNumber = Number(els.sessionNumber.value || 1);
   const durationMinutes = Number(els.sessionDuration.value || 60);
   els.sessionTitle.textContent = `Session ${sessionNumber}`;
+  const setProgress = (percent) => {
+    els.sessionProgress.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+  };
 
   if (session.running && session.endsAt) {
     const remainingSeconds = Math.ceil((session.endsAt - Date.now()) / 1000);
+    const durationSeconds = durationMinutes * 60;
+    setProgress(((durationSeconds - remainingSeconds) / durationSeconds) * 100);
     if (remainingSeconds <= 0) {
       session.running = false;
       session.endsAt = null;
       session.startedAt = null;
       els.countdown.textContent = "00:00";
+      setProgress(100);
       els.sessionState.textContent = "Ended";
       saveSessionState();
       if (!session.ending && session.noteStatus !== "ready") {
@@ -553,6 +561,7 @@ function updateSessionDisplay() {
 
   if (!session.running && ["generating", "ready", "error"].includes(session.noteStatus)) {
     els.countdown.textContent = "00:00";
+    setProgress(100);
     els.sessionState.textContent = session.noteStatus === "generating" ? "Ending" : "Ended";
     els.sessionTimingHint.textContent = session.noteStatus === "ready"
       ? "Session note is saved in the local room store."
@@ -561,6 +570,7 @@ function updateSessionDisplay() {
   }
 
   els.countdown.textContent = formatDuration(durationMinutes * 60);
+  setProgress(0);
   els.sessionState.textContent = "Not started";
   els.sessionTimingHint.textContent = "Start stores timing in the local room.";
 }
@@ -916,6 +926,9 @@ els.companionFiles.addEventListener("change", async () => {
 });
 els.testMediator.addEventListener("click", () => runAction(els.testMediator, "Testing...", () => runConnectionTest("mediator")));
 els.testCompanion.addEventListener("click", () => runAction(els.testCompanion, "Testing...", () => runConnectionTest("companion")));
+els.breathButton.addEventListener("click", () => {
+  appendLog("Pause marker added. Slow the next turn before continuing.", "info");
+});
 
 els.messageForm.addEventListener("submit", async (event) => {
   event.preventDefault();
