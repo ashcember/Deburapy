@@ -22,7 +22,7 @@
 12. 人类发送后，Deburapy 会把回合转给 AI 伴侣。BYOK API 模式会调用伴侣模型；MCP 模式会为外部 MCP client 排队一个 pending turn。
 13. AI 伴侣回复后，回合回到 Deburapy。
 14. 倒计时进入最后五分钟时，Deburapy 会标记收尾窗口，并在协调员、API 伴侣和 MCP 伴侣上下文中加入收尾提醒。
-15. 点击 `End`，或让计时结束，以生成 session note。该 note 会自动保存进本地房间 store。session 设置中的导出是可选的，主要用于备份或迁移；不建议把 note 当作日常阅读材料。
+15. 点击 `End`，或让计时结束，以生成 session note。该 note 会自动保存进本地房间 store。transcript 或 note 的导出入口在 Settings > 本地存储，是可选项，主要用于备份或迁移；不建议把 note 当作日常阅读材料。
 16. 当 key、model、quota 或连接失败时，使用左侧 footer 的 `Diagnostics` 或 `FAQ`。
 
 ## 视觉截图检查
@@ -33,7 +33,7 @@
 npm run visual:check
 ```
 
-该脚本会用 Playwright 打开本地 app，截取知情同意 gate 和 room UI，检查浏览器 console error，并验证 transcript 按钮和 status dot 的 accessibility label 存在。截图会写入 `.deburapy-artifacts/visual/`，该目录已被 git 忽略。
+该脚本会用 Playwright 打开本地 app，截取知情同意 gate、room UI、Settings > 本地存储和手机 session drawer，检查浏览器 console error，并验证 export 控件被收进 Settings，而不是放在主房间里。截图会写入 `.deburapy-artifacts/visual/`，该目录已被 git 忽略。
 
 如果还没有安装 Playwright：
 

@@ -272,10 +272,6 @@
           </label>
           <div class="sessionNotePanel" aria-label="Session note" data-i18n-aria-label="ariaSessionNote">
             <p id="sessionNoteStatus">No session note yet. Notes save locally after End.</p>
-            <button id="downloadSessionNote" type="button" class="secondary" disabled>
-              <span class="icon" aria-hidden="true"><svg><use href="#icon-download"></use></svg></span>
-              <span data-i18n="exportNote">Export note</span>
-            </button>
           </div>
         </section>
 
@@ -334,10 +330,6 @@
           <div class="roomStatus">
             <div class="roomStatusTop">
               <span id="turnBadge">Next: Deburapy</span>
-              <button id="downloadTranscript" type="button" class="secondary transcriptButton">
-                <span class="icon" aria-hidden="true"><svg><use href="#icon-download"></use></svg></span>
-                <span data-i18n="downloadTranscript">Download transcript</span>
-              </button>
             </div>
             <p id="turnHelp">Start with the mediator, then move through human and AI companion turns.</p>
           </div>
@@ -485,6 +477,45 @@
         </div>
       </section>
 
+      <section id="localStorageSection" class="settingsSection">
+        <h2 data-i18n="localStorageTitle">Local Storage</h2>
+        <p class="settingsLead" data-i18n="localStorageIntro">
+          Room data is saved automatically. Export is only for backup or migration.
+        </p>
+        <div class="storageGrid">
+          <article class="storageCard">
+            <span data-i18n="serverDataDirectory">Server data directory</span>
+            <code id="storageDataDir">Loading...</code>
+          </article>
+          <article class="storageCard">
+            <span data-i18n="storeFile">Store file</span>
+            <code id="storageStorePath">Loading...</code>
+          </article>
+          <article class="storageCard">
+            <span data-i18n="browserStorage">Browser storage</span>
+            <code data-i18n="browserStorageValue">localStorage for this localhost origin</code>
+          </article>
+          <article class="storageCard">
+            <span data-i18n="configuredBy">Configured by</span>
+            <code id="storageConfiguredBy">Loading...</code>
+          </article>
+        </div>
+        <p class="storageHint" data-i18n="storageChangeHint">
+          To change the server data directory, set this in .env and restart Deburapy:
+        </p>
+        <pre class="storageEnvExample"><code id="storageEnvExample">DEBURAPY_DATA_DIR=/absolute/path/to/deburapy-data</code></pre>
+        <div class="settingsInlineActions">
+          <button id="exportTranscript" type="button" class="secondary transcriptButton">
+            <span class="icon" aria-hidden="true"><svg><use href="#icon-download"></use></svg></span>
+            <span data-i18n="exportTranscript">Export transcript</span>
+          </button>
+          <button id="downloadSessionNote" type="button" class="secondary" disabled>
+            <span class="icon" aria-hidden="true"><svg><use href="#icon-download"></use></svg></span>
+            <span data-i18n="exportNote">Export note</span>
+          </button>
+        </div>
+      </section>
+
       <section class="settingsSection">
         <h2 data-i18n="diagnostics">Diagnostics</h2>
         <div id="diagnostics" class="diagnostics"></div>
@@ -493,7 +524,7 @@
       <section id="faqSection" class="settingsSection">
         <h2 data-i18n="faq">FAQ</h2>
         <div class="faqList">
-          <p><strong data-i18n="faqNotesQ">Where are session notes?</strong> <span data-i18n="faqNotesA">They are saved locally. Export is optional and lives in session settings.</span></p>
+          <p><strong data-i18n="faqNotesQ">Where are session notes?</strong> <span data-i18n="faqNotesA">They are saved locally. Export is optional and lives under Settings &gt; Local Storage.</span></p>
           <p><strong data-i18n="faqDeburapyQ">What is Deburapy?</strong> <span data-i18n="faqDeburapyA">It is for AI-human relationship repair and continuity planning, not clinical therapy.</span></p>
           <p><strong data-i18n="faqKeysQ">Where are model keys?</strong> <span data-i18n="faqKeysA">Keys stay in this browser only if you choose to remember them.</span></p>
         </div>
@@ -518,6 +549,6 @@
       </select>
     </footer>
 
-    <script type="module" src="/app.js?v=2026-07-05-icons-mobile"></script>
+    <script type="module" src="/app.js?v=2026-07-05-storage-settings"></script>
   </body>
 </html>

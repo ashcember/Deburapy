@@ -87,7 +87,9 @@ Google AI Studio:
 
 ### 本地数据
 
-本地 transcript、session 计时、channel push 和生成的 session note 会存储在 `.deburapy-data/store.json`，该目录已被 git 忽略。重新打开同一个 localhost app 会从本地文件恢复房间。删除 `.deburapy-data/` 可以重置本地房间数据。
+本地 transcript、session 计时、channel push 和生成的 session note 会自动存储在 `.deburapy-data/store.json`，该目录已被 git 忽略。重新打开同一个 localhost app 会从本地文件恢复房间。Settings 会显示当前数据目录和 store file。导出只是用于备份或迁移，不是平时保存数据的方式。删除 `.deburapy-data/` 可以重置本地房间数据。
+
+如需调整 server-side 房间数据的保存位置，请在 `.env` 中设置 `DEBURAPY_DATA_DIR`，然后重启 Deburapy。运行时热切换目录是刻意关闭的。
 
 API key 不会存储在仓库或 server 数据里。浏览器只会在你要求协调员或伴侣响应时，把 key 发送给本地 server。默认不保存 key；只有在你信任的私人浏览器 profile 中，才建议勾选 `Remember API key`。
 

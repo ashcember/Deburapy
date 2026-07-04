@@ -28,7 +28,7 @@ and contributors at a high level.
 12. After the human sends, Deburapy routes the turn to the AI companion. In BYOK API mode it calls the companion model; in MCP mode it queues a pending turn for the external MCP client.
 13. After the AI companion replies, the turn returns to Deburapy.
 14. When the countdown reaches the final five minutes, Deburapy marks the wrap-up window and includes that reminder in mediator, API companion, and MCP companion context.
-15. Click `End`, or let the timer expire, to generate a session note. The note is saved into the local room store automatically. Exporting the note from session settings is optional, mainly for backup or transfer; casual reading is not recommended.
+15. Click `End`, or let the timer expire, to generate a session note. The note is saved into the local room store automatically. Exporting transcript or notes from Settings > Local Storage is optional, mainly for backup or transfer; casual reading is not recommended.
 16. Use `Diagnostics` or `FAQ` in the left rail footer when a key, model, quota, or connection fails.
 
 ## Visual Screenshot Check
@@ -39,10 +39,11 @@ Start `npm run dev`, then run:
 npm run visual:check
 ```
 
-The script opens the local app with Playwright, captures the consent gate and
-room UI, checks for browser console errors, and verifies that the transcript
-button and status-dot accessibility labels exist. Screenshots are written to
-`.deburapy-artifacts/visual/`, which is ignored by git.
+The script opens the local app with Playwright, captures the consent gate, room
+UI, Settings > Local Storage, and mobile session drawer, checks for browser
+console errors, and verifies that export controls are tucked into Settings
+instead of the main room. Screenshots are written to `.deburapy-artifacts/visual/`,
+which is ignored by git.
 
 If Playwright is not installed yet:
 

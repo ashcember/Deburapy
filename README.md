@@ -102,9 +102,14 @@ Google AI Studio:
 ### Local Data
 
 Local transcripts, session timing, channel pushes, and generated session notes
-are stored in `.deburapy-data/store.json`, which is ignored by git. Reopening
-the same localhost app reloads the room from that local file. Delete
+are stored automatically in `.deburapy-data/store.json`, which is ignored by
+git. Reopening the same localhost app reloads the room from that local file.
+Settings shows the active data directory and store file. Export is optional and
+intended for backup or migration, not as the normal way to keep data. Delete
 `.deburapy-data/` to reset local room data.
+
+To change where server-side room data is stored, set `DEBURAPY_DATA_DIR` in
+`.env` and restart Deburapy. Runtime hot switching is intentionally disabled.
 
 API keys are not stored in the repository or server data. The browser sends the
 key to the local server only when you ask the mediator or companion to respond.

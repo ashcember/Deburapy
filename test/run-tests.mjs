@@ -87,7 +87,8 @@ assert.equal(packageJson.scripts["visual:check"], "node scripts/visual-check.mjs
 assert.equal(packageJson.devDependencies.playwright, "1.60.0");
 assert.match(visualCheck, /PLAYWRIGHT_PACKAGE_PATH/);
 assert.match(visualCheck, /deburapy\.onboarding\.v1/);
-assert.match(visualCheck, /downloadTranscript/);
+assert.match(visualCheck, /exportTranscript/);
+assert.match(visualCheck, /settingsStorage/);
 assert.match(visualCheck, /mediatorDotLabel/);
 assert.match(visualCheck, /room-mobile-session\.png/);
 assert.match(visualCheck, /openSessionRail/);
@@ -144,6 +145,10 @@ assert.match(appJs, /mediatorPersona:\s*document\.querySelector\("#mediatorPerso
 assert.match(appJs, /\/api\/prompts\/mediator-personas/);
 assert.match(appJs, /sessionProgress:\s*document\.querySelector\("#sessionProgress"\)/);
 assert.match(appJs, /sessionSettingsToggle:\s*document\.querySelector\("#sessionSettingsToggle"\)/);
+assert.match(appJs, /storageDataDir:\s*document\.querySelector\("#storageDataDir"\)/);
+assert.match(appJs, /storageStorePath:\s*document\.querySelector\("#storageStorePath"\)/);
+assert.match(appJs, /async function loadStorageInfo/);
+assert.match(appJs, /\/api\/storage/);
 assert.match(appJs, /openSessionRail:\s*document\.querySelector\("#openSessionRail"\)/);
 assert.match(appJs, /closeSessionRail:\s*document\.querySelector\("#closeSessionRail"\)/);
 assert.match(appJs, /sessionRailBackdrop:\s*document\.querySelector\("#sessionRailBackdrop"\)/);
@@ -189,7 +194,12 @@ assert.match(indexHtml, /id="sessionTotalSessions"/);
 assert.match(indexHtml, /id="sessionDuration"/);
 assert.match(indexHtml, /id="sessionNoteStatus"/);
 assert.match(indexHtml, /id="downloadSessionNote"/);
-assert.match(indexHtml, /id="downloadTranscript"/);
+assert.match(indexHtml, /id="exportTranscript"/);
+assert.match(indexHtml, /id="localStorageSection"[\s\S]*id="exportTranscript"/);
+assert.match(indexHtml, /id="storageDataDir"/);
+assert.match(indexHtml, /id="storageStorePath"/);
+assert.match(indexHtml, /DEBURAPY_DATA_DIR=\/absolute\/path\/to\/deburapy-data/);
+assert.doesNotMatch(indexHtml, /class="roomStatusTop"[\s\S]{0,800}id="exportTranscript"/);
 assert.match(indexHtml, /id="mediatorDot"[^>]*role="img"/);
 assert.match(indexHtml, /id="companionDot"[^>]*role="img"/);
 assert.match(indexHtml, /id="openDiagnostics"/);
@@ -216,6 +226,8 @@ assert.doesNotMatch(indexHtml, /id="authorRole"/);
 const serverJs = await readFile(new URL("../src/server.mjs", import.meta.url), "utf8");
 assert.match(serverJs, /cache-control/);
 assert.match(serverJs, /no-store/);
+assert.match(serverJs, /\/api\/storage/);
+assert.match(serverJs, /DEBURAPY_DATA_DIR/);
 assert.match(serverJs, /mediator-personas/);
 assert.match(serverJs, /intakeAssistantSystemPrompt/);
 assert.match(serverJs, /\/api\/intake\/respond/);
@@ -441,6 +453,14 @@ async function testSessionLifecycleApi() {
 
   try {
     await waitForServer(port, child);
+    const storageResponse = await fetch(`http://127.0.0.1:${port}/api/storage`);
+    assert.equal(storageResponse.status, 200);
+    const storage = await storageResponse.json();
+    assert.equal(storage.dataDir, apiDataDir);
+    assert.equal(storage.storePath, join(apiDataDir, "store.json"));
+    assert.equal(storage.configuredBy, "DEBURAPY_DATA_DIR");
+    assert.equal(storage.canChangeAtRuntime, false);
+
     const createResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/default/sessions`, {
       method: "POST",
       headers: { "content-type": "application/json" },

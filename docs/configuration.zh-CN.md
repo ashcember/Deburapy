@@ -18,3 +18,7 @@
 | `DEBURAPY_PARTICIPANT_ID` | `companion` | MCP pending-push polling 使用的默认参与者 ID。 |
 | `DEBURAPY_CLAUDE_CHANNEL_NOTIFICATIONS` | `0` | 设为 `1` 可启用 MCP server 中可选的 Claude Code channel notification bridge。 |
 | `DEBURAPY_POLL_MS` | `3000` | 可选 Claude Code channel notification 的轮询间隔，单位毫秒。 |
+
+`DEBURAPY_DATA_DIR` 会在 server 启动时读取。如需移动本地房间存储，请在
+`.env` 中设置它并重启 Deburapy；Settings 会显示当前解析后的目录和
+`store.json` 路径。

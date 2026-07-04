@@ -75,8 +75,12 @@ const els = {
   companionDocs: document.querySelector("#companionDocs"),
   saveConfig: document.querySelector("#saveConfig"),
   diagnostics: document.querySelector("#diagnostics"),
+  storageDataDir: document.querySelector("#storageDataDir"),
+  storageStorePath: document.querySelector("#storageStorePath"),
+  storageConfiguredBy: document.querySelector("#storageConfiguredBy"),
+  storageEnvExample: document.querySelector("#storageEnvExample"),
   messages: document.querySelector("#messages"),
-  downloadTranscript: document.querySelector("#downloadTranscript"),
+  exportTranscript: document.querySelector("#exportTranscript"),
   messageForm: document.querySelector("#messageForm"),
   messageInput: document.querySelector("#messageInput"),
   askCompanion: document.querySelector("#askCompanion"),
@@ -146,7 +150,6 @@ const copy = {
     sixtyMinutes: "60 minutes",
     ninetyMinutes: "90 minutes",
     exportNote: "Export note",
-    downloadTranscript: "Download transcript",
     journey: "Journey",
     diagnostics: "Diagnostics",
     faq: "FAQ",
@@ -181,8 +184,17 @@ const copy = {
     mcpGuideStep2: "Register the MCP server in the external client.",
     mcpGuideStep3: "When the turn reaches the AI companion, Deburapy queues the room context for that MCP client.",
     mcpGuideStep4: "The external client replies with",
+    localStorageTitle: "Local Storage",
+    localStorageIntro: "Room data is saved automatically. Export is only for backup or migration.",
+    serverDataDirectory: "Server data directory",
+    storeFile: "Store file",
+    browserStorage: "Browser storage",
+    browserStorageValue: "localStorage for this localhost origin",
+    configuredBy: "Configured by",
+    storageChangeHint: "To change the server data directory, set this in .env and restart Deburapy:",
+    exportTranscript: "Export transcript",
     faqNotesQ: "Where are session notes?",
-    faqNotesA: "They are saved locally. Export is optional and lives in session settings.",
+    faqNotesA: "They are saved locally. Export is optional and lives under Settings > Local Storage.",
     faqDeburapyQ: "What is Deburapy?",
     faqDeburapyA: "It is for AI-human relationship repair and continuity planning, not clinical therapy.",
     faqKeysQ: "Where are model keys?",
@@ -343,7 +355,6 @@ const copy = {
     sixtyMinutes: "60 分钟",
     ninetyMinutes: "90 分钟",
     exportNote: "导出 note",
-    downloadTranscript: "下载 transcript",
     journey: "进程",
     diagnostics: "诊断",
     faq: "FAQ",
@@ -378,8 +389,17 @@ const copy = {
     mcpGuideStep2: "在外部客户端中注册 MCP server。",
     mcpGuideStep3: "当轮到 AI 伴侣时，Deburapy 会把房间上下文排队给该 MCP 客户端。",
     mcpGuideStep4: "外部客户端用这个工具回复：",
+    localStorageTitle: "本地存储",
+    localStorageIntro: "房间数据会自动保存。导出只用于备份或迁移。",
+    serverDataDirectory: "Server 数据目录",
+    storeFile: "Store 文件",
+    browserStorage: "浏览器存储",
+    browserStorageValue: "此 localhost origin 的 localStorage",
+    configuredBy: "配置来源",
+    storageChangeHint: "如需调整 server 数据目录，请在 .env 中设置并重启 Deburapy：",
+    exportTranscript: "导出 transcript",
     faqNotesQ: "Session note 在哪里？",
-    faqNotesA: "它们会保存在本地。导出是可选项，入口在 session 设置里。",
+    faqNotesA: "它们会保存在本地。导出是可选项，入口在 Settings > 本地存储。",
     faqDeburapyQ: "Deburapy 是什么？",
     faqDeburapyA: "它用于人机关系修复和连续性规划，不是临床治疗。",
     faqKeysQ: "模型 key 存在哪里？",
@@ -906,6 +926,24 @@ async function json(path, options = {}) {
   return payload;
 }
 
+async function loadStorageInfo() {
+  try {
+    const info = await json("/api/storage");
+    els.storageDataDir.textContent = info.dataDir || "Unavailable";
+    els.storageDataDir.title = info.dataDir || "";
+    els.storageStorePath.textContent = info.storePath || "Unavailable";
+    els.storageStorePath.title = info.storePath || "";
+    els.storageConfiguredBy.textContent = info.configuredBy || "default";
+    els.storageEnvExample.textContent = info.envExample || "DEBURAPY_DATA_DIR=/absolute/path/to/deburapy-data";
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    els.storageDataDir.textContent = "Unavailable";
+    els.storageStorePath.textContent = "Unavailable";
+    els.storageConfiguredBy.textContent = "Unavailable";
+    appendLog(`Could not load storage info: ${message}`, "warn");
+  }
+}
+
 function uiDebugState() {
   return {
     phase: session.turnPhase,
@@ -997,7 +1035,7 @@ function downloadBlob(filename, content, type = "text/markdown;charset=utf-8") {
   URL.revokeObjectURL(url);
 }
 
-async function downloadTranscript() {
+async function exportTranscript() {
   const payload = await json(`/api/rooms/${roomId}/messages`);
   const now = new Date().toISOString().replace(/[:.]/g, "-");
   downloadBlob(`deburapy-${roomId}-transcript-${now}.md`, formatTranscriptMarkdown(payload.messages || []));
@@ -1751,8 +1789,8 @@ els.downloadSessionNote.addEventListener("click", () => {
   if (!session.noteId) return;
   window.location.href = `/api/rooms/${roomId}/session-notes/${session.noteId}/download`;
 });
-els.downloadTranscript.addEventListener("click", () => {
-  runAction(els.downloadTranscript, "…", downloadTranscript);
+els.exportTranscript.addEventListener("click", () => {
+  runAction(els.exportTranscript, "…", exportTranscript);
 });
 els.mediatorProvider.addEventListener("change", () => applyProviderDefaults("mediator"));
 els.companionProvider.addEventListener("change", () => applyProviderDefaults("companion"));
@@ -1861,3 +1899,4 @@ window.setInterval(() => {
 loadMediatorPersonas().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 refreshRoom().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 loadSessionNotes().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
+loadStorageInfo().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));

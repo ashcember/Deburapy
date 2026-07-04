@@ -1204,11 +1204,74 @@ label {
   border-bottom: 1px solid rgba(195, 200, 191, 0.72);
 }
 
+.settingsLead,
+.storageHint {
+  margin-top: 10px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 .settingsGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px 24px;
   margin-top: 26px;
+}
+
+.storageGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.storageCard {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid rgba(195, 200, 191, 0.42);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.storageCard span {
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.storageCard code,
+.storageEnvExample code {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.storageEnvExample {
+  overflow: auto;
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(195, 200, 191, 0.42);
+  border-radius: var(--radius-sm);
+  background: var(--surface-low);
+}
+
+.settingsInlineActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.settingsInlineActions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .checkboxLabel {
@@ -1489,6 +1552,7 @@ details textarea {
   .signatureRow,
   .manualTurnControls,
   .settingsGrid,
+  .storageGrid,
   .settingsActions {
     display: grid;
     grid-template-columns: 1fr;

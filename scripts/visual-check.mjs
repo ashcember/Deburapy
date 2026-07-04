@@ -58,7 +58,8 @@ await page.reload({ waitUntil: "networkidle" });
 const ui = await page.evaluate(() => ({
   title: document.title,
   consentHidden: document.querySelector("#consentGate")?.hidden,
-  downloadTranscript: Boolean(document.querySelector("#downloadTranscript")),
+  roomExportTranscript: Boolean(document.querySelector(".roomStatusTop #exportTranscript")),
+  settingsExportTranscript: Boolean(document.querySelector("#localStorageSection #exportTranscript")),
   iconSprite: Boolean(document.querySelector(".iconSprite")),
   diagnosticsIcon: Boolean(document.querySelector("#openDiagnostics use[href='#icon-activity']")),
   faqIcon: Boolean(document.querySelector("#openFaq use[href='#icon-circle-help']")),
@@ -69,6 +70,24 @@ const ui = await page.evaluate(() => ({
 }));
 
 await page.screenshot({ path: path.join(outputDir, "room.png"), fullPage: false });
+await page.click("#openSettings");
+await page.waitForFunction(() => {
+  const text = document.querySelector("#storageDataDir")?.textContent || "";
+  return text && text !== "Loading...";
+});
+const settingsStorage = await page.evaluate(() => ({
+  localStorageSection: Boolean(document.querySelector("#localStorageSection")),
+  dataDir: document.querySelector("#storageDataDir")?.textContent,
+  storePath: document.querySelector("#storageStorePath")?.textContent,
+  configuredBy: document.querySelector("#storageConfiguredBy")?.textContent,
+  envExample: document.querySelector("#storageEnvExample")?.textContent,
+  transcriptExportText: document.querySelector("#localStorageSection #exportTranscript")?.textContent?.trim()
+}));
+await page.evaluate(() => {
+  document.querySelector("#localStorageSection")?.scrollIntoView({ block: "start" });
+});
+await page.waitForTimeout(160);
+await page.screenshot({ path: path.join(outputDir, "settings-local-storage.png"), fullPage: false });
 await page.setViewportSize({ width: 390, height: 844 });
 await page.reload({ waitUntil: "networkidle" });
 
@@ -104,12 +123,18 @@ await browser.close();
 
 assertCondition(ui.title === "Deburapy", "Page title did not load.");
 assertCondition(ui.consentHidden === true, "Consent bypass did not reveal the room UI.");
-assertCondition(ui.downloadTranscript === true, "Download transcript button is missing.");
+assertCondition(ui.roomExportTranscript === false, "Transcript export should not be visible in the room status bar.");
+assertCondition(ui.settingsExportTranscript === true, "Transcript export is missing from Settings local storage.");
 assertCondition(ui.iconSprite === true, "SVG icon sprite is missing.");
 assertCondition(ui.diagnosticsIcon === true, "Diagnostics icon is missing.");
 assertCondition(ui.faqIcon === true, "FAQ icon is missing.");
 assertCondition(Boolean(ui.mediatorDotLabel), "Mediator status dot is missing aria-label.");
 assertCondition(Boolean(ui.companionDotLabel), "Companion status dot is missing aria-label.");
+assertCondition(settingsStorage.localStorageSection === true, "Local storage settings section is missing.");
+assertCondition(Boolean(settingsStorage.dataDir), "Storage data directory was not rendered.");
+assertCondition(settingsStorage.storePath.endsWith("store.json"), "Storage store path was not rendered.");
+assertCondition(settingsStorage.envExample.includes("DEBURAPY_DATA_DIR="), "Storage env example is missing.");
+assertCondition(settingsStorage.transcriptExportText.includes("Export"), "Transcript export is not tucked into Settings.");
 assertCondition(mobileBefore.openSessionRail !== "none", "Mobile session button is hidden.");
 assertCondition(mobileBefore.buttonText.includes("Session"), "Mobile session button label is missing.");
 assertCondition(mobileAfter.bodyOpen === true, "Mobile session drawer did not set the open state.");
@@ -124,11 +149,13 @@ console.log(JSON.stringify({
   baseUrl,
   outputDir,
   ui,
+  settingsStorage,
   mobileBefore,
   mobileAfter,
   screenshots: [
     path.join(outputDir, "consent.png"),
     path.join(outputDir, "room.png"),
+    path.join(outputDir, "settings-local-storage.png"),
     path.join(outputDir, "room-mobile-session.png")
   ]
 }, null, 2));
