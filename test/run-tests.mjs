@@ -18,6 +18,7 @@ assert.doesNotMatch(prompt, /single named deployment/i);
 assert.doesNotMatch(prompt, /private chat platform/i);
 assert.match(appJs, /rememberApiKey/);
 assert.match(appJs, /google-ai-studio/);
+assert.match(appJs, /testCompanion:\s*document\.querySelector\("#testCompanion"\)/);
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 assert.match(indexHtml, /id="companionMode"/);
 assert.match(indexHtml, /id="testCompanion"/);
@@ -32,6 +33,17 @@ assert.match(appJs, /openSettings/);
 assert.match(appJs, /updateCompanionMode/);
 assert.match(appJs, /setTurnPhase/);
 assert.match(appJs, /\/api\/companion\/mcp-request/);
+
+for (const [, id] of appJs.matchAll(/document\.querySelector\("#([^"]+)"\)/g)) {
+  assert.match(indexHtml, new RegExp(`id="${id}"`), `Missing HTML element for #${id}`);
+}
+
+const elsBlock = appJs.match(/const els = \{([\s\S]*?)\n\};/);
+assert.ok(elsBlock, "Could not find els declaration block.");
+const elsKeys = new Set([...elsBlock[1].matchAll(/^\s*([a-zA-Z0-9_$]+):/gm)].map((match) => match[1]));
+for (const [, key] of appJs.matchAll(/els\.([a-zA-Z0-9_$]+)\.addEventListener/g)) {
+  assert.equal(elsKeys.has(key), true, `Missing els.${key} declaration for event listener.`);
+}
 
 const mediatorUserPrompt = buildMediatorUserPrompt({ messages: [] });
 assert.match(mediatorUserPrompt, /Next speaker: human/);

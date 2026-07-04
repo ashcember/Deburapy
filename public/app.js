@@ -25,6 +25,7 @@ const els = {
   mediatorDot: document.querySelector("#mediatorDot"),
   mediatorStatus: document.querySelector("#mediatorStatus"),
   testMediator: document.querySelector("#testMediator"),
+  testCompanion: document.querySelector("#testCompanion"),
   companionMode: document.querySelector("#companionMode"),
   companionName: document.querySelector("#companionName"),
   companionApiSettings: document.querySelector("#companionApiSettings"),
@@ -160,6 +161,36 @@ function fullConfig() {
   };
 }
 
+function storageErrorMessage(err) {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function readSavedJson(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch (err) {
+    console.warn(`Could not read ${key}: ${storageErrorMessage(err)}`);
+    return {};
+  }
+}
+
+function writeSavedJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (err) {
+    const message = `Browser storage is unavailable; ${key} was not saved. ${storageErrorMessage(err)}`;
+    console.warn(message);
+    try {
+      reportClientEvent("storage_error", { action: key, message });
+    } catch {
+      // Storage failure must never block the primary UI action.
+    }
+    appendLog(message, "warn");
+    return false;
+  }
+}
+
 function saveConfig() {
   const current = fullConfig();
   const saved = {
@@ -185,37 +216,39 @@ function saveConfig() {
   if (current.companion.mode === "api" && current.companion.rememberApiKey) {
     saved.companion.apiKey = current.companion.apiKey;
   }
-  localStorage.setItem("deburapy.config", JSON.stringify(saved));
-  appendLog("Settings saved locally.");
+  if (writeSavedJson("deburapy.config", saved)) {
+    appendLog("Settings saved locally.");
+  }
 }
 
 function saveSessionState() {
-  localStorage.setItem("deburapy.session", JSON.stringify({
+  writeSavedJson("deburapy.session", {
     running: session.running,
     startedAt: session.startedAt,
     endsAt: session.endsAt,
     turnPhase: session.turnPhase,
     sessionNumber: els.sessionNumber.value,
     durationMinutes: els.sessionDuration.value
-  }));
+  });
 }
 
 function loadSessionState() {
-  const saved = JSON.parse(localStorage.getItem("deburapy.session") || "{}");
+  const saved = readSavedJson("deburapy.session");
   if (saved.sessionNumber) els.sessionNumber.value = saved.sessionNumber;
   if (saved.durationMinutes) els.sessionDuration.value = saved.durationMinutes;
-  if (saved.running && saved.endsAt && Number(saved.endsAt) > Date.now()) {
+  const hasActiveSavedSession = saved.running && saved.endsAt && Number(saved.endsAt) > Date.now();
+  if (hasActiveSavedSession) {
     session.running = true;
     session.startedAt = Number(saved.startedAt) || Date.now();
     session.endsAt = Number(saved.endsAt);
   }
-  if (saved.turnPhase) session.turnPhase = saved.turnPhase;
+  session.turnPhase = hasActiveSavedSession && saved.turnPhase ? saved.turnPhase : "mediator";
   updateSessionDisplay();
   setTurnPhase(session.turnPhase, { persist: false });
 }
 
 function loadConfig() {
-  const saved = JSON.parse(localStorage.getItem("deburapy.config") || "{}");
+  const saved = readSavedJson("deburapy.config");
   const migrated = saved.mediator ? saved : {
     mediator: saved,
     companion: {
@@ -260,6 +293,46 @@ async function json(path, options = {}) {
   if (!response.ok) throw new Error(payload.error || response.statusText);
   return payload;
 }
+
+function uiDebugState() {
+  return {
+    phase: session.turnPhase,
+    sessionRunning: session.running,
+    countdown: els.countdown.textContent,
+    sessionState: els.sessionState.textContent,
+    askMediatorDisabled: els.askMediator.disabled,
+    askCompanionDisabled: els.askCompanion.disabled,
+    startDisabled: els.startSession.disabled,
+    settingsOpen: !els.settingsDrawer.hidden
+  };
+}
+
+function reportClientEvent(event, detail = {}) {
+  const payload = JSON.stringify({
+    event,
+    ...detail,
+    ...uiDebugState()
+  });
+  if (navigator.sendBeacon) {
+    const sent = navigator.sendBeacon("/api/debug/client-event", new Blob([payload], { type: "application/json" }));
+    if (sent) return;
+  }
+  fetch("/api/debug/client-event", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: payload,
+    keepalive: true
+  }).catch(() => {});
+}
+
+window.addEventListener("error", (event) => {
+  reportClientEvent("window_error", { message: event.message });
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  const reason = event.reason instanceof Error ? event.reason.message : String(event.reason);
+  reportClientEvent("unhandled_rejection", { message: reason });
+});
 
 function renderMessages(messages) {
   els.messages.innerHTML = "";
@@ -391,6 +464,7 @@ function updateTurnUi() {
 }
 
 function startSession() {
+  reportClientEvent("click", { action: "startSession.before" });
   const durationMinutes = Number(els.sessionDuration.value || 60);
   session.running = true;
   session.startedAt = Date.now();
@@ -400,6 +474,7 @@ function startSession() {
   updateSessionDisplay();
   updateTurnUi();
   appendLog(`Started session ${els.sessionNumber.value} for ${durationMinutes} minutes.`);
+  reportClientEvent("click", { action: "startSession.after" });
 }
 
 function endSession() {
@@ -638,10 +713,12 @@ els.messageForm.addEventListener("submit", async (event) => {
 });
 
 els.askCompanion.addEventListener("click", () => {
+  reportClientEvent("click", { action: "askCompanion" });
   saveConfig();
   runAction(els.askCompanion, copy[els.locale.value].companionBusy, askCompanion);
 });
 els.askMediator.addEventListener("click", () => {
+  reportClientEvent("click", { action: "askMediator" });
   saveConfig();
   runAction(els.askMediator, copy[els.locale.value].mediatorBusy, askMediator);
 });

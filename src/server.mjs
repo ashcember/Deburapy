@@ -33,6 +33,62 @@ if (!loopbackHosts.has(host) && process.env.DEBURAPY_ALLOW_UNSAFE_BIND !== "1") 
 
 class BadRequestError extends Error {}
 
+function safeBaseUrl(value) {
+  if (!value) return undefined;
+  try {
+    const url = new URL(String(value));
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return "[invalid-url]";
+  }
+}
+
+function setRequestLog(req, meta) {
+  req.deburapyLog = {
+    ...(req.deburapyLog || {}),
+    ...Object.fromEntries(Object.entries(meta).filter(([, value]) => value !== undefined && value !== ""))
+  };
+}
+
+function safeClientLog(input = {}) {
+  const allowed = [
+    "event",
+    "action",
+    "message",
+    "phase",
+    "sessionRunning",
+    "countdown",
+    "sessionState",
+    "askMediatorDisabled",
+    "askCompanionDisabled",
+    "startDisabled",
+    "settingsOpen"
+  ];
+  const output = {};
+  for (const key of allowed) {
+    if (input[key] === undefined) continue;
+    output[key] = String(input[key]).slice(0, 240);
+  }
+  return output;
+}
+
+function logApiRequest(req, statusCode) {
+  if (!req.url?.startsWith("/api/")) return;
+  const { url } = routeParts(req);
+  const elapsedMs = Date.now() - (req.deburapyStartedAt || Date.now());
+  const entry = {
+    ts: new Date().toISOString(),
+    level: statusCode >= 500 ? "error" : "info",
+    method: req.method,
+    path: url.pathname,
+    status: statusCode,
+    elapsedMs,
+    ...(req.deburapyLog || {})
+  };
+  if (req.deburapyError) entry.error = req.deburapyError;
+  console.log(JSON.stringify(entry));
+}
+
 function sendJson(res, status, payload) {
   res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(payload, null, 2));
@@ -103,6 +159,15 @@ async function handleApi(req, res) {
     return sendJson(res, 200, { systemPrompt: await loadMediatorPrompt() });
   }
 
+  if (req.method === "POST" && url.pathname === "/api/debug/client-event") {
+    const input = await readJson(req);
+    setRequestLog(req, {
+      source: "browser",
+      ...safeClientLog(input)
+    });
+    return sendJson(res, 200, { ok: true });
+  }
+
   if (req.method === "GET" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "messages") {
     const room = store.getRoom(parts[2] || "default");
     return sendJson(res, 200, { messages: room.messages });
@@ -124,6 +189,13 @@ async function handleApi(req, res) {
     const input = await readJson(req);
     requiredText(input, "apiKey");
     const roomId = input.roomId || "default";
+    setRequestLog(req, {
+      role: "mediator",
+      roomId,
+      provider: input.provider,
+      model: input.model,
+      baseUrl: safeBaseUrl(input.baseUrl)
+    });
     const room = store.getRoom(roomId);
     const systemPrompt = input.systemPrompt || await loadMediatorPrompt();
     const userPrompt = buildMediatorUserPrompt(room, input.locale || room.locale, {
@@ -153,6 +225,13 @@ async function handleApi(req, res) {
     const roomId = input.roomId || "default";
     const room = store.getRoom(roomId);
     const companionName = input.companionName || "AI Companion";
+    setRequestLog(req, {
+      role: "companion",
+      roomId,
+      provider: input.provider,
+      model: input.model,
+      baseUrl: safeBaseUrl(input.baseUrl)
+    });
     const systemPrompt = input.systemPrompt || defaultCompanionPrompt(companionName);
     const userPrompt = buildCompanionUserPrompt(room, {
       locale: input.locale || room.locale,
@@ -180,6 +259,12 @@ async function handleApi(req, res) {
   if (req.method === "POST" && url.pathname === "/api/companion/mcp-request") {
     const input = await readJson(req);
     const roomId = input.roomId || "default";
+    setRequestLog(req, {
+      role: "companion",
+      mode: "mcp",
+      roomId,
+      targetParticipantId: input.targetParticipantId || "companion"
+    });
     const room = store.getRoom(roomId);
     const content = String(input.content || [
       "Deburapy turn request for the external AI companion.",
@@ -202,6 +287,13 @@ async function handleApi(req, res) {
     const input = await readJson(req);
     requiredText(input, "apiKey");
     const target = input.target === "companion" ? "companion" : "mediator";
+    setRequestLog(req, {
+      role: target,
+      action: "connection_test",
+      provider: input.provider,
+      model: input.model,
+      baseUrl: safeBaseUrl(input.baseUrl)
+    });
     const content = await generateChatCompletion({
       provider: input.provider,
       apiKey: input.apiKey,
@@ -261,12 +353,23 @@ async function handleApi(req, res) {
 }
 
 const server = http.createServer(async (req, res) => {
+  req.deburapyStartedAt = Date.now();
+  const originalWriteHead = res.writeHead;
+  res.writeHead = function writeHeadWithStatus(statusCode, ...args) {
+    res.deburapyStatusCode = statusCode;
+    return originalWriteHead.call(this, statusCode, ...args);
+  };
+  res.on("finish", () => {
+    logApiRequest(req, res.deburapyStatusCode || res.statusCode || 200);
+  });
+
   try {
     const { url } = routeParts(req);
     if (url.pathname.startsWith("/api/")) return await handleApi(req, res);
     if (serveStatic(req, res, url.pathname)) return;
     sendJson(res, 404, { error: "Not found" });
   } catch (err) {
+    req.deburapyError = err instanceof Error ? err.message : String(err);
     if (err instanceof BadRequestError) {
       return sendJson(res, 400, { error: err.message });
     }
