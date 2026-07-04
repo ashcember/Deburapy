@@ -97,7 +97,10 @@ function sendJson(res, status, payload) {
 }
 
 function sendText(res, status, text, contentType = "text/plain; charset=utf-8") {
-  res.writeHead(status, { "content-type": contentType });
+  res.writeHead(status, {
+    "content-type": contentType,
+    "cache-control": "no-store, max-age=0"
+  });
   res.end(text);
 }
 
