@@ -453,9 +453,9 @@ function formatDuration(totalSeconds) {
 
 function updateSessionNoteUi() {
   const noteText = {
-    not_started: "Session note not generated.",
-    generating: "Writing session note...",
-    ready: "Session note ready. Download for records; casual reading is not recommended.",
+    not_started: "No session note yet. Notes save locally after End.",
+    generating: "Writing local session note...",
+    ready: "Session note saved locally. Export is optional; casual reading is not recommended.",
     error: "Session ended, but note generation failed."
   };
   els.sessionNoteStatus.textContent = noteText[session.noteStatus] || noteText.not_started;
@@ -493,14 +493,14 @@ function updateSessionDisplay() {
     els.countdown.textContent = "00:00";
     els.sessionState.textContent = session.noteStatus === "generating" ? "Ending" : "Ended";
     els.sessionTimingHint.textContent = session.noteStatus === "ready"
-      ? "Session note is saved for download."
+      ? "Session note is saved in the local room store."
       : "Session has ended.";
     return;
   }
 
   els.countdown.textContent = formatDuration(durationMinutes * 60);
   els.sessionState.textContent = "Not started";
-  els.sessionTimingHint.textContent = "Deburapy receives live timing after Start.";
+  els.sessionTimingHint.textContent = "Start stores timing in the local room.";
 }
 
 function setTurnPhase(phase, { persist = true, silent = false } = {}) {
@@ -623,7 +623,7 @@ async function completeSession(reason = "manual") {
   if (payload.note) {
     session.noteStatus = "ready";
     session.noteId = payload.note.id;
-    appendLog("Session note saved. Download is available.", "ok");
+    appendLog("Session note saved locally. Export is available.", "ok");
   } else {
     session.noteStatus = payload.noteError ? "error" : "not_started";
     appendLog(payload.noteError || "Session ended without a note.", payload.noteError ? "warn" : "info");
@@ -899,7 +899,7 @@ setLocale(els.locale.value);
 setStatus("mediator", "idle", "Not tested.");
 setStatus("companion", "idle", "Not tested.");
 updateCompanionMode();
-appendLog("Deburapy loaded. Test both connections before running a room.");
+appendLog("Deburapy loaded. Local room data reloads from .deburapy-data.");
 window.setInterval(checkSessionClock, 1000);
 window.setInterval(() => {
   if (els.companionMode.value === "mcp" && session.turnPhase === "companion") {

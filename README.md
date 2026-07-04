@@ -20,7 +20,8 @@ Chinese name for the first prototype: **Deburapy 人机关系协调员**.
   behavior guidance.
 - A generic channel API, not tied to any one chat platform.
 - A companion MCP server for Claude Code, Codex, and other MCP clients.
-- Local JSON storage under `.deburapy-data/`, ignored by git.
+- Local JSON storage under `.deburapy-data/`, ignored by git, for room
+  transcripts, session state, channel pushes, and session notes.
 
 ## What It Is Not
 
@@ -54,8 +55,10 @@ The server reads `.env` if present. You can copy `.env.example` to `.env`, but
 keep `DEBURAPY_HOST=127.0.0.1` for local testing. Deburapy has no built-in auth;
 it refuses non-loopback binds unless `DEBURAPY_ALLOW_UNSAFE_BIND=1` is set.
 
-Local transcripts and channel pushes are stored in `.deburapy-data/`, which is
-ignored by git. Delete that directory to reset local data.
+Local transcripts, session timing, channel pushes, and generated session notes
+are stored in `.deburapy-data/store.json`, which is ignored by git. Reopening
+the same localhost app reloads the room from that local file. Delete
+`.deburapy-data/` to reset local data.
 
 API keys are not stored in the repository or server data. The browser sends the
 key to the local server only when you ask the mediator to respond. The key is
@@ -119,16 +122,22 @@ Smoke test through the UI:
     wrap-up window and includes that reminder in mediator, API companion, and
     MCP companion context.
 14. Click `End`, or let the timer expire, to generate a session note. The note
-    is stored locally and can be downloaded from the left rail. The product
-    recommends downloading it for continuity rather than reading it casually.
+    is saved into the local room store automatically. Exporting the note from
+    the left rail is optional, mainly for backup or transfer; casual reading is
+    not recommended.
 15. Reopen Settings and use Diagnostics when a key, model, quota, or
     connection fails.
 
-## Session Notes
+## Local Persistence and Session Notes
 
-Prototype storage is local. Room state and session notes are written to
-`.deburapy-data/store.json`, under each room's `session` and `sessionNotes`
-fields. The browser downloads notes through:
+Prototype storage is local-first. Room messages, pending channel pushes, current
+session timing, and generated session notes are written to
+`.deburapy-data/store.json`. Restarting the dev server or reopening
+`http://127.0.0.1:8787` keeps the room history as long as that directory is not
+deleted.
+
+Export is a convenience path, not the primary save mechanism. The browser can
+export notes through:
 
 ```text
 GET /api/rooms/:roomId/session-notes/:noteId/download
@@ -280,7 +289,9 @@ deburapy_send_channel_reply.
 The MVP room is intentionally thin. The next backend layer will add timed
 sessions, mediator notes, next-session recall, course outlines, pattern reviews,
 check-in scales, and scenario modules. See
-[docs/session-architecture.md](./docs/session-architecture.md).
+[docs/session-architecture.md](./docs/session-architecture.md). The broader
+project architecture and skill taxonomy are captured in
+[docs/deburapy_architecture_guide.md](./docs/deburapy_architecture_guide.md).
 
 ## Tests
 

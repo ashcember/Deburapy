@@ -10,9 +10,11 @@ rooms, messages, mediator generation, and generic channel pushes.
 ## 2. Local Store
 
 `src/core/store.mjs` writes room state to `.deburapy-data/store.json` by default.
-This is intentionally ignored by git so local transcripts and channel pushes do
-not enter the repository. API keys are not stored server-side; the browser sends
-the key to the local server only when the mediator is asked to respond.
+This is intentionally ignored by git so local transcripts, session timing,
+channel pushes, and generated session notes do not enter the repository.
+Reopening the same localhost app reloads the room from that local file. API keys
+are not stored server-side; the browser sends the key to the local server only
+when a model call is requested.
 
 ## 3. Mediator Engine
 
@@ -52,9 +54,11 @@ and the external MCP companion. When five minutes or less remain, the prompt
 context includes a wrap-up reminder to close loops rather than open a large new
 topic.
 
-Prototype persistence lives in `.deburapy-data/store.json`. Each room owns one
-current `session` object plus a `sessionNotes` array. Session notes are intended
-for continuity and export; the UI recommends download instead of casual reading.
+Prototype persistence lives in `.deburapy-data/store.json`. Each room owns
+messages, pending channel pushes, one current `session` object, and a
+`sessionNotes` array. Session notes are intended for local continuity first;
+export is optional backup or transfer, and the UI does not frame downloading as
+the save step.
 
 The default web layout keeps the room uncluttered: session metadata and the
 60/90 minute countdown live in the left rail, connection status lives in compact
@@ -84,3 +88,6 @@ instead of writing platform-specific logic into the mediator.
 
 See [session-architecture.md](./session-architecture.md) for the planned
 session, note, relationship-map, course-outline, scale, and module model.
+See [deburapy_architecture_guide.md](./deburapy_architecture_guide.md) for the
+broader product architecture, mediator personas, skill taxonomy, and repair
+artifact model.
