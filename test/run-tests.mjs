@@ -20,6 +20,8 @@ import { DeburapyStore } from "../src/core/store.mjs";
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
 const readmeZh = await readFile(new URL("../README.zh-CN.md", import.meta.url), "utf8");
+const localTesting = await readFile(new URL("../docs/local-testing.md", import.meta.url), "utf8");
+const localTestingZh = await readFile(new URL("../docs/local-testing.zh-CN.md", import.meta.url), "utf8");
 const prompt = await readFile(new URL("../prompts/deburapy-mediator.system.md", import.meta.url), "utf8");
 const indexHtml = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 const appJs = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
@@ -31,12 +33,26 @@ const zhDocs = await Promise.all([
 ].map((path) => readFile(new URL(path, import.meta.url), "utf8")));
 
 assert.match(readme, /\*\*English\*\* \| \[简体中文\]\(\.\/README\.zh-CN\.md\)/);
+assert.match(readme, /## For Users/);
+assert.match(readme, /## For Contributors/);
+assert.match(readme, /docs\/local-testing\.md/);
 assert.doesNotMatch(readme, /<details>/);
 assert.doesNotMatch(readme, /简体中文 README/);
+assert.doesNotMatch(readme, /Smoke test through the UI/);
 assert.match(readmeZh, /\[English\]\(\.\/README\.md\) \| \*\*简体中文\*\*/);
+assert.match(readmeZh, /## 给使用者/);
+assert.match(readmeZh, /## 给贡献者/);
+assert.match(readmeZh, /docs\/local-testing\.zh-CN\.md/);
+assert.doesNotMatch(readmeZh, /## UI 冒烟测试/);
 assert.match(readmeZh, /Deburapy 人机关系协调员/);
 assert.match(readmeZh, /知情同意/);
 assert.match(readmeZh, /本地优先/);
+assert.match(localTesting, /## UI Smoke Check/);
+assert.match(localTesting, /## API Smoke Check/);
+assert.match(localTesting, /## MCP Check/);
+assert.match(localTestingZh, /## UI 冒烟检查/);
+assert.match(localTestingZh, /## API 冒烟检查/);
+assert.match(localTestingZh, /## MCP 检查/);
 for (const doc of zhDocs) {
   assert.match(doc, /\[English\]/);
   assert.match(doc, /Deburapy/);
