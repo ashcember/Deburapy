@@ -44,6 +44,8 @@ await page.goto(baseUrl, { waitUntil: "networkidle" });
 await page.screenshot({ path: path.join(outputDir, "consent.png"), fullPage: false });
 
 await page.evaluate(() => {
+  localStorage.setItem("deburapy.locale", "en");
+  localStorage.setItem("deburapy.theme", "light");
   localStorage.setItem("deburapy.onboarding.v1", JSON.stringify({
     version: 1,
     acceptedAt: new Date().toISOString(),
@@ -58,6 +60,8 @@ await page.reload({ waitUntil: "networkidle" });
 const ui = await page.evaluate(() => ({
   title: document.title,
   consentHidden: document.querySelector("#consentGate")?.hidden,
+  themeToggle: Boolean(document.querySelector("#themeToggle")),
+  theme: document.documentElement.dataset.theme,
   roomExportTranscript: Boolean(document.querySelector(".roomStatusTop #exportTranscript")),
   settingsExportTranscript: Boolean(document.querySelector("#localStorageSection #exportTranscript")),
   iconSprite: Boolean(document.querySelector(".iconSprite")),
@@ -70,6 +74,16 @@ const ui = await page.evaluate(() => ({
 }));
 
 await page.screenshot({ path: path.join(outputDir, "room.png"), fullPage: false });
+await page.click("#themeToggle");
+await page.waitForFunction(() => document.documentElement.dataset.theme === "dark");
+const darkTheme = await page.evaluate(() => ({
+  theme: document.documentElement.dataset.theme,
+  savedTheme: localStorage.getItem("deburapy.theme"),
+  toggleLabel: document.querySelector("#themeToggle")?.getAttribute("aria-label"),
+  background: getComputedStyle(document.body).backgroundColor,
+  ink: getComputedStyle(document.body).color
+}));
+await page.screenshot({ path: path.join(outputDir, "room-dark.png"), fullPage: false });
 await page.click("#openSettings");
 await page.waitForFunction(() => {
   const text = document.querySelector("#storageDataDir")?.textContent || "";
@@ -98,6 +112,7 @@ const mobileBefore = await page.evaluate(() => {
   const railStyle = window.getComputedStyle(rail);
   return {
     openSessionRail: buttonStyle.display,
+    persistedTheme: document.documentElement.dataset.theme,
     buttonText: button?.textContent?.trim(),
     railTransform: railStyle.transform
   };
@@ -123,6 +138,11 @@ await browser.close();
 
 assertCondition(ui.title === "Deburapy", "Page title did not load.");
 assertCondition(ui.consentHidden === true, "Consent bypass did not reveal the room UI.");
+assertCondition(ui.themeToggle === true, "Theme toggle is missing.");
+assertCondition(ui.theme === "light", "Initial theme should be light.");
+assertCondition(darkTheme.theme === "dark", "Theme toggle did not switch to dark mode.");
+assertCondition(darkTheme.savedTheme === "dark", "Dark theme preference was not persisted.");
+assertCondition(darkTheme.toggleLabel.includes("light"), "Theme toggle label did not update after dark mode.");
 assertCondition(ui.roomExportTranscript === false, "Transcript export should not be visible in the room status bar.");
 assertCondition(ui.settingsExportTranscript === true, "Transcript export is missing from Settings local storage.");
 assertCondition(ui.iconSprite === true, "SVG icon sprite is missing.");
@@ -136,6 +156,7 @@ assertCondition(settingsStorage.storePath.endsWith("store.json"), "Storage store
 assertCondition(settingsStorage.envExample.includes("DEBURAPY_DATA_DIR="), "Storage env example is missing.");
 assertCondition(settingsStorage.transcriptExportText.includes("Export"), "Transcript export is not tucked into Settings.");
 assertCondition(mobileBefore.openSessionRail !== "none", "Mobile session button is hidden.");
+assertCondition(mobileBefore.persistedTheme === "dark", "Theme preference did not persist across reload.");
 assertCondition(mobileBefore.buttonText.includes("Session"), "Mobile session button label is missing.");
 assertCondition(mobileAfter.bodyOpen === true, "Mobile session drawer did not set the open state.");
 assertCondition(mobileAfter.expanded === "true", "Mobile session button did not update aria-expanded.");
@@ -149,12 +170,14 @@ console.log(JSON.stringify({
   baseUrl,
   outputDir,
   ui,
+  darkTheme,
   settingsStorage,
   mobileBefore,
   mobileAfter,
   screenshots: [
     path.join(outputDir, "consent.png"),
     path.join(outputDir, "room.png"),
+    path.join(outputDir, "room-dark.png"),
     path.join(outputDir, "settings-local-storage.png"),
     path.join(outputDir, "room-mobile-session.png")
   ]

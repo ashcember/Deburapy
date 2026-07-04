@@ -154,6 +154,34 @@ GET  /api/rooms/:roomId/messages
 
 ## For Contributors
 
+### Version 2 Direction
+
+The next version should move closer to a SillyTavern-style local workspace for
+AI-human relationship repair: a calm room UI, selectable mediator personas,
+AI companion configuration, local files, plugin-like modules, and reusable
+skills that people can share without sharing private relationship data.
+
+The most useful contribution areas right now are:
+
+- Frontend: improve the local room UI, responsive/mobile states, persona
+  browsing, accessibility, theme polish, and local-first data management.
+- JSON plugins: help design and implement a manifest format for mediator
+  personas, scenario modules, check-in scales, repair artifacts, provider
+  presets, and companion adapters.
+- Skills: write practical Deburapy skills for common AI-human rupture patterns,
+  account loss, memory discontinuity, prompt repair, continuity rituals, and
+  artifact writing.
+- Integrations: improve the MCP client path and generic channel API so external
+  companions can receive pushes and respond reliably.
+
+The skills surface already exists:
+
+- `skills/mediator/` contains mediator behavior skills.
+- `skills/companion-repair/` contains companion continuity and migration skills.
+- `skills/artifact-writers/` contains reusable repair artifact writers.
+- `skills/templates/` contains templates for new skill contributions.
+- `skills/README.md` explains the skill taxonomy and contribution format.
+
 Start with:
 
 - [docs/architecture.md](./docs/architecture.md) for the current MVP shape.

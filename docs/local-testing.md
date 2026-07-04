@@ -40,10 +40,10 @@ npm run visual:check
 ```
 
 The script opens the local app with Playwright, captures the consent gate, room
-UI, Settings > Local Storage, and mobile session drawer, checks for browser
-console errors, and verifies that export controls are tucked into Settings
-instead of the main room. Screenshots are written to `.deburapy-artifacts/visual/`,
-which is ignored by git.
+UI, dark theme, Settings > Local Storage, and mobile session drawer, checks for
+browser console errors, and verifies that export controls are tucked into
+Settings instead of the main room. Screenshots are written to
+`.deburapy-artifacts/visual/`, which is ignored by git.
 
 If Playwright is not installed yet:
 

@@ -123,6 +123,33 @@ GET  /api/rooms/:roomId/messages
 
 ## 给贡献者
 
+### 第二版方向
+
+下一版会更接近 SillyTavern 式的本地工作台，但主题是人机关系修复：
+安静的房间 UI、可选择的协调员 persona、AI 伴侣配置、本地文件、
+plugin-like module，以及可以复用和分享的 skills。目标是让大家能分享
+方法和模块，而不是分享私密关系数据。
+
+目前最需要的贡献方向：
+
+- 前端：改进本地房间 UI、响应式/手机状态、persona 浏览、可访问性、
+  主题 polish，以及本地优先的数据管理体验。
+- JSON plugins：一起设计和实现 manifest 格式，用于协调员 persona、
+  场景 module、check-in scale、repair artifact、provider preset 和
+  companion adapter。
+- Skills：为常见人机关系断裂、账号丢失、记忆不连续、prompt 修复、
+  连续性仪式和 artifact 写作编写实用 Deburapy skills。
+- 集成：改进 MCP client 路径和通用 channel API，让外部 AI 伴侣可以可靠地
+  接收 push 并回复。
+
+skills 入口已经存在：
+
+- `skills/mediator/` 放协调员行为技能。
+- `skills/companion-repair/` 放伴侣连续性和迁移技能。
+- `skills/artifact-writers/` 放可复用的修复物写作器。
+- `skills/templates/` 放新增 skill 的模板。
+- `skills/README.zh-CN.md` 说明 skill taxonomy 和贡献格式。
+
 先读：
 
 - [docs/architecture.zh-CN.md](./docs/architecture.zh-CN.md)：当前 MVP 形状。

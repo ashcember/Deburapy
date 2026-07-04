@@ -33,7 +33,7 @@
 npm run visual:check
 ```
 
-该脚本会用 Playwright 打开本地 app，截取知情同意 gate、room UI、Settings > 本地存储和手机 session drawer，检查浏览器 console error，并验证 export 控件被收进 Settings，而不是放在主房间里。截图会写入 `.deburapy-artifacts/visual/`，该目录已被 git 忽略。
+该脚本会用 Playwright 打开本地 app，截取知情同意 gate、room UI、夜间模式、Settings > 本地存储和手机 session drawer，检查浏览器 console error，并验证 export 控件被收进 Settings，而不是放在主房间里。截图会写入 `.deburapy-artifacts/visual/`，该目录已被 git 忽略。
 
 如果还没有安装 Playwright：
 

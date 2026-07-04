@@ -1,6 +1,7 @@
 const roomId = "default";
 const onboardingStorageKey = "deburapy.onboarding.v1";
 const localeStorageKey = "deburapy.locale";
+const themeStorageKey = "deburapy.theme";
 
 const els = {
   locale: document.querySelector("#locale"),
@@ -21,6 +22,7 @@ const els = {
   consentAssistantSend: document.querySelector("#consentAssistantSend"),
   consentAssistantStatus: document.querySelector("#consentAssistantStatus"),
   consentAssistantSettings: document.querySelector("#consentAssistantSettings"),
+  themeToggle: document.querySelector("#themeToggle"),
   openSettings: document.querySelector("#openSettings"),
   closeSettings: document.querySelector("#closeSettings"),
   settingsBackdrop: document.querySelector("#settingsBackdrop"),
@@ -206,6 +208,11 @@ const copy = {
     saveSettings: "Save settings",
     source: "Source",
     noWarranty: "No warranty",
+    switchToDark: "Switch to dark mode",
+    switchToLight: "Switch to light mode",
+    themeLight: "light mode",
+    themeDark: "dark mode",
+    themeChanged: "Theme changed to {theme}.",
     sessionLabel: "Session",
     ofTotal: "of",
     saved: "Saved",
@@ -411,6 +418,11 @@ const copy = {
     saveSettings: "保存设置",
     source: "源码",
     noWarranty: "无担保",
+    switchToDark: "切换到夜间模式",
+    switchToLight: "切换到日间模式",
+    themeLight: "日间模式",
+    themeDark: "夜间模式",
+    themeChanged: "已切换到{theme}。",
     sessionLabel: "Session",
     ofTotal: "共",
     saved: "已保存",
@@ -547,6 +559,46 @@ function saveLocalePreference(locale) {
   } catch {
     // Ignore blocked storage for language switching.
   }
+}
+
+function currentTheme() {
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+}
+
+function readThemePreference() {
+  try {
+    const saved = localStorage.getItem(themeStorageKey);
+    return saved === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
+
+function updateThemeButton() {
+  const nextTheme = currentTheme() === "dark" ? "light" : "dark";
+  const label = nextTheme === "dark" ? t("switchToDark") : t("switchToLight");
+  els.themeToggle.setAttribute("aria-label", label);
+  els.themeToggle.setAttribute("title", label);
+}
+
+function setTheme(theme, { persist = true, announce = false } = {}) {
+  const nextTheme = theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = nextTheme;
+  if (persist) {
+    try {
+      localStorage.setItem(themeStorageKey, nextTheme);
+    } catch (err) {
+      appendLog(`Could not save theme preference: ${storageErrorMessage(err)}`, "warn");
+    }
+  }
+  updateThemeButton();
+  if (announce) {
+    appendLog(t("themeChanged", { theme: t(nextTheme === "dark" ? "themeDark" : "themeLight") }));
+  }
+}
+
+function toggleTheme() {
+  setTheme(currentTheme() === "dark" ? "light" : "dark", { announce: true });
 }
 
 function applyStaticTranslations(locale) {
@@ -1156,6 +1208,7 @@ function setLocale(locale) {
   if (!copy[locale]) locale = "en";
   els.locale.value = locale;
   applyStaticTranslations(locale);
+  updateThemeButton();
   updateSessionDisplay();
   updateSessionNoteUi();
   updateTurnUi();
@@ -1765,6 +1818,7 @@ document.querySelectorAll("[data-consent-question]").forEach((button) => {
   });
 });
 els.consentAssistantSettings.addEventListener("click", openSettingsFromConsent);
+els.themeToggle.addEventListener("click", toggleTheme);
 els.openSettings.addEventListener("click", openSettings);
 els.closeSettings.addEventListener("click", closeSettings);
 els.settingsBackdrop.addEventListener("click", closeSettings);
@@ -1880,6 +1934,7 @@ window.addEventListener("keydown", (event) => {
 });
 
 els.locale.value = readLocalePreference();
+setTheme(readThemePreference(), { persist: false });
 loadConfig();
 loadSessionState();
 applyProviderDefaults("mediator");
