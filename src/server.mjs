@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DeburapyStore } from "./core/store.mjs";
 import { loadEnvFile } from "./core/env.mjs";
+import { deburapyModules } from "./core/modules.mjs";
 import {
   loadMediatorPrompt,
   loadMediatorPersonas,
@@ -11,7 +12,8 @@ import {
   defaultCompanionPrompt,
   buildCompanionUserPrompt,
   buildSessionClockBlock,
-  buildSessionNotePrompt
+  buildSessionNotePrompt,
+  parseMediatorTurn
 } from "./core/prompt.mjs";
 import { generateChatCompletion } from "./core/openai-compatible.mjs";
 
@@ -141,17 +143,6 @@ function routeParts(req) {
   return { url, parts: url.pathname.split("/").filter(Boolean) };
 }
 
-function parseMediatorTurn(content) {
-  const match = content.match(/(?:^|\n)\s*Next speaker:\s*(human|companion|ai companion)\s*\.?\s*$/i);
-  const nextSpeaker = match
-    ? (match[1].toLowerCase().includes("companion") ? "companion" : "human")
-    : "human";
-  const visibleContent = match
-    ? content.slice(0, match.index).trim()
-    : content.trim();
-  return { visibleContent: visibleContent || content.trim(), nextSpeaker };
-}
-
 const intakeAssistantSystemPrompt = [
   "You are the Deburapy pre-intake assistant.",
   "You are not the mediator, not the AI companion, and not a therapist.",
@@ -260,6 +251,82 @@ async function handleApi(req, res) {
       temperature: 0.2
     });
     return sendJson(res, 200, { ok: true, content });
+  }
+
+  if (req.method === "POST" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "sessions") {
+    const input = await readJson(req);
+    const roomId = parts[2] || "default";
+    setRequestLog(req, {
+      action: "session_create",
+      roomId,
+      sessionNumber: input.sessionNumber,
+      durationMinutes: input.durationMinutes
+    });
+    const result = store.createSession(roomId, input);
+    return sendJson(res, 201, result);
+  }
+
+  if (req.method === "PUT" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "course-outline") {
+    const input = await readJson(req);
+    const roomId = parts[2] || "default";
+    setRequestLog(req, {
+      action: "course_outline_upsert",
+      roomId,
+      totalSessions: input.totalSessions,
+      reviewCadenceSessions: input.reviewCadenceSessions
+    });
+    return sendJson(res, 200, store.upsertCourseOutline(roomId, input));
+  }
+
+  if (req.method === "GET" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "recall") {
+    const roomId = parts[2] || "default";
+    return sendJson(res, 200, store.getRoomRecall(roomId, {
+      beforeSessionId: url.searchParams.get("beforeSessionId") || undefined
+    }));
+  }
+
+  if (req.method === "POST" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "relationship-map") {
+    const input = await readJson(req);
+    const roomId = parts[2] || "default";
+    setRequestLog(req, {
+      action: "relationship_map_create",
+      roomId,
+      afterSessionNumber: input.afterSessionNumber
+    });
+    return sendJson(res, 201, store.createRelationshipMap(roomId, input));
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/modules") {
+    return sendJson(res, 200, { modules: deburapyModules });
+  }
+
+  if (req.method === "GET" && parts[0] === "api" && parts[1] === "sessions" && parts[2]) {
+    const result = store.getSession(parts[2]);
+    if (!result) return sendJson(res, 404, { error: "Session not found." });
+    return sendJson(res, 200, result);
+  }
+
+  if (req.method === "POST" && parts[0] === "api" && parts[1] === "sessions" && parts[3] === "check-in-scale") {
+    const input = await readJson(req);
+    setRequestLog(req, {
+      action: "check_in_scale_create",
+      sessionId: parts[2],
+      scaleType: input.scaleType
+    });
+    const result = store.addCheckInScale(parts[2], input);
+    if (!result) return sendJson(res, 404, { error: "Session not found." });
+    return sendJson(res, 201, result);
+  }
+
+  if (req.method === "PATCH" && parts[0] === "api" && parts[1] === "sessions" && parts[3] === "end") {
+    const input = await readJson(req);
+    setRequestLog(req, {
+      action: "session_record_end",
+      sessionId: parts[2]
+    });
+    const result = store.endSessionRecord(parts[2], input);
+    if (!result) return sendJson(res, 404, { error: "Session not found." });
+    return sendJson(res, 200, result);
   }
 
   if (req.method === "POST" && parts[0] === "api" && parts[1] === "rooms" && parts[3] === "session" && parts[4] === "start") {

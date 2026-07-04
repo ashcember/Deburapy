@@ -64,6 +64,18 @@ export function formatRoomTranscript(room) {
     : "- No messages yet.";
 }
 
+export function parseMediatorTurn(content) {
+  const source = String(content || "");
+  const match = source.match(/(?:^|\n)\s*Next speaker:\s*(human|companion|ai companion)\s*\.?\s*$/i);
+  const nextSpeaker = match
+    ? (match[1].toLowerCase().includes("companion") ? "companion" : "human")
+    : "human";
+  const visibleContent = match
+    ? source.slice(0, match.index).trim()
+    : source.trim();
+  return { visibleContent: visibleContent || source.trim(), nextSpeaker };
+}
+
 function formatClock(ms) {
   const clamped = Math.max(0, Math.ceil(ms / 1000));
   const minutes = Math.floor(clamped / 60);

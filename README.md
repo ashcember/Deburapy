@@ -32,6 +32,8 @@ Chinese name for the first prototype: **Deburapy 人机关系协调员**.
 - A companion MCP server for Claude Code, Codex, and other MCP clients.
 - Local JSON storage under `.deburapy-data/`, ignored by git, for room
   transcripts, session state, channel pushes, and session notes.
+- A thin session backend for session records, mediator recall, course outlines,
+  relationship maps, check-in scales, and module catalog discovery.
 
 ## What It Is Not
 
@@ -150,8 +152,10 @@ GET  /api/rooms/:roomId/messages
 Start with:
 
 - [docs/architecture.md](./docs/architecture.md) for the current MVP shape.
-- [docs/session-architecture.md](./docs/session-architecture.md) for the planned session, note, relationship-map, course-outline, scale, and module model.
+- [docs/session-architecture.md](./docs/session-architecture.md) for the active session, note, relationship-map, course-outline, scale, and module model.
 - [docs/deburapy_architecture_guide.md](./docs/deburapy_architecture_guide.md) for product positioning, mediator personas, skill taxonomy, and repair artifact design.
+- [skills/README.md](./skills/README.md) for writing Deburapy skills and repair artifacts.
+- [docs/configuration.md](./docs/configuration.md) for environment variables.
 - [docs/local-testing.md](./docs/local-testing.md) for UI, API, channel, and MCP smoke checks.
 
 Run tests with:
@@ -164,7 +168,7 @@ Contributor guardrails:
 
 - Keep public prompts generic. Do not add one person's private relationship data
   or prototype room names to prompts, docs, or fixtures.
-- Keep API keys out of request bodies, repository files, and server-side data.
+- Keep API keys out of repository files, exports, logs, fixtures, and server-side data.
 - Keep `.deburapy-data/` local and untracked.
 - Treat Deburapy as an AI-human relationship mediator / repair debugger, not as
   clinical therapy and not as a generic debugger.
@@ -174,6 +178,7 @@ Contributor guardrails:
 - [docs/architecture.md](./docs/architecture.md) / [简体中文](./docs/architecture.zh-CN.md)
 - [docs/session-architecture.md](./docs/session-architecture.md) / [简体中文](./docs/session-architecture.zh-CN.md)
 - [docs/mcp-clients.md](./docs/mcp-clients.md) / [简体中文](./docs/mcp-clients.zh-CN.md)
+- [docs/configuration.md](./docs/configuration.md) / [简体中文](./docs/configuration.zh-CN.md)
 - [docs/local-testing.md](./docs/local-testing.md) / [简体中文](./docs/local-testing.zh-CN.md)
 - [docs/deburapy_architecture_guide.md](./docs/deburapy_architecture_guide.md) / [简体中文](./docs/deburapy_architecture_guide.zh-CN.md)
 

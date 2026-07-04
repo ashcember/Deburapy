@@ -220,7 +220,7 @@
 
           <div class="topActions">
             <article class="statusChip" id="mediatorCard">
-              <span class="statusDot" id="mediatorDot"></span>
+              <span class="statusDot" id="mediatorDot" role="img" aria-label="Deburapy: Not tested" title="Deburapy: Not tested"></span>
               <div>
                 <strong>Deburapy</strong>
                 <p id="mediatorStatus">Not tested</p>
@@ -228,7 +228,7 @@
               <button id="testMediator" type="button" data-i18n="test">Test</button>
             </article>
             <article class="statusChip" id="companionCard">
-              <span class="statusDot" id="companionDot"></span>
+              <span class="statusDot" id="companionDot" role="img" aria-label="Companion: Not tested" title="Companion: Not tested"></span>
               <div>
                 <strong data-i18n="companionRole">Companion</strong>
                 <p id="companionStatus">Not tested</p>
@@ -241,7 +241,10 @@
 
         <section class="room">
           <div class="roomStatus">
-            <span id="turnBadge">Next: Deburapy</span>
+            <div class="roomStatusTop">
+              <span id="turnBadge">Next: Deburapy</span>
+              <button id="downloadTranscript" type="button" class="secondary transcriptButton" data-i18n="downloadTranscript">Download transcript</button>
+            </div>
             <p id="turnHelp">Start with the mediator, then move through human and AI companion turns.</p>
           </div>
 
@@ -419,6 +422,6 @@
       </select>
     </footer>
 
-    <script type="module" src="/app.js?v=2026-07-04-journey-clicks"></script>
+    <script type="module" src="/app.js?v=2026-07-04-session-model"></script>
   </body>
 </html>

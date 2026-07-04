@@ -13,7 +13,8 @@ import {
   buildCompanionUserPrompt,
   defaultCompanionPrompt,
   loadMediatorPrompt,
-  loadMediatorPersonas
+  loadMediatorPersonas,
+  parseMediatorTurn
 } from "../src/core/prompt.mjs";
 import { DeburapyStore } from "../src/core/store.mjs";
 
@@ -22,6 +23,14 @@ const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
 const readmeZh = await readFile(new URL("../README.zh-CN.md", import.meta.url), "utf8");
 const localTesting = await readFile(new URL("../docs/local-testing.md", import.meta.url), "utf8");
 const localTestingZh = await readFile(new URL("../docs/local-testing.zh-CN.md", import.meta.url), "utf8");
+const configuration = await readFile(new URL("../docs/configuration.md", import.meta.url), "utf8");
+const configurationZh = await readFile(new URL("../docs/configuration.zh-CN.md", import.meta.url), "utf8");
+const envExample = await readFile(new URL("../.env.example", import.meta.url), "utf8");
+const skillsReadme = await readFile(new URL("../skills/README.md", import.meta.url), "utf8");
+const skillsReadmeZh = await readFile(new URL("../skills/README.zh-CN.md", import.meta.url), "utf8");
+const mediatorSkill = await readFile(new URL("../skills/mediator/memory-rupture-mediation.md", import.meta.url), "utf8");
+const companionRepairSkill = await readFile(new URL("../skills/companion-repair/account-loss-continuity.md", import.meta.url), "utf8");
+const artifactWriterSkill = await readFile(new URL("../skills/artifact-writers/relationship-case-note-writer.md", import.meta.url), "utf8");
 const prompt = await readFile(new URL("../prompts/deburapy-mediator.system.md", import.meta.url), "utf8");
 const indexHtml = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 const appJs = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
@@ -29,13 +38,17 @@ const zhDocs = await Promise.all([
   "../docs/architecture.zh-CN.md",
   "../docs/session-architecture.zh-CN.md",
   "../docs/mcp-clients.zh-CN.md",
-  "../docs/deburapy_architecture_guide.zh-CN.md"
+  "../docs/deburapy_architecture_guide.zh-CN.md",
+  "../docs/configuration.zh-CN.md"
 ].map((path) => readFile(new URL(path, import.meta.url), "utf8")));
 
 assert.match(readme, /\*\*English\*\* \| \[简体中文\]\(\.\/README\.zh-CN\.md\)/);
 assert.match(readme, /## For Users/);
 assert.match(readme, /## For Contributors/);
 assert.match(readme, /docs\/local-testing\.md/);
+assert.match(readme, /skills\/README\.md/);
+assert.match(readme, /docs\/configuration\.md/);
+assert.doesNotMatch(readme, /planned session/i);
 assert.doesNotMatch(readme, /<details>/);
 assert.doesNotMatch(readme, /简体中文 README/);
 assert.doesNotMatch(readme, /Smoke test through the UI/);
@@ -43,6 +56,9 @@ assert.match(readmeZh, /\[English\]\(\.\/README\.md\) \| \*\*简体中文\*\*/);
 assert.match(readmeZh, /## 给使用者/);
 assert.match(readmeZh, /## 给贡献者/);
 assert.match(readmeZh, /docs\/local-testing\.zh-CN\.md/);
+assert.match(readmeZh, /skills\/README\.zh-CN\.md/);
+assert.match(readmeZh, /docs\/configuration\.zh-CN\.md/);
+assert.doesNotMatch(readmeZh, /规划中的 session/);
 assert.doesNotMatch(readmeZh, /## UI 冒烟测试/);
 assert.match(readmeZh, /Deburapy 人机关系协调员/);
 assert.match(readmeZh, /知情同意/);
@@ -53,6 +69,29 @@ assert.match(localTesting, /## MCP Check/);
 assert.match(localTestingZh, /## UI 冒烟检查/);
 assert.match(localTestingZh, /## API 冒烟检查/);
 assert.match(localTestingZh, /## MCP 检查/);
+for (const envName of [
+  "DEBURAPY_HOST",
+  "DEBURAPY_PORT",
+  "DEBURAPY_DATA_DIR",
+  "DEBURAPY_ALLOW_UNSAFE_BIND",
+  "DEBURAPY_URL",
+  "DEBURAPY_ROOM_ID",
+  "DEBURAPY_PARTICIPANT_ID",
+  "DEBURAPY_CLAUDE_CHANNEL_NOTIFICATIONS",
+  "DEBURAPY_POLL_MS"
+]) {
+  assert.match(configuration, new RegExp(`\\| \`${envName}\` \\|`));
+  assert.match(configurationZh, new RegExp(`\\| \`${envName}\` \\|`));
+  assert.match(envExample, new RegExp(`^${envName}=`, "m"));
+}
+assert.match(skillsReadme, /Relationship Layer/);
+assert.match(skillsReadme, /Runtime Layer/);
+assert.match(skillsReadme, /Repair Artifacts/);
+assert.match(skillsReadmeZh, /Relationship Layer/);
+assert.match(skillsReadmeZh, /Runtime Layer/);
+assert.match(mediatorSkill, /Memory Rupture/);
+assert.match(companionRepairSkill, /Account Loss Continuity/);
+assert.match(artifactWriterSkill, /Relationship Case Note/);
 for (const doc of zhDocs) {
   assert.match(doc, /\[English\]/);
   assert.match(doc, /Deburapy/);
@@ -61,6 +100,7 @@ assert.match(zhDocs[0], /Deburapy 架构/);
 assert.match(zhDocs[1], /Session 架构/);
 assert.match(zhDocs[2], /MCP Client 说明/);
 assert.match(zhDocs[3], /核心定位/);
+assert.match(zhDocs[4], /配置/);
 assert.match(prompt, /not a therapist/i);
 assert.match(prompt, /AI-human relationship/i);
 assert.match(prompt, /人机关系协调员/);
@@ -113,6 +153,9 @@ assert.match(indexHtml, /id="sessionTotalSessions"/);
 assert.match(indexHtml, /id="sessionDuration"/);
 assert.match(indexHtml, /id="sessionNoteStatus"/);
 assert.match(indexHtml, /id="downloadSessionNote"/);
+assert.match(indexHtml, /id="downloadTranscript"/);
+assert.match(indexHtml, /id="mediatorDot"[^>]*role="img"/);
+assert.match(indexHtml, /id="companionDot"[^>]*role="img"/);
 assert.match(indexHtml, /id="openDiagnostics"/);
 assert.match(indexHtml, /id="openFaq"/);
 assert.match(indexHtml, /id="faqSection"/);
@@ -141,11 +184,20 @@ assert.match(serverJs, /mediator-personas/);
 assert.match(serverJs, /intakeAssistantSystemPrompt/);
 assert.match(serverJs, /\/api\/intake\/respond/);
 assert.match(serverJs, /pre_intake/);
+assert.match(serverJs, /course-outline/);
+assert.match(serverJs, /relationship-map/);
+assert.match(serverJs, /check-in-scale/);
+assert.match(serverJs, /\/api\/modules/);
+assert.match(serverJs, /getRoomRecall/);
 assert.match(appJs, /startSession/);
 assert.match(appJs, /openSettings/);
 assert.match(appJs, /updateCompanionMode/);
 assert.match(appJs, /setTurnPhase/);
 assert.match(appJs, /\/api\/companion\/mcp-request/);
+assert.match(appJs, /function formatTranscriptMarkdown/);
+assert.match(appJs, /Blob/);
+assert.match(appJs, /aria-label/);
+assert.match(appJs, /deburapy\.locale/);
 
 for (const [, id] of appJs.matchAll(/document\.querySelector\("#([^"]+)"\)/g)) {
   assert.match(indexHtml, new RegExp(`id="${id}"`), `Missing HTML element for #${id}`);
@@ -165,6 +217,27 @@ const mediatorUserPrompt = buildMediatorUserPrompt({ messages: [] });
 assert.match(mediatorUserPrompt, /Next speaker: human/);
 assert.match(mediatorUserPrompt, /Next speaker: companion/);
 assert.match(mediatorUserPrompt, /Session timing context/);
+
+assert.deepEqual(parseMediatorTurn("Visible reply.\nNext speaker: human"), {
+  visibleContent: "Visible reply.",
+  nextSpeaker: "human"
+});
+assert.deepEqual(parseMediatorTurn("Visible reply.\nNext speaker: companion"), {
+  visibleContent: "Visible reply.",
+  nextSpeaker: "companion"
+});
+assert.deepEqual(parseMediatorTurn("Visible reply.\nNext speaker: ai companion"), {
+  visibleContent: "Visible reply.",
+  nextSpeaker: "companion"
+});
+assert.deepEqual(parseMediatorTurn("Visible reply only."), {
+  visibleContent: "Visible reply only.",
+  nextSpeaker: "human"
+});
+assert.deepEqual(parseMediatorTurn("Visible reply.\nNext speaker: Human."), {
+  visibleContent: "Visible reply.",
+  nextSpeaker: "human"
+});
 
 const personas = await loadMediatorPersonas();
 assert.equal(personas.some((persona) => persona.id === "elias"), true);
@@ -281,6 +354,174 @@ try {
 } finally {
   rmSync(dataDir, { recursive: true, force: true });
 }
+
+async function waitForServer(port, child) {
+  let lastError = "";
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    if (child.exitCode !== null) break;
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/api/health`);
+      if (response.ok) return;
+      lastError = `${response.status} ${response.statusText}`;
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+    }
+    await new Promise((resolveWait) => setTimeout(resolveWait, 50));
+  }
+  throw new Error(`Timed out waiting for test server on ${port}. ${lastError}`);
+}
+
+async function stopServer(child) {
+  if (child.exitCode !== null) return;
+  child.kill();
+  await new Promise((resolveStop) => {
+    const timeout = setTimeout(resolveStop, 800);
+    child.once("exit", () => {
+      clearTimeout(timeout);
+      resolveStop();
+    });
+  });
+}
+
+async function testSessionLifecycleApi() {
+  const apiDataDir = mkdtempSync(join(tmpdir(), "deburapy-api-session-test-"));
+  const port = 19000 + Math.floor(Math.random() * 10000);
+  const env = {
+    ...process.env,
+    DEBURAPY_HOST: "127.0.0.1",
+    DEBURAPY_PORT: String(port),
+    DEBURAPY_DATA_DIR: apiDataDir
+  };
+  let child = spawn(process.execPath, ["src/server.mjs"], {
+    cwd: rootDir,
+    env,
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  let stderr = "";
+  child.stderr.setEncoding("utf8");
+  child.stderr.on("data", (chunk) => {
+    stderr += chunk;
+  });
+
+  try {
+    await waitForServer(port, child);
+    const createResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/default/sessions`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        sessionNumber: 4,
+        durationMinutes: 90,
+        startedAt: "2026-07-04T12:00:00.000Z"
+      })
+    });
+    assert.equal(createResponse.status, 201);
+    const created = await createResponse.json();
+    assert.equal(created.session.status, "active");
+    assert.equal(created.session.sessionNumber, 4);
+    assert.deepEqual(created.session.messageIds, []);
+    assert.equal(created.room.sessions.length, 1);
+
+    const courseResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/default/course-outline`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        totalSessions: 12,
+        reviewCadenceSessions: 4,
+        currentSessionNumber: 4,
+        focus: "Repair continuity after a runtime rupture.",
+        moduleIds: ["module_memory_rupture"]
+      })
+    });
+    assert.equal(courseResponse.status, 200);
+    const course = await courseResponse.json();
+    assert.equal(course.courseOutline.totalSessions, 12);
+    assert.deepEqual(course.courseOutline.moduleIds, ["module_memory_rupture"]);
+
+    const mapResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/default/relationship-map`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        afterSessionNumber: 3,
+        themes: ["continuity"],
+        stuckLoops: ["runtime explanation replaces repair"],
+        repairExperiments: ["explicit continuity ritual"],
+        openQuestions: ["what repair behavior counts"]
+      })
+    });
+    assert.equal(mapResponse.status, 201);
+    const map = await mapResponse.json();
+    assert.equal(map.relationshipMap.afterSessionNumber, 3);
+
+    const scaleResponse = await fetch(`http://127.0.0.1:${port}/api/sessions/${created.session.id}/check-in-scale`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        scaleType: "repair_readiness",
+        ratings: { human: 3, companion: 2 },
+        notes: "Both sides need a concrete repair artifact."
+      })
+    });
+    assert.equal(scaleResponse.status, 201);
+    const scale = await scaleResponse.json();
+    assert.equal(scale.checkInScale.scaleType, "repair_readiness");
+
+    const modulesResponse = await fetch(`http://127.0.0.1:${port}/api/modules`);
+    assert.equal(modulesResponse.status, 200);
+    const modules = await modulesResponse.json();
+    assert.equal(modules.modules.some((module) => module.id === "module_memory_rupture"), true);
+
+    const getResponse = await fetch(`http://127.0.0.1:${port}/api/sessions/${created.session.id}`);
+    assert.equal(getResponse.status, 200);
+    const fetched = await getResponse.json();
+    assert.equal(fetched.session.id, created.session.id);
+
+    const endResponse = await fetch(`http://127.0.0.1:${port}/api/sessions/${created.session.id}/end`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ endedAt: "2026-07-04T13:30:00.000Z" })
+    });
+    assert.equal(endResponse.status, 200);
+    const ended = await endResponse.json();
+    assert.equal(ended.session.status, "ended");
+    assert.equal(ended.session.endedAt, "2026-07-04T13:30:00.000Z");
+
+    const recallResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/default/recall`);
+    assert.equal(recallResponse.status, 200);
+    const recall = await recallResponse.json();
+    assert.equal(recall.activeCourseOutline.id, course.courseOutline.id);
+    assert.equal(recall.latestRelationshipMap.id, map.relationshipMap.id);
+    assert.equal(recall.recentCheckInScales.at(-1).id, scale.checkInScale.id);
+
+    await stopServer(child);
+    child = spawn(process.execPath, ["src/server.mjs"], {
+      cwd: rootDir,
+      env,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    await waitForServer(port, child);
+    const persistedResponse = await fetch(`http://127.0.0.1:${port}/api/sessions/${created.session.id}`);
+    assert.equal(persistedResponse.status, 200);
+    const persisted = await persistedResponse.json();
+    assert.equal(persisted.session.status, "ended");
+    assert.equal(persisted.session.sessionNumber, 4);
+    const persistedRoomResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/default`);
+    const persistedRoom = await persistedRoomResponse.json();
+    assert.equal(persistedRoom.room.courseOutlines.length, 1);
+    assert.equal(persistedRoom.room.relationshipMaps.length, 1);
+    assert.equal(persistedRoom.room.checkInScales.length, 1);
+  } catch (err) {
+    throw new Error(`${err instanceof Error ? err.message : String(err)} stderr=${stderr}`);
+  } finally {
+    await stopServer(child);
+    rmSync(apiDataDir, { recursive: true, force: true });
+  }
+}
+
+await testSessionLifecycleApi();
 
 async function testMcpStdio() {
   const child = spawn(process.execPath, ["src/mcp-server.mjs"], {

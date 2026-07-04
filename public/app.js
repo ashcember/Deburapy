@@ -73,6 +73,7 @@ const els = {
   saveConfig: document.querySelector("#saveConfig"),
   diagnostics: document.querySelector("#diagnostics"),
   messages: document.querySelector("#messages"),
+  downloadTranscript: document.querySelector("#downloadTranscript"),
   messageForm: document.querySelector("#messageForm"),
   messageInput: document.querySelector("#messageInput"),
   askCompanion: document.querySelector("#askCompanion"),
@@ -142,6 +143,7 @@ const copy = {
     sixtyMinutes: "60 minutes",
     ninetyMinutes: "90 minutes",
     exportNote: "Export note",
+    downloadTranscript: "Download transcript",
     journey: "Journey",
     diagnostics: "Diagnostics",
     faq: "FAQ",
@@ -237,6 +239,8 @@ const copy = {
     endingSession: "Ending session and writing session note.",
     noteSavedLog: "Session note saved locally. Export is available.",
     noNoteLog: "Session ended without a note.",
+    noMessagesYet: "No messages yet.",
+    transcriptDownloaded: "Transcript downloaded.",
     apiKeyMissing: "{target} API key is missing.",
     baseUrlMissing: "{target} base URL is missing.",
     modelMissing: "{target} model is missing.",
@@ -334,6 +338,7 @@ const copy = {
     sixtyMinutes: "60 分钟",
     ninetyMinutes: "90 分钟",
     exportNote: "导出 note",
+    downloadTranscript: "下载 transcript",
     journey: "进程",
     diagnostics: "诊断",
     faq: "FAQ",
@@ -429,6 +434,8 @@ const copy = {
     endingSession: "正在结束 session 并写入 session note。",
     noteSavedLog: "Session note 已本地保存。可在设置中导出。",
     noNoteLog: "Session 已结束，但没有生成 note。",
+    noMessagesYet: "还没有消息。",
+    transcriptDownloaded: "Transcript 已下载。",
     apiKeyMissing: "{target} API key 缺失。",
     baseUrlMissing: "{target} base URL 缺失。",
     modelMissing: "{target} model 缺失。",
@@ -938,6 +945,46 @@ function renderMessages(messages) {
   els.messages.scrollTop = els.messages.scrollHeight;
 }
 
+function formatTranscriptMarkdown(messages) {
+  const lines = [
+    "# Deburapy Transcript",
+    "",
+    `Exported at: ${new Date().toISOString()}`,
+    ""
+  ];
+  if (!messages.length) {
+    lines.push(t("noMessagesYet"));
+    return `${lines.join("\n")}\n`;
+  }
+  for (const message of messages) {
+    const author = message.authorName || message.authorRole || "Participant";
+    const kind = message.kind || "message";
+    const content = String(message.content || "").trim() || " ";
+    lines.push(`**${author}** (${kind}): ${content}`, "");
+  }
+  return lines.join("\n");
+}
+
+function downloadBlob(filename, content, type = "text/markdown;charset=utf-8") {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.style.display = "none";
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function downloadTranscript() {
+  const payload = await json(`/api/rooms/${roomId}/messages`);
+  const now = new Date().toISOString().replace(/[:.]/g, "-");
+  downloadBlob(`deburapy-${roomId}-transcript-${now}.md`, formatTranscriptMarkdown(payload.messages || []));
+  appendLog(t("transcriptDownloaded"), "ok");
+}
+
 async function refreshRoom() {
   const payload = await json(`/api/rooms/${roomId}`);
   renderMessages(payload.room.messages);
@@ -1440,6 +1487,10 @@ function setStatus(target, next, detail) {
   }
   dot.className = `statusDot statusDot--${next}`;
   text.textContent = detail;
+  const roleLabel = target === "mediator" ? "Deburapy" : t("companionRole");
+  const label = `${roleLabel}: ${detail || next}`;
+  dot.setAttribute("aria-label", label);
+  dot.setAttribute("title", label);
 }
 
 function setConsentAssistantStatus(message, level = "info") {
@@ -1654,6 +1705,9 @@ els.endSession.addEventListener("click", endSession);
 els.downloadSessionNote.addEventListener("click", () => {
   if (!session.noteId) return;
   window.location.href = `/api/rooms/${roomId}/session-notes/${session.noteId}/download`;
+});
+els.downloadTranscript.addEventListener("click", () => {
+  runAction(els.downloadTranscript, "…", downloadTranscript);
 });
 els.mediatorProvider.addEventListener("change", () => applyProviderDefaults("mediator"));
 els.companionProvider.addEventListener("change", () => applyProviderDefaults("companion"));

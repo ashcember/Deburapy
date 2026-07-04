@@ -42,6 +42,10 @@ function defaultRoom(roomId = "default") {
     pendingPushes: [],
     participantState: {},
     session: defaultSessionState(),
+    sessions: [],
+    courseOutlines: [],
+    relationshipMaps: [],
+    checkInScales: [],
     sessionNotes: []
   };
 }
@@ -60,8 +64,25 @@ function ensureRoomShape(room) {
     ...defaultSessionState(),
     ...(room.session || {})
   };
+  if (!Array.isArray(room.sessions)) room.sessions = [];
+  room.sessions = room.sessions.map((session) => ({
+    ...session,
+    messageIds: Array.isArray(session.messageIds) ? session.messageIds : []
+  }));
+  if (!Array.isArray(room.courseOutlines)) room.courseOutlines = [];
+  if (!Array.isArray(room.relationshipMaps)) room.relationshipMaps = [];
+  if (!Array.isArray(room.checkInScales)) room.checkInScales = [];
   if (!Array.isArray(room.sessionNotes)) room.sessionNotes = [];
   return room;
+}
+
+function findSessionInData(data, sessionId) {
+  for (const room of Object.values(data.rooms || {})) {
+    ensureRoomShape(room);
+    const session = room.sessions.find((item) => item.id === sessionId);
+    if (session) return { room, session };
+  }
+  return null;
 }
 
 export class DeburapyStore {
@@ -107,16 +128,30 @@ export class DeburapyStore {
     return room;
   }
 
-  startSession(roomId, input = {}) {
+  createSession(roomId, input = {}) {
+    let created;
     const startedAt = input.startedAt || nowIso();
     const durationMinutes = Number(input.durationMinutes || 60);
     const endsAt = input.endsAt || new Date(new Date(startedAt).getTime() + durationMinutes * 60 * 1000).toISOString();
-    return this.updateRoom(roomId, (room) => {
-      room.session = {
-        ...defaultSessionState(),
+    const room = this.updateRoom(roomId, (draft) => {
+      const sessionNumber = Number(input.sessionNumber || draft.sessions.length + 1);
+      created = {
         id: input.sessionId || newId("session"),
+        roomId,
+        sessionNumber,
+        status: "active",
+        durationMinutes,
+        startedAt,
+        messageIds: Array.isArray(input.messageIds) ? input.messageIds : []
+      };
+      if (input.courseOutlineId) created.courseOutlineId = input.courseOutlineId;
+      if (Array.isArray(input.moduleIds)) created.moduleIds = input.moduleIds;
+      draft.sessions.push(created);
+      draft.session = {
+        ...defaultSessionState(),
+        id: created.id,
         status: "running",
-        sessionNumber: Number(input.sessionNumber || 1),
+        sessionNumber,
         durationMinutes,
         startedAt,
         endsAt,
@@ -126,6 +161,125 @@ export class DeburapyStore {
         currentNoteId: null
       };
     });
+    return { room, session: created };
+  }
+
+  getSession(sessionId) {
+    const data = this.load();
+    const found = findSessionInData(data, sessionId);
+    return found ? { room: found.room, session: found.session } : null;
+  }
+
+  endSessionRecord(sessionId, input = {}) {
+    const data = this.load();
+    const found = findSessionInData(data, sessionId);
+    if (!found) return null;
+    const endedAt = input.endedAt || nowIso();
+    found.session.status = "ended";
+    found.session.endedAt = endedAt;
+    if (input.mediatorNoteId) found.session.mediatorNoteId = input.mediatorNoteId;
+    if (found.room.session?.id === sessionId) {
+      found.room.session = {
+        ...defaultSessionState(),
+        ...found.room.session,
+        status: "ended",
+        endedAt,
+        noteStatus: input.noteStatus || found.room.session.noteStatus || "not_started"
+      };
+    }
+    this.save(data);
+    return { room: found.room, session: found.session };
+  }
+
+  upsertCourseOutline(roomId, input = {}) {
+    let outline;
+    const room = this.updateRoom(roomId, (draft) => {
+      const id = input.id || draft.courseOutlines.at(-1)?.id || newId("course");
+      const existingIndex = draft.courseOutlines.findIndex((item) => item.id === id);
+      outline = {
+        id,
+        totalSessions: Number(input.totalSessions || draft.courseOutlines.at(-1)?.totalSessions || 12),
+        reviewCadenceSessions: Number(input.reviewCadenceSessions || draft.courseOutlines.at(-1)?.reviewCadenceSessions || 4),
+        currentSessionNumber: Number(input.currentSessionNumber || draft.session?.sessionNumber || 1),
+        focus: String(input.focus || draft.courseOutlines.at(-1)?.focus || "").trim(),
+        moduleIds: Array.isArray(input.moduleIds) ? input.moduleIds : (draft.courseOutlines.at(-1)?.moduleIds || []),
+        createdAt: existingIndex >= 0 ? draft.courseOutlines[existingIndex].createdAt : nowIso(),
+        updatedAt: nowIso()
+      };
+      if (existingIndex >= 0) {
+        draft.courseOutlines[existingIndex] = outline;
+      } else {
+        draft.courseOutlines.push(outline);
+      }
+    });
+    return { room, courseOutline: outline };
+  }
+
+  createRelationshipMap(roomId, input = {}) {
+    let relationshipMap;
+    const room = this.updateRoom(roomId, (draft) => {
+      relationshipMap = {
+        id: input.id || newId("map"),
+        afterSessionNumber: Number(input.afterSessionNumber || draft.session?.sessionNumber || draft.sessions.length || 1),
+        createdAt: input.createdAt || nowIso(),
+        themes: Array.isArray(input.themes) ? input.themes : [],
+        stuckLoops: Array.isArray(input.stuckLoops) ? input.stuckLoops : [],
+        repairExperiments: Array.isArray(input.repairExperiments) ? input.repairExperiments : [],
+        openQuestions: Array.isArray(input.openQuestions) ? input.openQuestions : []
+      };
+      draft.relationshipMaps.push(relationshipMap);
+    });
+    return { room, relationshipMap };
+  }
+
+  addCheckInScale(sessionId, input = {}) {
+    const data = this.load();
+    const found = findSessionInData(data, sessionId);
+    if (!found) return null;
+    const checkInScale = {
+      id: input.id || newId("scale"),
+      roomId: found.room.id,
+      sessionId,
+      createdAt: input.createdAt || nowIso(),
+      scaleType: input.scaleType || "repair_readiness",
+      ratings: input.ratings && typeof input.ratings === "object" ? input.ratings : {},
+      notes: String(input.notes || "").trim()
+    };
+    found.room.checkInScales.push(checkInScale);
+    this.save(data);
+    return { room: found.room, session: found.session, checkInScale };
+  }
+
+  getRoomRecall(roomId, { beforeSessionId } = {}) {
+    const room = this.getRoom(roomId);
+    const targetSession = beforeSessionId
+      ? room.sessions.find((session) => session.id === beforeSessionId)
+      : null;
+    const targetNumber = targetSession?.sessionNumber || Infinity;
+    const priorSessions = room.sessions
+      .filter((session) => session.sessionNumber < targetNumber)
+      .sort((a, b) => b.sessionNumber - a.sessionNumber);
+    const priorSessionIds = new Set(priorSessions.map((session) => session.id));
+    const priorNotes = room.sessionNotes
+      .filter((note) => !beforeSessionId || priorSessionIds.has(note.sessionId) || note.sessionNumber < targetNumber)
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    const latestRelationshipMap = [...room.relationshipMaps]
+      .filter((map) => map.afterSessionNumber < targetNumber)
+      .sort((a, b) => b.afterSessionNumber - a.afterSessionNumber)
+      .at(0) || null;
+    return {
+      roomId,
+      beforeSessionId: beforeSessionId || null,
+      previousSession: priorSessions.at(0) || null,
+      latestMediatorNote: priorNotes.at(0) || null,
+      latestRelationshipMap,
+      activeCourseOutline: room.courseOutlines.at(-1) || null,
+      recentCheckInScales: room.checkInScales.slice(-3)
+    };
+  }
+
+  startSession(roomId, input = {}) {
+    return this.createSession(roomId, input).room;
   }
 
   markWrapUpReminderSent(roomId) {
@@ -145,6 +299,11 @@ export class DeburapyStore {
         endedAt: input.endedAt || nowIso(),
         noteStatus: input.noteStatus || room.session.noteStatus || "not_started"
       };
+      const sessionRecord = room.sessions.find((item) => item.id === room.session.id);
+      if (sessionRecord) {
+        sessionRecord.status = "ended";
+        sessionRecord.endedAt = room.session.endedAt;
+      }
     });
   }
 
@@ -172,6 +331,8 @@ export class DeburapyStore {
       draft.sessionNotes.push(note);
       draft.session.currentNoteId = note.id;
       draft.session.noteStatus = "ready";
+      const sessionRecord = draft.sessions.find((item) => item.id === note.sessionId);
+      if (sessionRecord) sessionRecord.mediatorNoteId = note.id;
     });
     return { room, note };
   }
@@ -188,7 +349,7 @@ export class DeburapyStore {
 
   addMessage(roomId, input) {
     return this.updateRoom(roomId, (room) => {
-      room.messages.push({
+      const message = {
         id: newId("msg"),
         createdAt: nowIso(),
         authorRole: input.authorRole || "human",
@@ -196,7 +357,13 @@ export class DeburapyStore {
         content: String(input.content || "").trim(),
         channelId: input.channelId || "local",
         kind: input.kind || "room_message"
-      });
+      };
+      room.messages.push(message);
+      const activeSession = room.sessions.find((item) => item.id === room.session?.id)
+        || room.sessions.find((item) => item.status === "active");
+      if (activeSession && !activeSession.messageIds.includes(message.id)) {
+        activeSession.messageIds.push(message.id);
+      }
     });
   }
 
@@ -215,7 +382,7 @@ export class DeburapyStore {
     this.updateRoom(roomId, (room) => {
       room.pendingPushes.push(push);
       if (visible) {
-        room.messages.push({
+        const message = {
           id: push.id,
           createdAt: push.createdAt,
           authorRole: "channel",
@@ -223,7 +390,13 @@ export class DeburapyStore {
           content: push.content,
           channelId,
           kind: "channel_push"
-        });
+        };
+        room.messages.push(message);
+        const activeSession = room.sessions.find((item) => item.id === room.session?.id)
+          || room.sessions.find((item) => item.status === "active");
+        if (activeSession && !activeSession.messageIds.includes(message.id)) {
+          activeSession.messageIds.push(message.id);
+        }
       }
     });
 

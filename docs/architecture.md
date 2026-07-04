@@ -46,6 +46,11 @@ The mediator and AI companion are separate runtime roles:
   to write a continuity note.
 - `/api/rooms/:roomId/session-notes/:noteId/download` downloads that note as
   markdown.
+- `/api/rooms/:roomId/sessions`, `/api/sessions/:sessionId`, and
+  `/api/sessions/:sessionId/end` expose persisted session records.
+- `/api/rooms/:roomId/course-outline`, `/api/rooms/:roomId/recall`,
+  `/api/rooms/:roomId/relationship-map`, `/api/sessions/:sessionId/check-in-scale`,
+  and `/api/modules` expose the thin session model for continuity and modules.
 
 The browser composer is intentionally human-only. The other two roles speak
 through their configured connections instead of through a role selector.
@@ -60,10 +65,11 @@ context includes a wrap-up reminder to close loops rather than open a large new
 topic.
 
 Prototype persistence lives in `.deburapy-data/store.json`. Each room owns
-messages, pending channel pushes, one current `session` object, and a
-`sessionNotes` array. Session notes are intended for local continuity first;
-export is optional backup or transfer, and the UI does not frame downloading as
-the save step.
+messages, pending channel pushes, one current `session` compatibility object,
+persisted `sessions`, `sessionNotes`, `courseOutlines`, `relationshipMaps`, and
+`checkInScales`. Session notes are intended for local continuity first; export
+is optional backup or transfer, and the UI does not frame downloading as the
+save step.
 
 The default web layout keeps the room uncluttered: session metadata and the
 60/90 minute countdown live in the left rail, connection status lives in compact
@@ -91,7 +97,7 @@ The room model is intentionally platform-neutral:
 Adapters for chat platforms should translate external messages into this shape
 instead of writing platform-specific logic into the mediator.
 
-See [session-architecture.md](./session-architecture.md) for the planned
+See [session-architecture.md](./session-architecture.md) for the current
 session, note, relationship-map, course-outline, scale, and module model.
 See [deburapy_architecture_guide.md](./deburapy_architecture_guide.md) for the
 broader product architecture, mediator personas, skill taxonomy, and repair
