@@ -102,7 +102,6 @@ await page.waitForFunction(() => document.querySelector("#companionMcpGuide")?.h
 const mcpGuide = await page.evaluate(() => ({
   visible: document.querySelector("#companionMcpGuide")?.hidden === false,
   copyInstallPrompt: Boolean(document.querySelector("#copyMcpInstallPrompt")),
-  copyInstallPromptText: document.querySelector("#copyMcpInstallPrompt")?.textContent?.trim(),
   guideText: document.querySelector("#companionMcpGuide")?.textContent || ""
 }));
 await page.evaluate(() => {
@@ -164,8 +163,7 @@ assertCondition(settingsStorage.storePath.endsWith("store.json"), "Storage store
 assertCondition(settingsStorage.envExample.includes("DEBURAPY_DATA_DIR="), "Storage env example is missing.");
 assertCondition(settingsStorage.transcriptExportText.includes("Export"), "Transcript export is not tucked into Settings.");
 assertCondition(mcpGuide.visible === true, "MCP companion guide did not open.");
-assertCondition(mcpGuide.copyInstallPrompt === true, "AI install prompt copy button is missing.");
-assertCondition(mcpGuide.copyInstallPromptText.includes("install prompt"), "AI install prompt button text is wrong.");
+assertCondition(mcpGuide.copyInstallPrompt === false, "README install guidance should not appear as a Settings copy control.");
 assertCondition(mcpGuide.guideText.includes("deburapy_send_channel_reply"), "MCP guide is missing reply tool guidance.");
 assertCondition(mobileBefore.openSessionRail !== "none", "Mobile session button is hidden.");
 assertCondition(mobileBefore.persistedTheme === "dark", "Theme preference did not persist across reload.");

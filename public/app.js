@@ -63,7 +63,6 @@ const els = {
   companionName: document.querySelector("#companionName"),
   companionApiSettings: document.querySelector("#companionApiSettings"),
   companionMcpGuide: document.querySelector("#companionMcpGuide"),
-  copyMcpInstallPrompt: document.querySelector("#copyMcpInstallPrompt"),
   companionProvider: document.querySelector("#companionProvider"),
   companionBaseUrl: document.querySelector("#companionBaseUrl"),
   companionModel: document.querySelector("#companionModel"),
@@ -187,8 +186,6 @@ const copy = {
     mcpGuideStep2: "Register the MCP server in the external client.",
     mcpGuideStep3: "When the turn reaches the AI companion, Deburapy queues the room context for that MCP client.",
     mcpGuideStep4: "The external client replies with",
-    copyInstallPrompt: "Copy AI install prompt",
-    mcpInstallPromptHint: "Paste this prompt into the AI companion's coding environment so it can register the MCP server for you.",
     localStorageTitle: "Local Storage",
     localStorageIntro: "Room data is saved automatically. Export is only for backup or migration.",
     serverDataDirectory: "Server data directory",
@@ -280,7 +277,6 @@ const copy = {
     testPassed: "{target} test passed: {content}",
     mcpTurnQueuedStatus: "Turn queued for external MCP companion.",
     mcpTurnQueuedLog: "Queued MCP companion turn: {id}. Waiting for external client reply.",
-    installPromptCopied: "AI install prompt copied.",
     companionApiResponded: "AI companion responded through API.",
     companionResponseAdded: "AI companion response added to room.",
     mediatorApiResponded: "Deburapy mediator responded through API.",
@@ -400,8 +396,6 @@ const copy = {
     mcpGuideStep2: "在外部客户端中注册 MCP server。",
     mcpGuideStep3: "当轮到 AI 伴侣时，Deburapy 会把房间上下文排队给该 MCP 客户端。",
     mcpGuideStep4: "外部客户端用这个工具回复：",
-    copyInstallPrompt: "复制 AI 安装 prompt",
-    mcpInstallPromptHint: "把这段 prompt 粘贴给 AI 伴侣所在的 coding 环境，它就可以帮你注册 MCP server。",
     localStorageTitle: "本地存储",
     localStorageIntro: "房间数据会自动保存。导出只用于备份或迁移。",
     serverDataDirectory: "Server 数据目录",
@@ -493,7 +487,6 @@ const copy = {
     testPassed: "{target} 测试通过：{content}",
     mcpTurnQueuedStatus: "已为外部 MCP 伴侣排队。",
     mcpTurnQueuedLog: "已排队 MCP 伴侣回合：{id}。等待外部客户端回复。",
-    installPromptCopied: "AI 安装 prompt 已复制。",
     companionApiResponded: "AI 伴侣已通过 API 回复。",
     companionResponseAdded: "AI 伴侣回复已加入房间。",
     mediatorApiResponded: "Deburapy 协调员已通过 API 回复。",
@@ -1092,61 +1085,6 @@ function downloadBlob(filename, content, type = "text/markdown;charset=utf-8") {
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
-}
-
-function buildMcpInstallPrompt() {
-  const deburapyUrl = window.location.origin || "http://127.0.0.1:8787";
-  return [
-    "You are helping me connect an AI companion to Deburapy through MCP.",
-    "",
-    "Goal: register the Deburapy stdio MCP server in this AI client and verify it can call Deburapy tools.",
-    "",
-    "Rules:",
-    "- Do not ask for API keys, credentials, cookies, passwords, hidden chain-of-thought, private logs, or unredacted relationship data.",
-    "- Keep local room data private and untracked.",
-    "- Use redacted examples only.",
-    "",
-    "Context:",
-    `- Deburapy local URL: ${deburapyUrl}`,
-    "- Deburapy repository: https://github.com/ashcember/Deburapy",
-    "- MCP server entrypoint after clone: src/mcp-server.mjs",
-    "",
-    "Steps:",
-    "1. Check that Node.js is version 20 or newer.",
-    "2. If Deburapy is not already cloned locally, clone the repository and enter the project.",
-    "3. Make sure the Deburapy web server is running at the local URL above.",
-    "4. Register an MCP server named deburapy. For Claude Code, use this command after replacing the absolute path:",
-    "```bash",
-    `claude mcp add --env DEBURAPY_URL=${deburapyUrl} --transport stdio deburapy -- node /absolute/path/to/Deburapy/src/mcp-server.mjs`,
-    "```",
-    "5. If this client uses JSON MCP config, add a stdio server named deburapy with command node, args [\"/absolute/path/to/Deburapy/src/mcp-server.mjs\"], and env DEBURAPY_URL set to the local URL above.",
-    "6. Verify these tools are visible: deburapy_get_room_context, deburapy_get_pending_channel_pushes, deburapy_send_channel_reply, deburapy_set_participant_state.",
-    "7. Call deburapy_get_room_context for roomId default. When Deburapy queues a companion turn, call deburapy_get_pending_channel_pushes, answer as the AI companion, then send the answer with deburapy_send_channel_reply.",
-    "",
-    "Stop and report the exact blocker if the MCP client cannot register the server or cannot see the tools."
-  ].join("\n");
-}
-
-async function copyTextToClipboard(text) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return;
-  }
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.setAttribute("readonly", "");
-  textarea.style.position = "fixed";
-  textarea.style.left = "-9999px";
-  document.body.append(textarea);
-  textarea.select();
-  const copied = document.execCommand("copy");
-  textarea.remove();
-  if (!copied) throw new Error("Clipboard copy failed.");
-}
-
-async function copyMcpInstallPrompt() {
-  await copyTextToClipboard(buildMcpInstallPrompt());
-  appendLog(t("installPromptCopied"), "ok");
 }
 
 async function exportTranscript() {
@@ -1926,9 +1864,6 @@ els.clearCompanionKey.addEventListener("click", () => {
   saveConfig();
 });
 els.resetOnboarding.addEventListener("click", resetOnboarding);
-els.copyMcpInstallPrompt.addEventListener("click", () => {
-  runAction(els.copyMcpInstallPrompt, "…", copyMcpInstallPrompt);
-});
 els.copyMediatorConfig.addEventListener("click", () => {
   els.companionProvider.value = els.mediatorProvider.value;
   els.companionBaseUrl.value = els.mediatorBaseUrl.value;

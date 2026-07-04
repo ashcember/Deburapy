@@ -45,6 +45,27 @@ Deburapy 目前是 public alpha。请预期它还有粗糙边界：
 
 ## 给使用者
 
+### 我不懂技术，要怎么安装？
+
+复制这个仓库网址，粘贴给你平时使用的 AI coding assistant：
+
+```text
+https://github.com/ashcember/Deburapy
+```
+
+你可以这样说：
+
+```text
+请帮我在电脑上安装并运行这个本地优先 app：
+https://github.com/ashcember/Deburapy
+
+请不要索取 API key、secret、private log、隐藏 chain-of-thought，或未脱敏的关系数据。
+请按照 README 操作。我想在本地运行它，并打开 http://127.0.0.1:8787。
+```
+
+如果你想通过 MCP 接入 AI 伴侣，也可以让同一个 AI 阅读这个仓库并按照
+`docs/mcp-clients.zh-CN.md` 操作。
+
 ### 本地运行
 
 要求：
@@ -123,15 +144,6 @@ AI 伴侣有两种连接方式：
 - `deburapy_set_participant_state`
 
 Claude Code 和 Codex client 说明见 [docs/mcp-clients.zh-CN.md](./docs/mcp-clients.zh-CN.md)。
-
-### AI 安装 Prompt
-
-在 app 里选择 `External MCP companion`，点击 `Copy AI install prompt`。
-把复制出来的 prompt 粘贴给 AI 伴侣所在的 coding 环境，它就可以帮你注册
-Deburapy MCP server。
-
-这段 prompt 会明确要求 AI 不索取 API key、secret、private log、隐藏
-chain-of-thought 或未脱敏关系数据。
 
 第三方聊天平台应通过通用 channel API 集成：
 

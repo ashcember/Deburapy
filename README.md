@@ -56,6 +56,29 @@ Deburapy is public alpha software. Expect rough edges:
 
 ## For Users
 
+### How Do I Install This If I Am Not Technical?
+
+Copy this repository URL and paste it into the AI coding assistant you already
+use:
+
+```text
+https://github.com/ashcember/Deburapy
+```
+
+You can say:
+
+```text
+Please help me install and run this local-first app on my computer:
+https://github.com/ashcember/Deburapy
+
+Please do not ask for API keys, secrets, private logs, hidden chain-of-thought,
+or unredacted relationship data. Use the README instructions. I want to run it
+locally and open http://127.0.0.1:8787.
+```
+
+If you want to connect an AI companion through MCP, ask that same AI to read
+the repository and follow `docs/mcp-clients.md`.
+
 ### Run Locally
 
 Requirements:
@@ -155,15 +178,6 @@ The companion MCP exposes:
 
 See [docs/mcp-clients.md](./docs/mcp-clients.md) for Claude Code and Codex
 client notes.
-
-### AI Install Prompt
-
-In the app, choose `External MCP companion` and click `Copy AI install prompt`.
-Paste that prompt into the AI companion's coding environment so it can register
-the Deburapy MCP server for you.
-
-The prompt intentionally tells the AI not to ask for API keys, secrets, private
-logs, hidden chain-of-thought, or unredacted relationship data.
 
 Third-party chat platforms should integrate through the generic channel API:
 

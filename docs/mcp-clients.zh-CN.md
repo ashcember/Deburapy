@@ -2,11 +2,16 @@
 
 [English](./mcp-clients.md)
 
-## 复制给 AI 的安装 Prompt
+## 让你的 AI 帮你安装
 
-App 的 Settings -> AI Companion -> External MCP companion 里有
-`Copy AI install prompt` 按钮。把它复制出来，粘贴给 AI 伴侣所在的 coding
-环境。它会要求 AI：
+对不懂技术的用户，最简单的安装方式是把仓库网址粘贴给 AI coding assistant：
+
+```text
+https://github.com/ashcember/Deburapy
+```
+
+请 AI 帮你在本地安装并运行这个 repo。如果 AI 伴侣需要通过 Deburapy 接入，
+再让它按照本 MCP guide 操作。AI 应该：
 
 - 不索取 API key、secret、private log、隐藏 chain-of-thought 或未脱敏关系数据
 - 确认 Node.js 20 或更新版本

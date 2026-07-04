@@ -2,11 +2,17 @@
 
 [简体中文](./mcp-clients.zh-CN.md)
 
-## Copy-To-AI Installer Prompt
+## Ask Your AI To Install
 
-The app includes a `Copy AI install prompt` button under Settings -> AI
-Companion -> External MCP companion. Paste that prompt into the AI companion's
-coding environment. It tells the AI to:
+For non-technical users, the simplest install path is to paste the repository
+URL into an AI coding assistant:
+
+```text
+https://github.com/ashcember/Deburapy
+```
+
+Ask the AI to install and run the repo locally, then follow this MCP guide if
+the AI companion should connect through Deburapy. The AI should:
 
 - avoid requesting API keys, secrets, private logs, hidden chain-of-thought, or
   unredacted relationship data
