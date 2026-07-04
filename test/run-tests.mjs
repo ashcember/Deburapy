@@ -69,6 +69,9 @@ assert.match(appJs, /sessionTotalSessions:\s*document\.querySelector\("#sessionT
 assert.match(appJs, /openDiagnostics:\s*document\.querySelector\("#openDiagnostics"\)/);
 assert.match(appJs, /openFaq:\s*document\.querySelector\("#openFaq"\)/);
 assert.match(appJs, /function renderJourney/);
+assert.match(appJs, /handleJourneySessionClick/);
+assert.match(appJs, /handleJourneyReviewClick/);
+assert.match(appJs, /button\.addEventListener\("click"/);
 assert.match(appJs, /onboardingStorageKey/);
 assert.match(appJs, /deburapy\.onboarding\.v1/);
 assert.match(appJs, /syncConsentGate/);

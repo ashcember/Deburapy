@@ -261,6 +261,12 @@ const copy = {
     humanMessageAdded: "Human message added. Routing the turn to the AI companion.",
     appLoaded: "Deburapy loaded. Local room data reloads from .deburapy-data.",
     turnInstruction: "You are managing a three-party turn. If the human should answer next, use `Next speaker: human`. If the AI companion should answer next, use `Next speaker: companion`.",
+    selectSession: "Select {label}",
+    openReview: "Open review guidance",
+    selectedSession: "Selected {label}.",
+    activeSessionSettings: "Opened current session settings.",
+    switchSessionBlocked: "End the active session before switching sessions.",
+    reviewOpened: "Opened review guidance.",
     ariaInformedConsent: "Informed consent",
     ariaCareAgreements: "Care agreements",
     ariaPreIntakeAssistant: "Pre-intake assistant",
@@ -447,6 +453,12 @@ const copy = {
     humanMessageAdded: "人类消息已加入。正在把回合转给 AI 伴侣。",
     appLoaded: "Deburapy 已载入。本地房间数据会从 .deburapy-data 重新读取。",
     turnInstruction: "你正在管理三方回合。如果接下来应由人类回答，请使用 `Next speaker: human`。如果接下来应由 AI 伴侣回答，请使用 `Next speaker: companion`。",
+    selectSession: "选择{label}",
+    openReview: "打开回顾说明",
+    selectedSession: "已选择{label}。",
+    activeSessionSettings: "已打开当前 session 设置。",
+    switchSessionBlocked: "请先结束当前 session，再切换 session。",
+    reviewOpened: "已打开回顾说明。",
     ariaInformedConsent: "知情同意",
     ariaCareAgreements: "照护约定",
     ariaPreIntakeAssistant: "首次筛选助手",
@@ -1085,21 +1097,43 @@ function sessionDurationMinutes() {
   return Math.max(1, Number(els.sessionDuration.value || 60));
 }
 
+function handleJourneySessionClick(sessionNumber, state) {
+  if (state === "active") {
+    toggleSessionSettings(true);
+    appendLog(t("activeSessionSettings"));
+    return;
+  }
+  if (session.running) {
+    appendLog(t("switchSessionBlocked"), "warn");
+    return;
+  }
+  els.sessionNumber.value = String(sessionNumber);
+  saveSessionState();
+  updateSessionDisplay();
+  appendLog(t("selectedSession", { label: `${t("sessionLabel")} ${sessionNumber}` }));
+}
+
+function handleJourneyReviewClick() {
+  openSettingsSection(els.faqSection);
+  appendLog(t("reviewOpened"));
+}
+
 function renderJourney() {
   const current = currentSessionNumber();
   const total = totalSessionCount();
   const items = [];
   if (current > 1) {
-    items.push({ icon: "✓", label: `${t("sessionLabel")} ${current - 1}`, status: t("saved"), state: "done" });
+    items.push({ icon: "✓", label: `${t("sessionLabel")} ${current - 1}`, status: t("saved"), state: "done", sessionNumber: current - 1 });
   }
   items.push({
     icon: session.running ? "▶" : "○",
     label: `${t("sessionLabel")} ${current}`,
     status: session.running ? t("active") : t("next"),
-    state: "active"
+    state: "active",
+    sessionNumber: current
   });
   if (current < total) {
-    items.push({ icon: "◷", label: `${t("sessionLabel")} ${current + 1}`, status: t("upcoming"), state: "upcoming" });
+    items.push({ icon: "◷", label: `${t("sessionLabel")} ${current + 1}`, status: t("upcoming"), state: "upcoming", sessionNumber: current + 1 });
   }
   items.push({ icon: "□", label: t("review"), status: `${total} ${t("sessions")}`, state: "review" });
 
@@ -1108,6 +1142,14 @@ function renderJourney() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `courseItem${item.state === "active" ? " isActive" : ""}`;
+    button.setAttribute("aria-label", item.state === "review" ? t("openReview") : t("selectSession", { label: item.label }));
+    button.addEventListener("click", () => {
+      if (item.state === "review") {
+        handleJourneyReviewClick();
+        return;
+      }
+      handleJourneySessionClick(item.sessionNumber, item.state);
+    });
     const icon = document.createElement("span");
     icon.setAttribute("aria-hidden", "true");
     icon.textContent = item.icon;
