@@ -21,7 +21,11 @@ assert.match(appJs, /google-ai-studio/);
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 assert.match(indexHtml, /id="companionMode"/);
 assert.match(indexHtml, /id="testCompanion"/);
+assert.match(indexHtml, /id="settingsDrawer"/);
+assert.match(indexHtml, /id="sessionDuration"/);
 assert.doesNotMatch(indexHtml, /id="authorRole"/);
+assert.match(appJs, /startSession/);
+assert.match(appJs, /openSettings/);
 
 const companionSystem = defaultCompanionPrompt("Configured Companion");
 assert.match(companionSystem, /Configured Companion/);

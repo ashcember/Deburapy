@@ -3,6 +3,17 @@ const roomId = "default";
 const els = {
   locale: document.querySelector("#locale"),
   tagline: document.querySelector("#tagline"),
+  openSettings: document.querySelector("#openSettings"),
+  closeSettings: document.querySelector("#closeSettings"),
+  settingsBackdrop: document.querySelector("#settingsBackdrop"),
+  settingsDrawer: document.querySelector("#settingsDrawer"),
+  sessionTitle: document.querySelector("#sessionTitle"),
+  sessionNumber: document.querySelector("#sessionNumber"),
+  sessionDuration: document.querySelector("#sessionDuration"),
+  countdown: document.querySelector("#countdown"),
+  sessionState: document.querySelector("#sessionState"),
+  startSession: document.querySelector("#startSession"),
+  endSession: document.querySelector("#endSession"),
   mediatorProvider: document.querySelector("#mediatorProvider"),
   mediatorBaseUrl: document.querySelector("#mediatorBaseUrl"),
   mediatorModel: document.querySelector("#mediatorModel"),
@@ -82,6 +93,12 @@ const status = {
 const lastProvider = {
   mediator: "openai-compatible",
   companion: "openai-compatible"
+};
+
+const session = {
+  running: false,
+  startedAt: null,
+  endsAt: null
 };
 
 function providerControls(target) {
@@ -164,6 +181,28 @@ function saveConfig() {
   appendLog("Settings saved locally.");
 }
 
+function saveSessionState() {
+  localStorage.setItem("deburapy.session", JSON.stringify({
+    running: session.running,
+    startedAt: session.startedAt,
+    endsAt: session.endsAt,
+    sessionNumber: els.sessionNumber.value,
+    durationMinutes: els.sessionDuration.value
+  }));
+}
+
+function loadSessionState() {
+  const saved = JSON.parse(localStorage.getItem("deburapy.session") || "{}");
+  if (saved.sessionNumber) els.sessionNumber.value = saved.sessionNumber;
+  if (saved.durationMinutes) els.sessionDuration.value = saved.durationMinutes;
+  if (saved.running && saved.endsAt && Number(saved.endsAt) > Date.now()) {
+    session.running = true;
+    session.startedAt = Number(saved.startedAt) || Date.now();
+    session.endsAt = Number(saved.endsAt);
+  }
+  updateSessionDisplay();
+}
+
 function loadConfig() {
   const saved = JSON.parse(localStorage.getItem("deburapy.config") || "{}");
   const migrated = saved.mediator ? saved : {
@@ -241,6 +280,75 @@ function setLocale(locale) {
   els.tagline.textContent = copy[locale].tagline;
   els.askCompanion.textContent = copy[locale].askCompanion;
   els.askMediator.textContent = copy[locale].askMediator;
+}
+
+function formatDuration(totalSeconds) {
+  const clamped = Math.max(0, totalSeconds);
+  const minutes = Math.floor(clamped / 60);
+  const seconds = clamped % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function updateSessionDisplay() {
+  const sessionNumber = Number(els.sessionNumber.value || 1);
+  const durationMinutes = Number(els.sessionDuration.value || 60);
+  els.sessionTitle.textContent = `Session ${sessionNumber}`;
+
+  if (session.running && session.endsAt) {
+    const remainingSeconds = Math.ceil((session.endsAt - Date.now()) / 1000);
+    if (remainingSeconds <= 0) {
+      session.running = false;
+      session.endsAt = null;
+      session.startedAt = null;
+      els.countdown.textContent = "00:00";
+      els.sessionState.textContent = "Ended";
+      saveSessionState();
+      return;
+    }
+    els.countdown.textContent = formatDuration(remainingSeconds);
+    els.sessionState.textContent = "In session";
+    return;
+  }
+
+  els.countdown.textContent = formatDuration(durationMinutes * 60);
+  els.sessionState.textContent = "Not started";
+}
+
+function startSession() {
+  const durationMinutes = Number(els.sessionDuration.value || 60);
+  session.running = true;
+  session.startedAt = Date.now();
+  session.endsAt = session.startedAt + durationMinutes * 60 * 1000;
+  saveSessionState();
+  updateSessionDisplay();
+  appendLog(`Started session ${els.sessionNumber.value} for ${durationMinutes} minutes.`);
+}
+
+function endSession() {
+  session.running = false;
+  session.startedAt = null;
+  session.endsAt = null;
+  saveSessionState();
+  updateSessionDisplay();
+  appendLog(`Ended session ${els.sessionNumber.value}.`);
+}
+
+function openSettings() {
+  els.settingsBackdrop.hidden = false;
+  els.settingsDrawer.hidden = false;
+  requestAnimationFrame(() => {
+    els.settingsBackdrop.classList.add("isOpen");
+    els.settingsDrawer.classList.add("isOpen");
+  });
+}
+
+function closeSettings() {
+  els.settingsBackdrop.classList.remove("isOpen");
+  els.settingsDrawer.classList.remove("isOpen");
+  window.setTimeout(() => {
+    els.settingsBackdrop.hidden = true;
+    els.settingsDrawer.hidden = true;
+  }, 180);
 }
 
 function appendLog(message, level = "info") {
@@ -367,6 +475,19 @@ async function readCompanionFiles() {
 }
 
 els.locale.addEventListener("change", () => setLocale(els.locale.value));
+els.openSettings.addEventListener("click", openSettings);
+els.closeSettings.addEventListener("click", closeSettings);
+els.settingsBackdrop.addEventListener("click", closeSettings);
+els.sessionNumber.addEventListener("change", () => {
+  saveSessionState();
+  updateSessionDisplay();
+});
+els.sessionDuration.addEventListener("change", () => {
+  if (!session.running) updateSessionDisplay();
+  saveSessionState();
+});
+els.startSession.addEventListener("click", startSession);
+els.endSession.addEventListener("click", endSession);
 els.mediatorProvider.addEventListener("change", () => applyProviderDefaults("mediator"));
 els.companionProvider.addEventListener("change", () => applyProviderDefaults("companion"));
 els.saveConfig.addEventListener("click", saveConfig);
@@ -425,6 +546,7 @@ els.askMediator.addEventListener("click", () => {
 });
 
 loadConfig();
+loadSessionState();
 applyProviderDefaults("mediator");
 applyProviderDefaults("companion");
 setLocale(els.locale.value);
@@ -433,3 +555,4 @@ setStatus("companion", "idle", "Not tested.");
 appendLog("Deburapy loaded. Test both connections before running a room.");
 await loadMediatorPrompt();
 await refreshRoom();
+window.setInterval(updateSessionDisplay, 1000);

@@ -8,51 +8,78 @@
   </head>
   <body>
     <header class="topbar">
-      <div>
+      <div class="brandBlock">
         <h1>Deburapy</h1>
         <p id="tagline">Not therapy, not debugging. Deburapy for AI-human relationships.</p>
       </div>
-      <select id="locale">
-        <option value="en">English</option>
-        <option value="zh-Hans">简中</option>
-      </select>
+
+      <div class="topActions">
+        <article class="statusChip" id="mediatorCard">
+          <span class="statusDot" id="mediatorDot"></span>
+          <div>
+            <strong>Deburapy</strong>
+            <p id="mediatorStatus">Not tested</p>
+          </div>
+          <button id="testMediator" type="button">Test</button>
+        </article>
+        <article class="statusChip" id="companionCard">
+          <span class="statusDot" id="companionDot"></span>
+          <div>
+            <strong>Companion</strong>
+            <p id="companionStatus">Not tested</p>
+          </div>
+          <button id="testCompanion" type="button">Test</button>
+        </article>
+        <button id="openSettings" type="button" class="iconButton" title="Settings" aria-label="Settings">Settings</button>
+      </div>
     </header>
 
-    <main class="layout">
-      <section class="panel statusPanel">
-        <h2>Connections</h2>
-
-        <article class="connectionCard" id="mediatorCard">
-          <div class="connectionTitle">
-            <span class="statusDot" id="mediatorDot"></span>
-            <strong>Deburapy mediator</strong>
+    <main class="appShell">
+      <aside class="sessionRail">
+        <section>
+          <h2>Session</h2>
+          <div class="sessionHero">
+            <span id="sessionTitle">Session 1</span>
+            <strong id="countdown">60:00</strong>
+            <p id="sessionState">Not started</p>
           </div>
-          <p id="mediatorStatus">Not tested.</p>
-          <button id="testMediator">Test mediator</button>
-        </article>
-
-        <article class="connectionCard" id="companionCard">
-          <div class="connectionTitle">
-            <span class="statusDot" id="companionDot"></span>
-            <strong>AI companion</strong>
+          <label>
+            Session number
+            <input id="sessionNumber" type="number" min="1" value="1">
+          </label>
+          <label>
+            Duration
+            <select id="sessionDuration">
+              <option value="60">60 minutes</option>
+              <option value="90">90 minutes</option>
+            </select>
+          </label>
+          <div class="sessionButtons">
+            <button id="startSession" type="button">Start</button>
+            <button id="endSession" type="button" class="secondary">End</button>
           </div>
-          <p id="companionStatus">Not tested.</p>
-          <button id="testCompanion">Test companion</button>
-        </article>
+        </section>
 
-        <h2>Diagnostics</h2>
-        <div id="diagnostics" class="diagnostics"></div>
-      </section>
+        <section>
+          <h2>Course</h2>
+          <div class="courseList">
+            <button type="button" class="courseItem isActive">Session 1</button>
+            <button type="button" class="courseItem">Session 2</button>
+            <button type="button" class="courseItem">Session 3</button>
+            <button type="button" class="courseItem">Review</button>
+          </div>
+        </section>
+      </aside>
 
       <section class="room">
         <div class="roomHeader">
           <div>
             <h2>Deburapy Room</h2>
-            <p class="roomHint">Human messages enter here. The AI companion and mediator respond through their configured connections.</p>
+            <p class="roomHint">Human message stream</p>
           </div>
           <div class="roomActions">
-            <button id="askCompanion">Ask AI companion</button>
-            <button id="askMediator">Ask Deburapy</button>
+            <button id="askCompanion" type="button">Ask AI companion</button>
+            <button id="askMediator" type="button">Ask Deburapy</button>
           </div>
         </div>
         <div id="messages" class="messages"></div>
@@ -61,8 +88,19 @@
           <button>Send</button>
         </form>
       </section>
+    </main>
 
-      <section class="panel setupPanel">
+    <div id="settingsBackdrop" class="settingsBackdrop" hidden></div>
+    <aside id="settingsDrawer" class="settingsDrawer" aria-label="Settings" hidden>
+      <div class="settingsHeader">
+        <div>
+          <h2>Settings</h2>
+          <p>Connection, prompt, and diagnostics</p>
+        </div>
+        <button id="closeSettings" type="button" class="secondary">Close</button>
+      </div>
+
+      <section class="settingsSection">
         <h2>Mediator</h2>
         <label>
           Provider
@@ -94,7 +132,9 @@
           <summary>Mediator system prompt</summary>
           <textarea id="mediatorPrompt" spellcheck="false"></textarea>
         </details>
+      </section>
 
+      <section class="settingsSection">
         <h2>AI Companion</h2>
         <label>
           Connection mode
@@ -143,12 +183,21 @@
         </label>
         <textarea id="companionDocs" spellcheck="false" placeholder="Paste or upload markdown notes that describe the AI companion."></textarea>
       </section>
-    </main>
+
+      <section class="settingsSection">
+        <h2>Diagnostics</h2>
+        <div id="diagnostics" class="diagnostics"></div>
+      </section>
+    </aside>
 
     <footer class="footer">
       <span>AGPL-3.0-only</span>
       <a href="https://github.com/ashcember/Deburapy" rel="noreferrer">Source</a>
       <span>No warranty</span>
+      <select id="locale">
+        <option value="en">English</option>
+        <option value="zh-Hans">简中</option>
+      </select>
     </footer>
 
     <script type="module" src="/app.js"></script>

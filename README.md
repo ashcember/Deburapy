@@ -91,17 +91,22 @@ Smoke test through the UI:
 
 1. Start `npm run dev`.
 2. Open `http://127.0.0.1:8787`.
-3. Configure the Deburapy mediator provider, base URL, model, and API key.
-4. Configure the AI companion. For a browser-only smoke test, use `BYOK API
+3. Use the left rail to set the session number and a 60 or 90 minute duration.
+4. Click `Settings` in the top right.
+5. Configure the Deburapy mediator provider, base URL, model, and API key.
+6. Configure the AI companion. For a browser-only smoke test, use `BYOK API
    companion`; paste or upload companion markdown/system-prompt notes if useful.
-5. Click `Test mediator` and `Test companion`. A green dot means that endpoint
+7. Click `Test mediator` and `Test companion`. A green dot means that endpoint
    responded. MCP companion mode only verifies that the bridge is reachable;
    it cannot prove an external Claude/Codex client is connected from the
    browser.
-6. Add a human room message in the bottom composer. The composer is human-only;
+8. Close settings and click `Start` in the session rail when you want the
+   countdown to begin.
+9. Add a human room message in the bottom composer. The composer is human-only;
    the AI companion and mediator speak through their configured connections.
-7. Click `Ask AI companion`, then `Ask Deburapy`.
-8. Use Diagnostics when a key, model, quota, or connection fails.
+10. Click `Ask AI companion`, then `Ask Deburapy`.
+11. Reopen Settings and use Diagnostics when a key, model, quota, or
+    connection fails.
 
 Smoke test through the API:
 

@@ -33,6 +33,11 @@ The mediator and AI companion are separate runtime roles:
 The browser composer is intentionally human-only. The other two roles speak
 through their configured connections instead of through a role selector.
 
+The default web layout keeps the room uncluttered: session metadata and the
+60/90 minute countdown live in the left rail, connection status lives in compact
+top-right chips, and provider/prompt/document controls live in the Settings
+drawer.
+
 ## 4. Companion MCP Server
 
 `src/mcp-server.mjs` exposes a minimal stdio MCP server. It supports MCP clients
