@@ -31,6 +31,33 @@ and contributors at a high level.
 15. Click `End`, or let the timer expire, to generate a session note. The note is saved into the local room store automatically. Exporting the note from session settings is optional, mainly for backup or transfer; casual reading is not recommended.
 16. Use `Diagnostics` or `FAQ` in the left rail footer when a key, model, quota, or connection fails.
 
+## Visual Screenshot Check
+
+Start `npm run dev`, then run:
+
+```bash
+npm run visual:check
+```
+
+The script opens the local app with Playwright, captures the consent gate and
+room UI, checks for browser console errors, and verifies that the transcript
+button and status-dot accessibility labels exist. Screenshots are written to
+`.deburapy-artifacts/visual/`, which is ignored by git.
+
+If Playwright is not installed yet:
+
+```bash
+npm install
+npx playwright install chromium
+```
+
+On a local machine that already has a compatible Playwright package elsewhere,
+you can temporarily point the script at it:
+
+```bash
+PLAYWRIGHT_PACKAGE_PATH=/absolute/path/to/node_modules/playwright npm run visual:check
+```
+
 ## API Smoke Check
 
 Add a human message:

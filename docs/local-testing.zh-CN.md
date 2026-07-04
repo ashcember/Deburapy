@@ -25,6 +25,29 @@
 15. 点击 `End`，或让计时结束，以生成 session note。该 note 会自动保存进本地房间 store。session 设置中的导出是可选的，主要用于备份或迁移；不建议把 note 当作日常阅读材料。
 16. 当 key、model、quota 或连接失败时，使用左侧 footer 的 `Diagnostics` 或 `FAQ`。
 
+## 视觉截图检查
+
+先启动 `npm run dev`，然后运行：
+
+```bash
+npm run visual:check
+```
+
+该脚本会用 Playwright 打开本地 app，截取知情同意 gate 和 room UI，检查浏览器 console error，并验证 transcript 按钮和 status dot 的 accessibility label 存在。截图会写入 `.deburapy-artifacts/visual/`，该目录已被 git 忽略。
+
+如果还没有安装 Playwright：
+
+```bash
+npm install
+npx playwright install chromium
+```
+
+如果本机其他项目已经有兼容的 Playwright package，也可以临时指过去：
+
+```bash
+PLAYWRIGHT_PACKAGE_PATH=/absolute/path/to/node_modules/playwright npm run visual:check
+```
+
 ## API 冒烟检查
 
 先写入一条人类消息：

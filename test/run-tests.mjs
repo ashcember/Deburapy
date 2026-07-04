@@ -34,6 +34,8 @@ const artifactWriterSkill = await readFile(new URL("../skills/artifact-writers/r
 const prompt = await readFile(new URL("../prompts/deburapy-mediator.system.md", import.meta.url), "utf8");
 const indexHtml = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 const appJs = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+const visualCheck = await readFile(new URL("../scripts/visual-check.mjs", import.meta.url), "utf8");
+const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const zhDocs = await Promise.all([
   "../docs/architecture.zh-CN.md",
   "../docs/session-architecture.zh-CN.md",
@@ -64,11 +66,21 @@ assert.match(readmeZh, /Deburapy 人机关系协调员/);
 assert.match(readmeZh, /知情同意/);
 assert.match(readmeZh, /本地优先/);
 assert.match(localTesting, /## UI Smoke Check/);
+assert.match(localTesting, /## Visual Screenshot Check/);
+assert.match(localTesting, /npm run visual:check/);
 assert.match(localTesting, /## API Smoke Check/);
 assert.match(localTesting, /## MCP Check/);
 assert.match(localTestingZh, /## UI 冒烟检查/);
+assert.match(localTestingZh, /## 视觉截图检查/);
+assert.match(localTestingZh, /npm run visual:check/);
 assert.match(localTestingZh, /## API 冒烟检查/);
 assert.match(localTestingZh, /## MCP 检查/);
+assert.equal(packageJson.scripts["visual:check"], "node scripts/visual-check.mjs");
+assert.equal(packageJson.devDependencies.playwright, "1.60.0");
+assert.match(visualCheck, /PLAYWRIGHT_PACKAGE_PATH/);
+assert.match(visualCheck, /deburapy\.onboarding\.v1/);
+assert.match(visualCheck, /downloadTranscript/);
+assert.match(visualCheck, /mediatorDotLabel/);
 for (const envName of [
   "DEBURAPY_HOST",
   "DEBURAPY_PORT",
