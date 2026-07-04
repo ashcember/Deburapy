@@ -105,3 +105,7 @@ npm test
 
 The tests verify that the public mediator prompt stays generic and that the
 provider payload builder keeps API keys out of request bodies.
+
+## License
+
+AGPL-3.0-only. See [LICENSE](./LICENSE).
