@@ -52,7 +52,8 @@ const els = {
   messageForm: document.querySelector("#messageForm"),
   messageInput: document.querySelector("#messageInput"),
   askCompanion: document.querySelector("#askCompanion"),
-  askMediator: document.querySelector("#askMediator")
+  askMediator: document.querySelector("#askMediator"),
+  mediatorPersona: document.querySelector("#mediatorPersona")
 };
 
 const copy = {
@@ -105,6 +106,8 @@ const lastProvider = {
   companion: "openai-compatible"
 };
 
+let mediatorPersonaCards = new Map();
+
 const session = {
   running: false,
   startedAt: null,
@@ -156,6 +159,7 @@ function fullConfig() {
   return {
     mediator: {
       ...modelConfig("mediator"),
+      personaId: els.mediatorPersona.value,
       rememberApiKey: els.rememberMediatorApiKey.checked,
       systemPrompt: els.mediatorPrompt.value
     },
@@ -209,6 +213,7 @@ function saveConfig() {
       provider: current.mediator.provider,
       baseUrl: current.mediator.baseUrl,
       model: current.mediator.model,
+      personaId: current.mediator.personaId,
       rememberApiKey: Boolean(shouldSaveMediatorKey),
       systemPrompt: current.mediator.systemPrompt
     },
@@ -285,6 +290,7 @@ function loadConfig() {
   loadTargetConfig("mediator", migrated.mediator || {});
   loadTargetConfig("companion", migrated.companion || {});
 
+  els.mediatorPersona.value = migrated.mediator?.personaId || (migrated.mediator?.systemPrompt ? "custom" : "core");
   els.companionMode.value = migrated.companion?.mode || "api";
   els.companionName.value = migrated.companion?.name || "AI Companion";
   els.companionPrompt.value = migrated.companion?.systemPrompt || defaultCompanionPrompt;
@@ -302,6 +308,9 @@ function loadTargetConfig(target, saved = {}) {
   }
   if (saved.rememberApiKey === true && saved.apiKey) {
     els[`${target}ApiKey`].value = saved.apiKey;
+  }
+  if (target === "mediator" && saved.systemPrompt) {
+    els.mediatorPrompt.value = saved.systemPrompt;
   }
 }
 
@@ -422,9 +431,62 @@ function syncTurnFromRoom(room) {
   }
 }
 
-async function loadMediatorPrompt() {
-  const payload = await json("/api/prompts/mediator");
-  if (!els.mediatorPrompt.value.trim()) els.mediatorPrompt.value = payload.systemPrompt;
+function normalizePrompt(value) {
+  return String(value || "").trim();
+}
+
+function mediatorPersonaMatch(prompt) {
+  const normalized = normalizePrompt(prompt);
+  if (!normalized) return null;
+  for (const [personaId, persona] of mediatorPersonaCards.entries()) {
+    if (normalizePrompt(persona.systemPrompt) === normalized) return personaId;
+  }
+  return null;
+}
+
+function populateMediatorPersonaSelect(personas) {
+  const requestedPersona = els.mediatorPersona.value || "core";
+  els.mediatorPersona.innerHTML = "";
+  for (const persona of personas) {
+    const option = document.createElement("option");
+    option.value = persona.id;
+    option.textContent = persona.name;
+    option.title = persona.description;
+    els.mediatorPersona.append(option);
+  }
+  const customOption = document.createElement("option");
+  customOption.value = "custom";
+  customOption.textContent = "Custom prompt";
+  els.mediatorPersona.append(customOption);
+  els.mediatorPersona.value =
+    requestedPersona === "custom" || mediatorPersonaCards.has(requestedPersona)
+      ? requestedPersona
+      : "core";
+}
+
+function syncMediatorPersonaFromPrompt() {
+  const matchedPersona = mediatorPersonaMatch(els.mediatorPrompt.value);
+  els.mediatorPersona.value = matchedPersona || "custom";
+}
+
+function applyMediatorPersona(personaId, { silent = false } = {}) {
+  if (personaId === "custom") return;
+  const persona = mediatorPersonaCards.get(personaId);
+  if (!persona) return;
+  els.mediatorPrompt.value = persona.systemPrompt;
+  if (!silent) appendLog(`Mediator persona set to ${persona.name}.`);
+}
+
+async function loadMediatorPersonas() {
+  const payload = await json("/api/prompts/mediator-personas");
+  mediatorPersonaCards = new Map(payload.personas.map((persona) => [persona.id, persona]));
+  populateMediatorPersonaSelect(payload.personas);
+  if (normalizePrompt(els.mediatorPrompt.value)) {
+    syncMediatorPersonaFromPrompt();
+    return;
+  }
+  const personaId = els.mediatorPersona.value === "custom" ? "core" : els.mediatorPersona.value;
+  applyMediatorPersona(personaId, { silent: true });
 }
 
 function setLocale(locale) {
@@ -890,6 +952,16 @@ els.askMediator.addEventListener("click", () => {
   saveConfig();
   runAction(els.askMediator, copy[els.locale.value].mediatorBusy, askMediator);
 });
+els.mediatorPersona.addEventListener("change", () => {
+  if (els.mediatorPersona.value === "custom") {
+    appendLog("Mediator prompt is custom.");
+    saveConfig();
+    return;
+  }
+  applyMediatorPersona(els.mediatorPersona.value);
+  saveConfig();
+});
+els.mediatorPrompt.addEventListener("input", syncMediatorPersonaFromPrompt);
 
 loadConfig();
 loadSessionState();
@@ -906,6 +978,6 @@ window.setInterval(() => {
     refreshRoom().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
   }
 }, 4000);
-loadMediatorPrompt().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
+loadMediatorPersonas().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 refreshRoom().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 loadSessionNotes().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));

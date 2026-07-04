@@ -11,7 +11,9 @@ import {
   buildSessionNotePrompt,
   buildMediatorUserPrompt,
   buildCompanionUserPrompt,
-  defaultCompanionPrompt
+  defaultCompanionPrompt,
+  loadMediatorPrompt,
+  loadMediatorPersonas
 } from "../src/core/prompt.mjs";
 import { DeburapyStore } from "../src/core/store.mjs";
 
@@ -37,10 +39,15 @@ assert.match(appJs, /\/session\/end/);
 assert.match(appJs, /\/session\/wrap-up/);
 assert.match(appJs, /session-notes\/\$\{session\.noteId\}\/download/);
 assert.match(appJs, /Session note saved locally/);
+assert.match(appJs, /mediatorPersona:\s*document\.querySelector\("#mediatorPersona"\)/);
+assert.match(appJs, /\/api\/prompts\/mediator-personas/);
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 assert.match(indexHtml, /id="companionMode"/);
 assert.match(indexHtml, /id="testCompanion"/);
 assert.match(indexHtml, /id="settingsDrawer"/);
+assert.match(indexHtml, /id="mediatorPersona"/);
+assert.match(indexHtml, />Elias</);
+assert.match(indexHtml, />Mara</);
 assert.match(indexHtml, /id="sessionDuration"/);
 assert.match(indexHtml, /id="sessionNoteStatus"/);
 assert.match(indexHtml, /id="downloadSessionNote"/);
@@ -53,6 +60,7 @@ assert.doesNotMatch(indexHtml, /id="authorRole"/);
 const serverJs = await readFile(new URL("../src/server.mjs", import.meta.url), "utf8");
 assert.match(serverJs, /cache-control/);
 assert.match(serverJs, /no-store/);
+assert.match(serverJs, /mediator-personas/);
 assert.match(appJs, /startSession/);
 assert.match(appJs, /openSettings/);
 assert.match(appJs, /updateCompanionMode/);
@@ -77,6 +85,24 @@ const mediatorUserPrompt = buildMediatorUserPrompt({ messages: [] });
 assert.match(mediatorUserPrompt, /Next speaker: human/);
 assert.match(mediatorUserPrompt, /Next speaker: companion/);
 assert.match(mediatorUserPrompt, /Session timing context/);
+
+const personas = await loadMediatorPersonas();
+assert.equal(personas.some((persona) => persona.id === "elias"), true);
+assert.equal(personas.some((persona) => persona.id === "mara"), true);
+assert.match(personas.find((persona) => persona.id === "elias").systemPrompt, /You are Elias/);
+assert.match(personas.find((persona) => persona.id === "mara").systemPrompt, /You are Mara/);
+assert.match(await loadMediatorPrompt("mara"), /emotionally precise/);
+const forbiddenPrototypeNames = [
+  "A" + "sh",
+  "As" + "try",
+  "Hu" + "sband",
+  "Pi" + "erce",
+  "therapy" + "-room"
+];
+const forbiddenPrototypeNamePattern = new RegExp(forbiddenPrototypeNames.join("|"));
+for (const persona of personas) {
+  assert.doesNotMatch(persona.systemPrompt, forbiddenPrototypeNamePattern);
+}
 
 const now = new Date("2026-07-04T10:55:00.000Z");
 const clockBlock = buildSessionClockBlock({

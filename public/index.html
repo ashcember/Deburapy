@@ -112,6 +112,15 @@
       <section class="settingsSection">
         <h2>Mediator</h2>
         <label>
+          Persona
+          <select id="mediatorPersona">
+            <option value="core">Deburapy Core</option>
+            <option value="elias">Elias</option>
+            <option value="mara">Mara</option>
+            <option value="custom">Custom prompt</option>
+          </select>
+        </label>
+        <label>
           Provider
           <select id="mediatorProvider" data-provider-select>
             <option value="openai-compatible">OpenAI-compatible</option>
@@ -224,6 +233,6 @@
       </select>
     </footer>
 
-    <script type="module" src="/app.js?v=2026-07-04-session-notes"></script>
+    <script type="module" src="/app.js?v=2026-07-04-personas"></script>
   </body>
 </html>

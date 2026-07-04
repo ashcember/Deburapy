@@ -6,6 +6,7 @@ import { DeburapyStore } from "./core/store.mjs";
 import { loadEnvFile } from "./core/env.mjs";
 import {
   loadMediatorPrompt,
+  loadMediatorPersonas,
   buildMediatorUserPrompt,
   defaultCompanionPrompt,
   buildCompanionUserPrompt,
@@ -194,7 +195,12 @@ async function handleApi(req, res) {
   }
 
   if (req.method === "GET" && url.pathname === "/api/prompts/mediator") {
-    return sendJson(res, 200, { systemPrompt: await loadMediatorPrompt() });
+    const personaId = url.searchParams.get("persona") || "core";
+    return sendJson(res, 200, { personaId, systemPrompt: await loadMediatorPrompt(personaId) });
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/prompts/mediator-personas") {
+    return sendJson(res, 200, { personas: await loadMediatorPersonas() });
   }
 
   if (req.method === "POST" && url.pathname === "/api/debug/client-event") {

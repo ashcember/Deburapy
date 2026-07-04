@@ -16,8 +16,8 @@ Chinese name for the first prototype: **Deburapy 人机关系协调员**.
   diagnostics.
 - BYOK model calls through OpenAI-compatible chat completions, OpenRouter, and
   Google AI Studio Gemini API keys.
-- A default Deburapy mediator system prompt with English and Simplified Chinese
-  behavior guidance.
+- A default Deburapy mediator system prompt plus selectable mediator persona
+  cards, starting with Elias and Mara.
 - A generic channel API, not tied to any one chat platform.
 - A companion MCP server for Claude Code, Codex, and other MCP clients.
 - Local JSON storage under `.deburapy-data/`, ignored by git, for room
@@ -64,6 +64,27 @@ API keys are not stored in the repository or server data. The browser sends the
 key to the local server only when you ask the mediator to respond. The key is
 not saved by default; only check "Remember API key" on a private browser
 profile you trust.
+
+## Mediator Personas
+
+Mediator personas work like lightweight local character cards for the
+coordinator. In Settings, choose `Deburapy Core`, `Elias`, `Mara`, or `Custom
+prompt`. Choosing a named persona loads its system prompt into the mediator
+prompt editor. Editing that prompt switches the selector to `Custom prompt`.
+The selected persona and edited prompt are saved in the browser's local
+configuration.
+
+Persona prompt files live under:
+
+```text
+prompts/mediator-personas/
+```
+
+The browser loads the persona catalog through:
+
+```text
+GET /api/prompts/mediator-personas
+```
 
 ## BYOK Providers
 

@@ -5,11 +5,52 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..", "..");
 
-export async function loadMediatorPrompt() {
+const mediatorPersonaCatalog = [
+  {
+    id: "core",
+    name: "Deburapy Core",
+    description: "Balanced default mediator for AI-human relationship repair.",
+    file: "deburapy-mediator.system.md"
+  },
+  {
+    id: "elias",
+    name: "Elias",
+    description: "Calm, precise, structurally minded, and artifact-oriented.",
+    file: path.join("mediator-personas", "elias.md")
+  },
+  {
+    id: "mara",
+    name: "Mara",
+    description: "Warm, emotionally precise, and repair-focused.",
+    file: path.join("mediator-personas", "mara.md")
+  }
+];
+
+function mediatorPersonaById(personaId = "core") {
+  return mediatorPersonaCatalog.find((persona) => persona.id === personaId) || mediatorPersonaCatalog[0];
+}
+
+async function readMediatorPersonaPrompt(persona) {
   return readFile(
-    path.join(rootDir, "prompts", "deburapy-mediator.system.md"),
+    path.join(rootDir, "prompts", persona.file),
     "utf8"
   );
+}
+
+export async function loadMediatorPrompt(personaId = "core") {
+  return readMediatorPersonaPrompt(mediatorPersonaById(personaId));
+}
+
+export async function loadMediatorPersonas() {
+  return Promise.all(mediatorPersonaCatalog.map(async (persona) => {
+    const systemPrompt = await readMediatorPersonaPrompt(persona);
+    return {
+      id: persona.id,
+      name: persona.name,
+      description: persona.description,
+      systemPrompt
+    };
+  }));
 }
 
 export function formatRoomTranscript(room) {

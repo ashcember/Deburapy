@@ -31,6 +31,9 @@ The mediator and AI companion are separate runtime roles:
   and writes an AI companion message.
 - `/api/companion/mcp-request` queues the current room context for an external
   MCP companion without requiring a BYOK API key.
+- `/api/prompts/mediator-personas` returns selectable local mediator persona
+  cards. The MVP ships `Deburapy Core`, `Elias`, and `Mara`; editing the prompt
+  in the browser turns the selection into a custom local card.
 - `/api/connections/test` is the browser-facing diagnostics path for model
   reachability checks.
 - `/api/rooms/:roomId/session/start` stores server-side session start/end
