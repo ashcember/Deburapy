@@ -158,6 +158,10 @@ const copy = {
     test: "Test",
     localFirst: "Local-first",
     sendMessage: "Send message",
+    promptSystemConstraint: "System Constraint?",
+    promptEmotionalImpact: "Emotional Impact",
+    promptProposeRepair: "Propose Repair",
+    language: "Language",
     settings: "Settings",
     settingsSubtitle: "Connection, prompt, and diagnostics",
     close: "Close",
@@ -302,6 +306,7 @@ const copy = {
     ariaCurrentSession: "Current session",
     ariaSessionNote: "Session note",
     ariaManualTurnControls: "Manual turn controls",
+    ariaSuggestedPrompts: "Suggested prompts",
     openSessionPanel: "Open session panel",
     closeSessionPanel: "Close session panel"
   },
@@ -368,6 +373,10 @@ const copy = {
     test: "测试",
     localFirst: "本地优先",
     sendMessage: "发送消息",
+    promptSystemConstraint: "系统限制？",
+    promptEmotionalImpact: "情绪影响",
+    promptProposeRepair: "提出修复",
+    language: "语言",
     settings: "设置",
     settingsSubtitle: "连接、提示词与诊断",
     close: "关闭",
@@ -512,6 +521,7 @@ const copy = {
     ariaCurrentSession: "当前 session",
     ariaSessionNote: "Session note",
     ariaManualTurnControls: "手动回合控制",
+    ariaSuggestedPrompts: "建议提示",
     openSessionPanel: "打开 session 面板",
     closeSessionPanel: "关闭 session 面板"
   }
@@ -1206,7 +1216,9 @@ async function loadMediatorPersonas() {
 
 function setLocale(locale) {
   if (!copy[locale]) locale = "en";
-  els.locale.value = locale;
+  document.querySelectorAll(".localeControl").forEach((control) => {
+    control.value = locale;
+  });
   applyStaticTranslations(locale);
   updateThemeButton();
   updateSessionDisplay();
@@ -1298,7 +1310,7 @@ function renderJourney() {
   for (const item of items) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `courseItem${item.state === "active" ? " isActive" : ""}`;
+    button.className = `courseItem courseItem--${item.state}${item.state === "active" ? " isActive" : ""}`;
     button.setAttribute("aria-label", item.state === "review" ? t("openReview") : t("selectSession", { label: item.label }));
     button.addEventListener("click", () => {
       if (item.state === "review") {
@@ -1798,9 +1810,11 @@ async function readCompanionFiles() {
   appendLog(t("loadedDocs", { count: els.companionFiles.files.length }));
 }
 
-els.locale.addEventListener("change", () => {
-  saveLocalePreference(els.locale.value);
-  setLocale(els.locale.value);
+document.querySelectorAll(".localeControl").forEach((control) => {
+  control.addEventListener("change", () => {
+    saveLocalePreference(control.value);
+    setLocale(control.value);
+  });
 });
 els.consentForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -1906,6 +1920,21 @@ els.messageForm.addEventListener("submit", async (event) => {
     setTurnPhase("companion", { silent: true });
     await refreshRoom();
     await askCompanion();
+  });
+});
+
+document.querySelectorAll(".promptChip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    if (els.messageInput.disabled) return;
+    const labelNode = chip.querySelector("[data-i18n]");
+    const label = (labelNode ? labelNode.textContent : "").trim();
+    if (!label) return;
+    const existing = els.messageInput.value;
+    const prefix = existing && !existing.endsWith("\n") ? `${existing}\n` : existing;
+    els.messageInput.value = `${prefix}${label}: `;
+    els.messageInput.focus();
+    const end = els.messageInput.value.length;
+    els.messageInput.setSelectionRange(end, end);
   });
 });
 

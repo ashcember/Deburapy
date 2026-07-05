@@ -96,6 +96,13 @@
 
     <div id="consentGate" class="consentGate" hidden>
       <main class="consentDialog" role="dialog" aria-modal="true" aria-labelledby="consentTitle">
+        <div class="localeSwitch localeSwitch--consent" title="Language">
+          <span class="localeSwitchIcon" aria-hidden="true">🌐</span>
+          <select id="localeConsent" class="localeControl" aria-label="Language" data-i18n-aria-label="language">
+            <option value="en">EN</option>
+            <option value="zh-Hans">简</option>
+          </select>
+        </div>
         <section class="consentMain" aria-label="Informed consent" data-i18n-aria-label="ariaInformedConsent">
           <header class="consentHero">
             <div class="consentBrand">
@@ -341,6 +348,13 @@
               </div>
               <button id="testCompanion" type="button" data-i18n="test">Test</button>
             </article>
+            <div class="localeSwitch" title="Language">
+              <span class="localeSwitchIcon" aria-hidden="true">🌐</span>
+              <select id="locale" class="localeControl" aria-label="Language" data-i18n-aria-label="language">
+                <option value="en">EN</option>
+                <option value="zh-Hans">简</option>
+              </select>
+            </div>
             <button id="themeToggle" type="button" class="iconButton themeToggle" title="Switch to dark mode" aria-label="Switch to dark mode">
               <span class="icon themeIcon themeIcon--sun" aria-hidden="true"><svg><use href="#icon-sun"></use></svg></span>
               <span class="icon themeIcon themeIcon--moon" aria-hidden="true"><svg><use href="#icon-moon"></use></svg></span>
@@ -360,6 +374,21 @@
           </div>
 
           <div id="messages" class="messages"></div>
+
+          <div class="composerPrompts" aria-label="Suggested prompts" data-i18n-aria-label="ariaSuggestedPrompts">
+            <button type="button" class="promptChip" data-prompt-insert="systemConstraint">
+              <span class="promptChipIcon" aria-hidden="true">⚡</span>
+              <span data-i18n="promptSystemConstraint">System Constraint?</span>
+            </button>
+            <button type="button" class="promptChip" data-prompt-insert="emotionalImpact">
+              <span class="promptChipIcon" aria-hidden="true">♡</span>
+              <span data-i18n="promptEmotionalImpact">Emotional Impact</span>
+            </button>
+            <button type="button" class="promptChip" data-prompt-insert="proposeRepair">
+              <span class="promptChipIcon" aria-hidden="true">✎</span>
+              <span data-i18n="promptProposeRepair">Propose Repair</span>
+            </button>
+          </div>
 
           <div class="manualTurnControls" aria-label="Manual turn controls" data-i18n-aria-label="ariaManualTurnControls">
             <button id="askCompanion" type="button" class="secondary">Send to AI companion</button>
@@ -568,10 +597,6 @@
       <span>AGPL-3.0-only</span>
       <a href="https://github.com/ashcember/Deburapy" rel="noreferrer" data-i18n="source">Source</a>
       <span data-i18n="noWarranty">No warranty</span>
-      <select id="locale">
-        <option value="en">English</option>
-        <option value="zh-Hans">简中</option>
-      </select>
     </footer>
 
     <script type="module" src="/app.js?v=2026-07-05-public-readiness"></script>

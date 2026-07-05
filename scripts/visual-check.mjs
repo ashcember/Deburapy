@@ -30,6 +30,25 @@ function assertCondition(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+async function consentSignatureVisibility(page) {
+  return page.evaluate(() => {
+    const dialog = document.querySelector(".consentDialog")?.getBoundingClientRect();
+    const input = document.querySelector("#consentSignature")?.getBoundingClientRect();
+    const button = document.querySelector("#consentConfirm")?.getBoundingClientRect();
+    const status = document.querySelector("#consentStatus")?.getBoundingClientRect();
+    if (!dialog || !input || !button || !status) {
+      return { visible: false, reason: "missing consent signature elements" };
+    }
+    return {
+      visible: input.bottom <= dialog.bottom && button.bottom <= dialog.bottom && status.bottom <= dialog.bottom,
+      dialogBottom: Math.round(dialog.bottom),
+      inputBottom: Math.round(input.bottom),
+      buttonBottom: Math.round(button.bottom),
+      statusBottom: Math.round(status.bottom)
+    };
+  });
+}
+
 fs.mkdirSync(outputDir, { recursive: true });
 
 const { chromium } = loadPlaywright();
@@ -42,6 +61,12 @@ page.on("console", (message) => {
 
 await page.goto(baseUrl, { waitUntil: "networkidle" });
 await page.screenshot({ path: path.join(outputDir, "consent.png"), fullPage: false });
+const consentDesktop = await consentSignatureVisibility(page);
+await page.setViewportSize({ width: 1440, height: 800 });
+await page.reload({ waitUntil: "networkidle" });
+const consentCompact = await consentSignatureVisibility(page);
+await page.screenshot({ path: path.join(outputDir, "consent-compact.png"), fullPage: false });
+await page.setViewportSize({ width: 1440, height: 1000 });
 
 await page.evaluate(() => {
   localStorage.setItem("deburapy.locale", "en");
@@ -144,6 +169,8 @@ await page.screenshot({ path: path.join(outputDir, "room-mobile-session.png"), f
 await browser.close();
 
 assertCondition(ui.title === "Deburapy", "Page title did not load.");
+assertCondition(consentDesktop.visible === true, `Consent signature is clipped on desktop: ${JSON.stringify(consentDesktop)}`);
+assertCondition(consentCompact.visible === true, `Consent signature is clipped on compact desktop: ${JSON.stringify(consentCompact)}`);
 assertCondition(ui.consentHidden === true, "Consent bypass did not reveal the room UI.");
 assertCondition(ui.themeToggle === true, "Theme toggle is missing.");
 assertCondition(ui.theme === "light", "Initial theme should be light.");
@@ -179,6 +206,8 @@ console.log(JSON.stringify({
   ok: true,
   baseUrl,
   outputDir,
+  consentDesktop,
+  consentCompact,
   ui,
   darkTheme,
   settingsStorage,
@@ -187,6 +216,7 @@ console.log(JSON.stringify({
   mobileAfter,
   screenshots: [
     path.join(outputDir, "consent.png"),
+    path.join(outputDir, "consent-compact.png"),
     path.join(outputDir, "room.png"),
     path.join(outputDir, "room-dark.png"),
     path.join(outputDir, "settings-local-storage.png"),
