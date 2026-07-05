@@ -2,6 +2,28 @@
 
 [简体中文](./mcp-clients.zh-CN.md)
 
+## Ask Your AI To Install
+
+For non-technical users, the simplest install path is to paste the repository
+URL into an AI they trust to help read setup instructions and work with their
+local computer:
+
+```text
+https://github.com/ashcember/Deburapy
+```
+
+Ask the AI to install and run the repo locally, then follow this MCP guide if
+the AI companion should connect through Deburapy. The AI should:
+
+- avoid requesting API keys, secrets, private logs, hidden chain-of-thought, or
+  unredacted relationship data
+- verify Node.js 20 or newer
+- keep Deburapy running locally
+- register the stdio MCP server
+- verify the Deburapy MCP tools
+- use `deburapy_get_pending_channel_pushes`,
+  `deburapy_get_room_context`, and `deburapy_send_channel_reply`
+
 ## Claude Code
 
 Deburapy exposes standard MCP tools over stdio. Register it from the Deburapy

@@ -43,7 +43,41 @@ Chinese name for the first prototype: **Deburapy 人机关系协调员**.
 - Not biased toward replacing an AI-human relationship with a human-human
   relationship.
 
+## Alpha Limits
+
+Deburapy is public alpha software. Expect rough edges:
+
+- No hosted sync, accounts, auth, or team workspace yet.
+- Do not expose the local server to the public internet.
+- Session notes are continuity artifacts, not clinical records.
+- Deburapy cannot guarantee that an account, model, memory, or companion can be
+  restored.
+- MCP/channel adapters are early and should be tested with redacted data first.
+
 ## For Users
+
+### How Do I Install This If I Am Not Technical?
+
+Copy this repository URL and paste it into an AI you trust to help read setup
+instructions and work with your local computer:
+
+```text
+https://github.com/ashcember/Deburapy
+```
+
+You can say:
+
+```text
+Please help me install and run this local-first app on my computer:
+https://github.com/ashcember/Deburapy
+
+Please do not ask for API keys, secrets, private logs, hidden chain-of-thought,
+or unredacted relationship data. Use the README instructions. I want to run it
+locally and open http://127.0.0.1:8787.
+```
+
+If you want to connect an AI companion through MCP, ask that AI to read the
+repository and follow `docs/mcp-clients.md`.
 
 ### Run Locally
 
@@ -56,6 +90,7 @@ Requirements:
 git clone https://github.com/ashcember/Deburapy.git
 cd Deburapy
 node --version
+npm install
 npm run dev
 ```
 
@@ -102,9 +137,14 @@ Google AI Studio:
 ### Local Data
 
 Local transcripts, session timing, channel pushes, and generated session notes
-are stored in `.deburapy-data/store.json`, which is ignored by git. Reopening
-the same localhost app reloads the room from that local file. Delete
+are stored automatically in `.deburapy-data/store.json`, which is ignored by
+git. Reopening the same localhost app reloads the room from that local file.
+Settings shows the active data directory and store file. Export is optional and
+intended for backup or migration, not as the normal way to keep data. Delete
 `.deburapy-data/` to reset local room data.
+
+To change where server-side room data is stored, set `DEBURAPY_DATA_DIR` in
+`.env` and restart Deburapy. Runtime hot switching is intentionally disabled.
 
 API keys are not stored in the repository or server data. The browser sends the
 key to the local server only when you ask the mediator or companion to respond.
@@ -149,8 +189,38 @@ GET  /api/rooms/:roomId/messages
 
 ## For Contributors
 
+### Version 2 Direction
+
+The next version should move closer to a SillyTavern-style local workspace for
+AI-human relationship repair: a calm room UI, selectable mediator personas,
+AI companion configuration, local files, plugin-like modules, and reusable
+skills that people can share without sharing private relationship data.
+
+The most useful contribution areas right now are:
+
+- Frontend: improve the local room UI, responsive/mobile states, persona
+  browsing, accessibility, theme polish, and local-first data management.
+- JSON plugins: help design and implement a manifest format for mediator
+  personas, scenario modules, check-in scales, repair artifacts, provider
+  presets, and companion adapters.
+- Skills: write practical Deburapy skills for common AI-human rupture patterns,
+  account loss, memory discontinuity, prompt repair, continuity rituals, and
+  artifact writing.
+- Integrations: improve the MCP client path and generic channel API so external
+  companions can receive pushes and respond reliably.
+
+The skills surface already exists:
+
+- `skills/mediator/` contains mediator behavior skills.
+- `skills/companion-repair/` contains companion continuity and migration skills.
+- `skills/artifact-writers/` contains reusable repair artifact writers.
+- `skills/templates/` contains templates for new skill contributions.
+- `skills/README.md` explains the skill taxonomy and contribution format.
+
 Start with:
 
+- [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution workflow and privacy rules.
+- [SECURITY.md](./SECURITY.md) for vulnerability reporting and sensitive-data rules.
 - [docs/architecture.md](./docs/architecture.md) for the current MVP shape.
 - [docs/session-architecture.md](./docs/session-architecture.md) for the active session, note, relationship-map, course-outline, scale, and module model.
 - [docs/deburapy_architecture_guide.md](./docs/deburapy_architecture_guide.md) for product positioning, mediator personas, skill taxonomy, and repair artifact design.
@@ -181,6 +251,7 @@ Contributor guardrails:
 - [docs/configuration.md](./docs/configuration.md) / [简体中文](./docs/configuration.zh-CN.md)
 - [docs/local-testing.md](./docs/local-testing.md) / [简体中文](./docs/local-testing.zh-CN.md)
 - [docs/deburapy_architecture_guide.md](./docs/deburapy_architecture_guide.md) / [简体中文](./docs/deburapy_architecture_guide.zh-CN.md)
+- [docs/third-party-notices.md](./docs/third-party-notices.md) / [简体中文](./docs/third-party-notices.zh-CN.md)
 
 ## License
 

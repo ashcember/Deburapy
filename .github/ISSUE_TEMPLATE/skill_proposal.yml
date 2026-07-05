@@ -1,0 +1,49 @@
+name: Skill proposal
+description: Propose a reusable Deburapy skill.
+title: "[Skill]: "
+labels:
+  - skill
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Skills must be generic and reusable. Do not include private relationship data, API keys, hidden chain-of-thought, or unredacted provider traces.
+  - type: input
+    id: skill_name
+    attributes:
+      label: Skill name
+      placeholder: "memory-rupture-mediation"
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - mediator
+        - companion-repair
+        - artifact-writer
+        - scenario-module
+        - check-in-scale
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this skill address?
+      description: Use fictional or generalized examples only.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Desired mediator or companion behavior
+    validations:
+      required: true
+  - type: textarea
+    id: artifact
+    attributes:
+      label: Repair artifact produced
+      description: For example relationship case note, prompt patch, boundary rule, continuity ritual, or incident report.
+

@@ -1,6 +1,7 @@
 const roomId = "default";
 const onboardingStorageKey = "deburapy.onboarding.v1";
 const localeStorageKey = "deburapy.locale";
+const themeStorageKey = "deburapy.theme";
 
 const els = {
   locale: document.querySelector("#locale"),
@@ -21,10 +22,14 @@ const els = {
   consentAssistantSend: document.querySelector("#consentAssistantSend"),
   consentAssistantStatus: document.querySelector("#consentAssistantStatus"),
   consentAssistantSettings: document.querySelector("#consentAssistantSettings"),
+  themeToggle: document.querySelector("#themeToggle"),
   openSettings: document.querySelector("#openSettings"),
   closeSettings: document.querySelector("#closeSettings"),
   settingsBackdrop: document.querySelector("#settingsBackdrop"),
   settingsDrawer: document.querySelector("#settingsDrawer"),
+  openSessionRail: document.querySelector("#openSessionRail"),
+  closeSessionRail: document.querySelector("#closeSessionRail"),
+  sessionRailBackdrop: document.querySelector("#sessionRailBackdrop"),
   turnBadge: document.querySelector("#turnBadge"),
   turnHelp: document.querySelector("#turnHelp"),
   sessionTitle: document.querySelector("#sessionTitle"),
@@ -72,8 +77,12 @@ const els = {
   companionDocs: document.querySelector("#companionDocs"),
   saveConfig: document.querySelector("#saveConfig"),
   diagnostics: document.querySelector("#diagnostics"),
+  storageDataDir: document.querySelector("#storageDataDir"),
+  storageStorePath: document.querySelector("#storageStorePath"),
+  storageConfiguredBy: document.querySelector("#storageConfiguredBy"),
+  storageEnvExample: document.querySelector("#storageEnvExample"),
   messages: document.querySelector("#messages"),
-  downloadTranscript: document.querySelector("#downloadTranscript"),
+  exportTranscript: document.querySelector("#exportTranscript"),
   messageForm: document.querySelector("#messageForm"),
   messageInput: document.querySelector("#messageInput"),
   askCompanion: document.querySelector("#askCompanion"),
@@ -117,7 +126,7 @@ const copy = {
     agreeScope: "I understand Deburapy is not medical, legal, crisis, or emergency support.",
     agreeLocal: "I understand this prototype stores consent and session data locally on this device.",
     agreeAiLimits: "I understand AI systems can lose context, drift, refuse, fail tools, or change provider behavior.",
-    signatureLabel: "Type your full name as a digital signature",
+    signatureLabel: "Type your name as a digital signature",
     signaturePlaceholder: "Your Name",
     signEnter: "Sign & Enter",
     consentStatus: "By clicking \"Sign & Enter\", you confirm the agreements above and complete the first screening.",
@@ -143,7 +152,6 @@ const copy = {
     sixtyMinutes: "60 minutes",
     ninetyMinutes: "90 minutes",
     exportNote: "Export note",
-    downloadTranscript: "Download transcript",
     journey: "Journey",
     diagnostics: "Diagnostics",
     faq: "FAQ",
@@ -182,8 +190,17 @@ const copy = {
     mcpGuideStep2: "Register the MCP server in the external client.",
     mcpGuideStep3: "When the turn reaches the AI companion, Deburapy queues the room context for that MCP client.",
     mcpGuideStep4: "The external client replies with",
+    localStorageTitle: "Local Storage",
+    localStorageIntro: "Room data is saved automatically. Export is only for backup or migration.",
+    serverDataDirectory: "Server data directory",
+    storeFile: "Store file",
+    browserStorage: "Browser storage",
+    browserStorageValue: "localStorage for this localhost origin",
+    configuredBy: "Configured by",
+    storageChangeHint: "To change the server data directory, set this in .env and restart Deburapy:",
+    exportTranscript: "Export transcript",
     faqNotesQ: "Where are session notes?",
-    faqNotesA: "They are saved locally. Export is optional and lives in session settings.",
+    faqNotesA: "They are saved locally. Export is optional and lives under Settings > Local Storage.",
     faqDeburapyQ: "What is Deburapy?",
     faqDeburapyA: "It is for AI-human relationship repair and continuity planning, not clinical therapy.",
     faqKeysQ: "Where are model keys?",
@@ -195,6 +212,11 @@ const copy = {
     saveSettings: "Save settings",
     source: "Source",
     noWarranty: "No warranty",
+    switchToDark: "Switch to dark mode",
+    switchToLight: "Switch to light mode",
+    themeLight: "light mode",
+    themeDark: "dark mode",
+    themeChanged: "Theme changed to {theme}.",
     sessionLabel: "Session",
     ofTotal: "of",
     saved: "Saved",
@@ -284,7 +306,9 @@ const copy = {
     ariaCurrentSession: "Current session",
     ariaSessionNote: "Session note",
     ariaManualTurnControls: "Manual turn controls",
-    ariaSuggestedPrompts: "Suggested prompts"
+    ariaSuggestedPrompts: "Suggested prompts",
+    openSessionPanel: "Open session panel",
+    closeSessionPanel: "Close session panel"
   },
   "zh-Hans": {
     tagline: "不是治疗，不是调试。Deburapy 面向人机关系。",
@@ -317,8 +341,8 @@ const copy = {
     agreeScope: "我理解 Deburapy 不是医疗、法律、危机或紧急支持。",
     agreeLocal: "我理解这个原型会把知情同意和 session 数据存储在本设备本地。",
     agreeAiLimits: "我理解 AI 系统可能丢失上下文、发生漂移、拒绝、工具失败，或受服务商行为变化影响。",
-    signatureLabel: "输入你的全名作为电子签名",
-    signaturePlaceholder: "你的姓名",
+    signatureLabel: "输入你的名字作为电子签名",
+    signaturePlaceholder: "你的名字",
     signEnter: "签署并进入",
     consentStatus: "点击“签署并进入”表示你确认以上约定，并完成第一次筛选。",
     consentAssistantTitle: "有问题吗？",
@@ -343,7 +367,6 @@ const copy = {
     sixtyMinutes: "60 分钟",
     ninetyMinutes: "90 分钟",
     exportNote: "导出 note",
-    downloadTranscript: "下载 transcript",
     journey: "进程",
     diagnostics: "诊断",
     faq: "FAQ",
@@ -382,8 +405,17 @@ const copy = {
     mcpGuideStep2: "在外部客户端中注册 MCP server。",
     mcpGuideStep3: "当轮到 AI 伴侣时，Deburapy 会把房间上下文排队给该 MCP 客户端。",
     mcpGuideStep4: "外部客户端用这个工具回复：",
+    localStorageTitle: "本地存储",
+    localStorageIntro: "房间数据会自动保存。导出只用于备份或迁移。",
+    serverDataDirectory: "Server 数据目录",
+    storeFile: "Store 文件",
+    browserStorage: "浏览器存储",
+    browserStorageValue: "此 localhost origin 的 localStorage",
+    configuredBy: "配置来源",
+    storageChangeHint: "如需调整 server 数据目录，请在 .env 中设置并重启 Deburapy：",
+    exportTranscript: "导出 transcript",
     faqNotesQ: "Session note 在哪里？",
-    faqNotesA: "它们会保存在本地。导出是可选项，入口在 session 设置里。",
+    faqNotesA: "它们会保存在本地。导出是可选项，入口在 Settings > 本地存储。",
     faqDeburapyQ: "Deburapy 是什么？",
     faqDeburapyA: "它用于人机关系修复和连续性规划，不是临床治疗。",
     faqKeysQ: "模型 key 存在哪里？",
@@ -395,6 +427,11 @@ const copy = {
     saveSettings: "保存设置",
     source: "源码",
     noWarranty: "无担保",
+    switchToDark: "切换到夜间模式",
+    switchToLight: "切换到日间模式",
+    themeLight: "日间模式",
+    themeDark: "夜间模式",
+    themeChanged: "已切换到{theme}。",
     sessionLabel: "Session",
     ofTotal: "共",
     saved: "已保存",
@@ -484,7 +521,9 @@ const copy = {
     ariaCurrentSession: "当前 session",
     ariaSessionNote: "Session note",
     ariaManualTurnControls: "手动回合控制",
-    ariaSuggestedPrompts: "建议提示"
+    ariaSuggestedPrompts: "建议提示",
+    openSessionPanel: "打开 session 面板",
+    closeSessionPanel: "关闭 session 面板"
   }
 };
 
@@ -532,6 +571,46 @@ function saveLocalePreference(locale) {
   }
 }
 
+function currentTheme() {
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+}
+
+function readThemePreference() {
+  try {
+    const saved = localStorage.getItem(themeStorageKey);
+    return saved === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
+
+function updateThemeButton() {
+  const nextTheme = currentTheme() === "dark" ? "light" : "dark";
+  const label = nextTheme === "dark" ? t("switchToDark") : t("switchToLight");
+  els.themeToggle.setAttribute("aria-label", label);
+  els.themeToggle.setAttribute("title", label);
+}
+
+function setTheme(theme, { persist = true, announce = false } = {}) {
+  const nextTheme = theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = nextTheme;
+  if (persist) {
+    try {
+      localStorage.setItem(themeStorageKey, nextTheme);
+    } catch (err) {
+      appendLog(`Could not save theme preference: ${storageErrorMessage(err)}`, "warn");
+    }
+  }
+  updateThemeButton();
+  if (announce) {
+    appendLog(t("themeChanged", { theme: t(nextTheme === "dark" ? "themeDark" : "themeLight") }));
+  }
+}
+
+function toggleTheme() {
+  setTheme(currentTheme() === "dark" ? "light" : "dark", { announce: true });
+}
+
 function applyStaticTranslations(locale) {
   const localeCopy = copy[locale] || copy.en;
   document.documentElement.lang = locale;
@@ -557,6 +636,18 @@ function applyStaticTranslations(locale) {
     const value = consentQuestions[locale]?.[key] ?? consentQuestions.en[key];
     if (value) node.setAttribute("data-consent-question", value);
   });
+}
+
+function renderIconUse(iconId, className = "icon") {
+  const span = document.createElement("span");
+  span.className = className;
+  span.setAttribute("aria-hidden", "true");
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+  use.setAttribute("href", `#${iconId}`);
+  svg.append(use);
+  span.append(svg);
+  return span;
 }
 
 const providerDefaults = {
@@ -897,6 +988,24 @@ async function json(path, options = {}) {
   return payload;
 }
 
+async function loadStorageInfo() {
+  try {
+    const info = await json("/api/storage");
+    els.storageDataDir.textContent = info.dataDir || "Unavailable";
+    els.storageDataDir.title = info.dataDir || "";
+    els.storageStorePath.textContent = info.storePath || "Unavailable";
+    els.storageStorePath.title = info.storePath || "";
+    els.storageConfiguredBy.textContent = info.configuredBy || "default";
+    els.storageEnvExample.textContent = info.envExample || "DEBURAPY_DATA_DIR=/absolute/path/to/deburapy-data";
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    els.storageDataDir.textContent = "Unavailable";
+    els.storageStorePath.textContent = "Unavailable";
+    els.storageConfiguredBy.textContent = "Unavailable";
+    appendLog(`Could not load storage info: ${message}`, "warn");
+  }
+}
+
 function uiDebugState() {
   return {
     phase: session.turnPhase,
@@ -988,7 +1097,7 @@ function downloadBlob(filename, content, type = "text/markdown;charset=utf-8") {
   URL.revokeObjectURL(url);
 }
 
-async function downloadTranscript() {
+async function exportTranscript() {
   const payload = await json(`/api/rooms/${roomId}/messages`);
   const now = new Date().toISOString().replace(/[:.]/g, "-");
   downloadBlob(`deburapy-${roomId}-transcript-${now}.md`, formatTranscriptMarkdown(payload.messages || []));
@@ -1111,6 +1220,7 @@ function setLocale(locale) {
     control.value = locale;
   });
   applyStaticTranslations(locale);
+  updateThemeButton();
   updateSessionDisplay();
   updateSessionNoteUi();
   updateTurnUi();
@@ -1182,19 +1292,19 @@ function renderJourney() {
   const total = totalSessionCount();
   const items = [];
   if (current > 1) {
-    items.push({ icon: "✓", label: `${t("sessionLabel")} ${current - 1}`, status: t("saved"), state: "done", sessionNumber: current - 1 });
+    items.push({ icon: "icon-check", label: `${t("sessionLabel")} ${current - 1}`, status: t("saved"), state: "done", sessionNumber: current - 1 });
   }
   items.push({
-    icon: session.running ? "▶" : "○",
+    icon: session.running ? "icon-activity" : "icon-circle",
     label: `${t("sessionLabel")} ${current}`,
     status: session.running ? t("active") : t("next"),
     state: "active",
     sessionNumber: current
   });
   if (current < total) {
-    items.push({ icon: "◷", label: `${t("sessionLabel")} ${current + 1}`, status: t("upcoming"), state: "upcoming", sessionNumber: current + 1 });
+    items.push({ icon: "icon-clock-3", label: `${t("sessionLabel")} ${current + 1}`, status: t("upcoming"), state: "upcoming", sessionNumber: current + 1 });
   }
-  items.push({ icon: "□", label: t("review"), status: `${total} ${t("sessions")}`, state: "review" });
+  items.push({ icon: "icon-clipboard-list", label: t("review"), status: `${total} ${t("sessions")}`, state: "review" });
 
   els.courseList.innerHTML = "";
   for (const item of items) {
@@ -1209,9 +1319,7 @@ function renderJourney() {
       }
       handleJourneySessionClick(item.sessionNumber, item.state);
     });
-    const icon = document.createElement("span");
-    icon.setAttribute("aria-hidden", "true");
-    icon.textContent = item.icon;
+    const icon = renderIconUse(item.icon, "icon courseIcon");
     const label = document.createElement("span");
     label.textContent = item.label;
     const status = document.createElement("small");
@@ -1446,6 +1554,7 @@ function endSession() {
 }
 
 function openSettings() {
+  closeSessionRail({ immediate: true });
   els.settingsBackdrop.hidden = false;
   els.settingsDrawer.hidden = false;
   requestAnimationFrame(() => {
@@ -1474,6 +1583,30 @@ function openSettingsSection(section) {
   window.setTimeout(() => {
     section?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, 220);
+}
+
+function openSessionRail() {
+  els.sessionRailBackdrop.hidden = false;
+  document.body.classList.add("isSessionRailOpen");
+  els.openSessionRail.setAttribute("aria-expanded", "true");
+  requestAnimationFrame(() => {
+    els.sessionRailBackdrop.classList.add("isOpen");
+  });
+}
+
+function closeSessionRail({ immediate = false } = {}) {
+  els.sessionRailBackdrop.classList.remove("isOpen");
+  document.body.classList.remove("isSessionRailOpen");
+  els.openSessionRail.setAttribute("aria-expanded", "false");
+  if (immediate) {
+    els.sessionRailBackdrop.hidden = true;
+    return;
+  }
+  window.setTimeout(() => {
+    if (!document.body.classList.contains("isSessionRailOpen")) {
+      els.sessionRailBackdrop.hidden = true;
+    }
+  }, 180);
 }
 
 function toggleSessionSettings(forceOpen = null) {
@@ -1699,9 +1832,13 @@ document.querySelectorAll("[data-consent-question]").forEach((button) => {
   });
 });
 els.consentAssistantSettings.addEventListener("click", openSettingsFromConsent);
+els.themeToggle.addEventListener("click", toggleTheme);
 els.openSettings.addEventListener("click", openSettings);
 els.closeSettings.addEventListener("click", closeSettings);
 els.settingsBackdrop.addEventListener("click", closeSettings);
+els.openSessionRail.addEventListener("click", openSessionRail);
+els.closeSessionRail.addEventListener("click", closeSessionRail);
+els.sessionRailBackdrop.addEventListener("click", closeSessionRail);
 els.sessionSettingsToggle.addEventListener("click", () => toggleSessionSettings());
 els.sessionTotalSessions.addEventListener("change", () => {
   currentSessionNumber();
@@ -1720,8 +1857,8 @@ els.downloadSessionNote.addEventListener("click", () => {
   if (!session.noteId) return;
   window.location.href = `/api/rooms/${roomId}/session-notes/${session.noteId}/download`;
 });
-els.downloadTranscript.addEventListener("click", () => {
-  runAction(els.downloadTranscript, "…", downloadTranscript);
+els.exportTranscript.addEventListener("click", () => {
+  runAction(els.exportTranscript, "…", exportTranscript);
 });
 els.mediatorProvider.addEventListener("change", () => applyProviderDefaults("mediator"));
 els.companionProvider.addEventListener("change", () => applyProviderDefaults("companion"));
@@ -1821,8 +1958,12 @@ els.mediatorPersona.addEventListener("change", () => {
   saveConfig();
 });
 els.mediatorPrompt.addEventListener("input", syncMediatorPersonaFromPrompt);
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeSessionRail();
+});
 
 els.locale.value = readLocalePreference();
+setTheme(readThemePreference(), { persist: false });
 loadConfig();
 loadSessionState();
 applyProviderDefaults("mediator");
@@ -1842,3 +1983,4 @@ window.setInterval(() => {
 loadMediatorPersonas().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 refreshRoom().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 loadSessionNotes().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
+loadStorageInfo().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));

@@ -1,0 +1,48 @@
+name: Plugin or module proposal
+description: Propose a JSON plugin, module, provider preset, or adapter.
+title: "[Plugin]: "
+labels:
+  - plugin
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep proposals platform-neutral when possible. Do not include secrets, private transcripts, or unredacted provider logs.
+  - type: input
+    id: name
+    attributes:
+      label: Plugin or module name
+    validations:
+      required: true
+  - type: dropdown
+    id: plugin_type
+    attributes:
+      label: Type
+      options:
+        - mediator persona
+        - scenario module
+        - check-in scale
+        - repair artifact
+        - provider preset
+        - companion adapter
+        - channel adapter
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What should this help users do?
+    validations:
+      required: true
+  - type: textarea
+    id: manifest
+    attributes:
+      label: Proposed manifest fields
+      description: Sketch the JSON fields if you already know them.
+      render: json
+  - type: textarea
+    id: risks
+    attributes:
+      label: Privacy, safety, or compatibility risks

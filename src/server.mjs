@@ -121,6 +121,16 @@ function sendMarkdownDownload(res, note) {
   res.end(note.content);
 }
 
+function storageInfo() {
+  return {
+    dataDir,
+    storePath: store.filePath,
+    configuredBy: process.env.DEBURAPY_DATA_DIR ? "DEBURAPY_DATA_DIR" : "default",
+    envExample: "DEBURAPY_DATA_DIR=/absolute/path/to/deburapy-data",
+    canChangeAtRuntime: false
+  };
+}
+
 async function readJson(req) {
   let body = "";
   for await (const chunk of req) body += chunk;
@@ -210,6 +220,10 @@ async function handleApi(req, res) {
 
   if (req.method === "GET" && url.pathname === "/api/health") {
     return sendJson(res, 200, { ok: true, product: "Deburapy" });
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/storage") {
+    return sendJson(res, 200, storageInfo());
   }
 
   if (req.method === "GET" && url.pathname === "/api/prompts/mediator") {

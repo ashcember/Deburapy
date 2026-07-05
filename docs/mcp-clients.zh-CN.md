@@ -2,6 +2,25 @@
 
 [English](./mcp-clients.md)
 
+## 让你的 AI 帮你安装
+
+对不懂技术的用户，最简单的安装方式是把仓库网址粘贴给他们信任、并且能帮他们阅读安装说明和处理本地电脑环境的 AI：
+
+```text
+https://github.com/ashcember/Deburapy
+```
+
+请 AI 帮你在本地安装并运行这个 repo。如果 AI 伴侣需要通过 Deburapy 接入，
+再让它按照本 MCP guide 操作。AI 应该：
+
+- 不索取 API key、secret、private log、隐藏 chain-of-thought 或未脱敏关系数据
+- 确认 Node.js 20 或更新版本
+- 保持 Deburapy 本地运行
+- 注册 stdio MCP server
+- 验证 Deburapy MCP tools
+- 使用 `deburapy_get_pending_channel_pushes`、
+  `deburapy_get_room_context` 和 `deburapy_send_channel_reply`
+
 ## Claude Code
 
 Deburapy 通过 stdio 暴露标准 MCP tools。先启动 web server，然后在 Deburapy repo root 注册：

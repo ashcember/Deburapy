@@ -19,3 +19,7 @@ boundary. The local server has no built-in authentication.
 | `DEBURAPY_PARTICIPANT_ID` | `companion` | Default participant ID used by MCP pending-push polling. |
 | `DEBURAPY_CLAUDE_CHANNEL_NOTIFICATIONS` | `0` | Set to `1` to enable the optional Claude Code channel-notification bridge in the MCP server. |
 | `DEBURAPY_POLL_MS` | `3000` | Poll interval, in milliseconds, for optional Claude Code channel notifications. |
+
+`DEBURAPY_DATA_DIR` is read when the server starts. To move local room storage,
+set it in `.env` and restart Deburapy; Settings shows the active resolved
+directory and `store.json` path.
