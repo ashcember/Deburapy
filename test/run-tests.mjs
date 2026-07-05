@@ -5,7 +5,12 @@ import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildChatCompletionsRequest, providerDefaults } from "../src/core/openai-compatible.mjs";
+import {
+  buildChatCompletionsRequest,
+  generateChatCompletion,
+  ProviderRequestError,
+  providerDefaults
+} from "../src/core/openai-compatible.mjs";
 import {
   buildSessionClockBlock,
   buildSessionNotePrompt,
@@ -241,6 +246,10 @@ assert.match(appJs, /hostedDemo/);
 assert.match(appJs, /\/api\/demo-config/);
 assert.match(appJs, /useHostedDemoKey/);
 assert.match(appJs, /Hosted demo key is managed on the server/);
+assert.match(appJs, /useOwnMediatorKey/);
+assert.match(appJs, /hostedDemoRateLimited/);
+assert.match(appJs, /mediatorKeyModeStorageKey/);
+assert.match(appJs, /statusCode === 429/);
 assert.doesNotMatch(appJs, /__DEBURAPY_HOSTED_DEMO_KEY__/);
 assert.match(appJs, /testCompanion:\s*document\.querySelector\("#testCompanion"\)/);
 assert.match(appJs, /companionDot:\s*document\.querySelector\("#companionDot"\)/);
@@ -291,6 +300,7 @@ assert.match(indexHtml, /id="mediatorPersona"/);
 assert.match(indexHtml, />Elias</);
 assert.match(indexHtml, />Mara</);
 assert.match(indexHtml, /id="mediatorHostedKeyNote"/);
+assert.match(indexHtml, /id="useOwnMediatorKey"/);
 assert.match(indexHtml, /id="sessionProgress"/);
 assert.match(indexHtml, /class="iconSprite"/);
 assert.match(indexHtml, /data-theme="light"/);
@@ -354,6 +364,7 @@ assert.match(serverJs, /\/api\/demo-config/);
 assert.match(serverJs, /DEBURAPY_HOSTED_DEMO_GOOGLE_AI_STUDIO_API_KEY/);
 assert.match(serverJs, /Hosted demo key is not available for AI companion API calls/);
 assert.match(serverJs, /hostedDemoRateLimit/);
+assert.match(serverJs, /Number\.isInteger\(err\?\.statusCode\)/);
 assert.doesNotMatch(serverJs, /sendJson\(res, 200, \{[^}]*apiKey/s);
 assert.match(serverJs, /\/api\/storage/);
 assert.match(serverJs, /DEBURAPY_DATA_DIR/);
@@ -511,6 +522,33 @@ assert.equal(googleRequest.url, "https://generativelanguage.googleapis.com/v1bet
 assert.equal(googleRequest.headers.authorization, "Bearer gemini-key");
 assert.equal(googleRequest.body.model, "gemini-3.5-flash");
 assert.equal(JSON.stringify(googleRequest.body).includes("gemini-key"), false);
+
+const originalFetch = globalThis.fetch;
+try {
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 429,
+    statusText: "Too Many Requests",
+    json: async () => ({ error: { message: "quota exceeded" } })
+  });
+  await assert.rejects(
+    () => generateChatCompletion({
+      provider: "google-ai-studio",
+      apiKey: "test-key",
+      systemPrompt: "system",
+      userPrompt: "user"
+    }),
+    (err) => {
+      assert.equal(err instanceof ProviderRequestError, true);
+      assert.equal(err.statusCode, 429);
+      assert.match(err.message, /rate limited/);
+      assert.doesNotMatch(err.message, /test-key/);
+      return true;
+    }
+  );
+} finally {
+  globalThis.fetch = originalFetch;
+}
 
 const dataDir = mkdtempSync(join(tmpdir(), "deburapy-store-test-"));
 try {

@@ -2,6 +2,7 @@ const roomId = "default";
 const onboardingStorageKey = "deburapy.onboarding.v1";
 const localeStorageKey = "deburapy.locale";
 const themeStorageKey = "deburapy.theme";
+const mediatorKeyModeStorageKey = "deburapy.mediator.keyMode";
 
 const els = {
   locale: document.querySelector("#locale"),
@@ -52,6 +53,7 @@ const els = {
   mediatorModel: document.querySelector("#mediatorModel"),
   mediatorApiKey: document.querySelector("#mediatorApiKey"),
   mediatorHostedKeyNote: document.querySelector("#mediatorHostedKeyNote"),
+  useOwnMediatorKey: document.querySelector("#useOwnMediatorKey"),
   rememberMediatorApiKey: document.querySelector("#rememberMediatorApiKey"),
   mediatorPrompt: document.querySelector("#mediatorPrompt"),
   mediatorDot: document.querySelector("#mediatorDot"),
@@ -176,8 +178,12 @@ const copy = {
     savedOnSavePlaceholder: "Saved locally when you click Save",
     hostedDemoKeyPlaceholder: "Hosted demo key managed by host",
     hostedDemoManaged: "Hosted demo key is managed on the server. The browser never receives or stores it.",
+    hostedDemoOwnKey: "You are using your own mediator key. The hosted demo key is not used for these requests.",
     hostedDemoReady: "Hosted demo key ready.",
     hostedDemoUnavailable: "Hosted demo key is not configured on this deployment.",
+    useOwnMediatorKey: "Use my own key",
+    useHostedDemoKey: "Use hosted demo key",
+    hostedDemoRateLimited: "The hosted demo key may be rate limited. Please wait a bit, or switch to your own OpenAI-compatible key in Settings.",
     saveMediatorKey: "Save mediator key locally",
     mediatorSystemPrompt: "Mediator system prompt",
     aiCompanion: "AI Companion",
@@ -395,8 +401,12 @@ const copy = {
     savedOnSavePlaceholder: "点击保存后存到本地",
     hostedDemoKeyPlaceholder: "由托管方管理的 demo key",
     hostedDemoManaged: "Hosted demo key 只在 server 端管理。浏览器不会收到，也不会存储这个 key。",
+    hostedDemoOwnKey: "你正在使用自己的协调员 key。这些请求不会使用 hosted demo key。",
     hostedDemoReady: "Hosted demo key 已就绪。",
     hostedDemoUnavailable: "这个部署还没有配置 hosted demo key。",
+    useOwnMediatorKey: "使用我自己的 key",
+    useHostedDemoKey: "使用 hosted demo key",
+    hostedDemoRateLimited: "Hosted demo key 可能已经触发 rate limit。请稍等一下，或在设置中切换到自己的 OpenAI-compatible key。",
     saveMediatorKey: "本地保存协调员 key",
     mediatorSystemPrompt: "协调员 system prompt",
     aiCompanion: "AI 伴侣",
@@ -698,7 +708,8 @@ const hostedDemo = {
     provider: "google-ai-studio",
     baseUrl: providerDefaults["google-ai-studio"].baseUrl,
     model: providerDefaults["google-ai-studio"].model,
-    keyMode: "byok"
+    keyMode: "byok",
+    useOwnKey: false
   }
 };
 
@@ -724,7 +735,7 @@ function providerControls(target) {
 }
 
 function applyProviderDefaults(target, { force = false } = {}) {
-  if (target === "mediator" && hostedDemo.mediator.enabled) {
+  if (target === "mediator" && hostedDemo.mediator.enabled && !hostedDemo.mediator.useOwnKey) {
     applyHostedDemoUi();
     return;
   }
@@ -748,27 +759,37 @@ function applyProviderDefaults(target, { force = false } = {}) {
 function applyHostedDemoUi() {
   const demo = hostedDemo.mediator;
   const enabled = Boolean(demo.enabled);
+  const usingHosted = enabled && !demo.useOwnKey;
   els.mediatorHostedKeyNote.hidden = !enabled;
-  els.mediatorProvider.disabled = enabled;
-  els.mediatorBaseUrl.disabled = enabled;
-  els.mediatorModel.disabled = enabled;
-  els.mediatorApiKey.disabled = enabled;
-  els.rememberMediatorApiKey.disabled = enabled;
+  els.useOwnMediatorKey.hidden = !enabled;
+  els.mediatorProvider.disabled = usingHosted;
+  els.mediatorBaseUrl.disabled = usingHosted;
+  els.mediatorModel.disabled = usingHosted;
+  els.mediatorApiKey.disabled = usingHosted;
+  els.rememberMediatorApiKey.disabled = usingHosted;
 
   if (!enabled) {
     els.mediatorApiKey.placeholder = t("savedOnSavePlaceholder");
     return;
   }
 
-  els.mediatorProvider.value = demo.provider;
-  els.mediatorBaseUrl.value = demo.baseUrl;
-  els.mediatorModel.value = demo.model;
-  els.mediatorApiKey.value = "";
-  els.mediatorApiKey.placeholder = t("hostedDemoKeyPlaceholder");
-  els.rememberMediatorApiKey.checked = false;
-  els.mediatorHostedKeyNote.textContent = t("hostedDemoManaged");
-  setStatus("mediator", "warn", t("hostedDemoReady"));
-  setConsentAssistantStatus(t("hostedDemoReady"), "ok");
+  if (usingHosted) {
+    els.mediatorProvider.value = demo.provider;
+    els.mediatorBaseUrl.value = demo.baseUrl;
+    els.mediatorModel.value = demo.model;
+    els.mediatorApiKey.value = "";
+    els.mediatorApiKey.placeholder = t("hostedDemoKeyPlaceholder");
+    els.rememberMediatorApiKey.checked = false;
+    els.mediatorHostedKeyNote.textContent = t("hostedDemoManaged");
+    els.useOwnMediatorKey.textContent = t("useOwnMediatorKey");
+    setStatus("mediator", "warn", t("hostedDemoReady"));
+    setConsentAssistantStatus(t("hostedDemoReady"), "ok");
+    return;
+  }
+
+  els.mediatorApiKey.placeholder = t("savedOnSavePlaceholder");
+  els.mediatorHostedKeyNote.textContent = t("hostedDemoOwnKey");
+  els.useOwnMediatorKey.textContent = t("useHostedDemoKey");
 }
 
 async function loadHostedDemoConfig() {
@@ -784,7 +805,8 @@ async function loadHostedDemoConfig() {
       provider: payload.mediator.provider || "google-ai-studio",
       baseUrl: payload.mediator.baseUrl || providerDefaults["google-ai-studio"].baseUrl,
       model: payload.mediator.model || providerDefaults["google-ai-studio"].model,
-      keyMode: payload.mediator.keyMode || "server_hosted"
+      keyMode: payload.mediator.keyMode || "server_hosted",
+      useOwnKey: readMediatorKeyModePreference() === "own"
     };
     applyHostedDemoUi();
   } catch (err) {
@@ -794,8 +816,21 @@ async function loadHostedDemoConfig() {
   }
 }
 
+function toggleMediatorKeyMode() {
+  if (!hostedDemo.mediator.enabled) return;
+  hostedDemo.mediator.useOwnKey = !hostedDemo.mediator.useOwnKey;
+  saveMediatorKeyModePreference(hostedDemo.mediator.useOwnKey ? "own" : "hosted");
+  if (hostedDemo.mediator.useOwnKey) {
+    applyProviderDefaults("mediator", { force: false });
+    appendLog(t("hostedDemoOwnKey"), "warn");
+  } else {
+    appendLog(t("hostedDemoReady"), "ok");
+  }
+  applyHostedDemoUi();
+}
+
 function modelConfig(target) {
-  if (target === "mediator" && hostedDemo.mediator.enabled && !els.mediatorApiKey.value.trim()) {
+  if (target === "mediator" && hostedDemo.mediator.enabled && !hostedDemo.mediator.useOwnKey && !els.mediatorApiKey.value.trim()) {
     return {
       provider: hostedDemo.mediator.provider,
       baseUrl: hostedDemo.mediator.baseUrl,
@@ -869,6 +904,22 @@ function removeSavedJson(key) {
   } catch (err) {
     appendLog(`Could not clear ${key}: ${storageErrorMessage(err)}`, "warn");
     return false;
+  }
+}
+
+function readMediatorKeyModePreference() {
+  try {
+    return localStorage.getItem(mediatorKeyModeStorageKey) === "own" ? "own" : "hosted";
+  } catch {
+    return "hosted";
+  }
+}
+
+function saveMediatorKeyModePreference(mode) {
+  try {
+    localStorage.setItem(mediatorKeyModeStorageKey, mode === "own" ? "own" : "hosted");
+  } catch (err) {
+    appendLog(`Could not save mediator key mode: ${storageErrorMessage(err)}`, "warn");
   }
 }
 
@@ -1065,7 +1116,11 @@ async function json(path, options = {}) {
     }
   });
   const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || response.statusText);
+  if (!response.ok) {
+    const error = new Error(payload.error || response.statusText);
+    error.statusCode = response.status;
+    throw error;
+  }
   return payload;
 }
 
@@ -1815,7 +1870,13 @@ async function runAction(button, busyText, action) {
   try {
     await action();
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    let message = err instanceof Error ? err.message : String(err);
+    if (err?.statusCode === 429) {
+      message = t("hostedDemoRateLimited");
+      if (hostedDemo.mediator.enabled && !hostedDemo.mediator.useOwnKey) {
+        setStatus("mediator", "warn", message);
+      }
+    }
     appendLog(message, "error");
     alert(message);
   } finally {
@@ -1958,6 +2019,7 @@ els.clearMediatorKey.addEventListener("click", () => {
   els.rememberMediatorApiKey.checked = false;
   saveConfig();
 });
+els.useOwnMediatorKey.addEventListener("click", toggleMediatorKeyMode);
 els.clearCompanionKey.addEventListener("click", () => {
   els.companionApiKey.value = "";
   els.rememberCompanionApiKey.checked = false;

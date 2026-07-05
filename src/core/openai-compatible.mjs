@@ -19,6 +19,17 @@ export function providerDefaults(provider) {
   };
 }
 
+export class ProviderRequestError extends Error {
+  constructor(statusCode, detail) {
+    const isRateLimit = statusCode === 429;
+    super(isRateLimit
+      ? "The hosted demo key is currently rate limited. Please wait a bit, or use your own OpenAI-compatible key in Settings."
+      : `Provider request failed: ${detail}`);
+    this.statusCode = statusCode;
+    this.providerDetail = detail;
+  }
+}
+
 export function buildChatCompletionsRequest({
   provider = "openai-compatible",
   apiKey,
@@ -71,7 +82,7 @@ export async function generateChatCompletion(input) {
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     const detail = payload?.error?.message || response.statusText;
-    throw new Error(`Provider request failed: ${detail}`);
+    throw new ProviderRequestError(response.status, detail);
   }
 
   const content = payload?.choices?.[0]?.message?.content;

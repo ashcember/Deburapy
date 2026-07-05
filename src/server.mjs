@@ -744,6 +744,9 @@ export async function handleRequest(req, res) {
     if (err instanceof HttpStatusError) {
       return sendJson(res, err.statusCode, { error: err.message });
     }
+    if (Number.isInteger(err?.statusCode) && err.statusCode >= 400 && err.statusCode < 600) {
+      return sendJson(res, err.statusCode, { error: err.message });
+    }
     sendJson(res, 500, { error: err instanceof Error ? err.message : String(err) });
   }
 }

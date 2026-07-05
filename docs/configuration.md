@@ -43,6 +43,12 @@ general-purpose model proxy. Use a restricted, low-quota Google AI Studio key
 and add stronger auth / quota controls before treating it as a production
 public service.
 
+When hosted demo mode is enabled, the UI defaults to a disabled "Demo key
+managed by host" state for the mediator. Users can switch the mediator setup to
+their own OpenAI-compatible, OpenRouter, or Google AI Studio key from Settings.
+If the hosted key hits a provider rate limit, Deburapy returns HTTP 429 and
+prompts the user to wait or switch to their own key.
+
 On Vercel, if `DEBURAPY_DATA_DIR` is not set, server-side room storage defaults
 to `/tmp/deburapy-data`. That filesystem is suitable for demos only; it is not
 durable product storage.
