@@ -217,6 +217,12 @@ The skills surface already exists:
 - `skills/templates/` contains templates for new skill contributions.
 - `skills/README.md` explains the skill taxonomy and contribution format.
 
+Demo artifacts are available for public, fictional examples:
+
+- [examples/zh-CN/demo-account-loss-dialogue.md](./examples/zh-CN/demo-account-loss-dialogue.md) shows a Simplified Chinese AI companion account-loss repair room.
+- [examples/zh-CN/demo-account-loss-session-note.md](./examples/zh-CN/demo-account-loss-session-note.md) shows a display-safe relationship case note from that room.
+- [skills/mediator/account-loss-transition-mediation.zh-CN.md](./skills/mediator/account-loss-transition-mediation.zh-CN.md) is the matching mediator skill.
+
 Start with:
 
 - [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution workflow and privacy rules.

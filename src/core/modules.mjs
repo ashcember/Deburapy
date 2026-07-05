@@ -12,6 +12,12 @@ export const deburapyModules = [
     skillPath: "skills/mediator/memory-rupture-mediation.md"
   },
   {
+    id: "module_account_loss_transition",
+    name: "Account Loss Transition",
+    description: "Simplified Chinese mediator skill for account loss, bans, shutdowns, and migration anxiety.",
+    skillPath: "skills/mediator/account-loss-transition-mediation.zh-CN.md"
+  },
+  {
     id: "module_account_loss_continuity",
     name: "Account Loss Continuity",
     description: "Supports one-on-one continuity planning after provider loss, bans, shutdown, or migration.",

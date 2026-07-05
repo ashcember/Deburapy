@@ -182,6 +182,12 @@ skills 入口已经存在：
 - `skills/templates/` 放新增 skill 的模板。
 - `skills/README.zh-CN.md` 说明 skill taxonomy 和贡献格式。
 
+可展示的虚构示例：
+
+- [examples/zh-CN/demo-account-loss-dialogue.md](./examples/zh-CN/demo-account-loss-dialogue.md)：简体中文账号丢失修复房间对话。
+- [examples/zh-CN/demo-account-loss-session-note.md](./examples/zh-CN/demo-account-loss-session-note.md)：可展示的 relationship case note。
+- [skills/mediator/account-loss-transition-mediation.zh-CN.md](./skills/mediator/account-loss-transition-mediation.zh-CN.md)：对应的协调员 skill。
+
 先读：
 
 - [CONTRIBUTING.md](./CONTRIBUTING.md)：贡献流程和隐私规则。

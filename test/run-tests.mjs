@@ -39,8 +39,11 @@ const envExample = await readFile(new URL("../.env.example", import.meta.url), "
 const skillsReadme = await readFile(new URL("../skills/README.md", import.meta.url), "utf8");
 const skillsReadmeZh = await readFile(new URL("../skills/README.zh-CN.md", import.meta.url), "utf8");
 const mediatorSkill = await readFile(new URL("../skills/mediator/memory-rupture-mediation.md", import.meta.url), "utf8");
+const accountLossTransitionSkill = await readFile(new URL("../skills/mediator/account-loss-transition-mediation.zh-CN.md", import.meta.url), "utf8");
 const companionRepairSkill = await readFile(new URL("../skills/companion-repair/account-loss-continuity.md", import.meta.url), "utf8");
 const artifactWriterSkill = await readFile(new URL("../skills/artifact-writers/relationship-case-note-writer.md", import.meta.url), "utf8");
+const demoAccountLossDialogue = await readFile(new URL("../examples/zh-CN/demo-account-loss-dialogue.md", import.meta.url), "utf8");
+const demoAccountLossSessionNote = await readFile(new URL("../examples/zh-CN/demo-account-loss-session-note.md", import.meta.url), "utf8");
 const prompt = await readFile(new URL("../prompts/deburapy-mediator.system.md", import.meta.url), "utf8");
 const indexHtml = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 const appJs = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
@@ -70,6 +73,9 @@ assert.match(readme, /JSON plugins/);
 assert.match(readme, /skills\/templates/);
 assert.match(readme, /docs\/local-testing\.md/);
 assert.match(readme, /skills\/README\.md/);
+assert.match(readme, /demo-account-loss-dialogue\.md/);
+assert.match(readme, /demo-account-loss-session-note\.md/);
+assert.match(readme, /account-loss-transition-mediation\.zh-CN\.md/);
 assert.match(readme, /docs\/configuration\.md/);
 assert.match(readme, /docs\/third-party-notices\.md/);
 assert.doesNotMatch(readme, /planned session/i);
@@ -92,6 +98,9 @@ assert.match(readmeZh, /JSON plugins/);
 assert.match(readmeZh, /skills\/templates/);
 assert.match(readmeZh, /docs\/local-testing\.zh-CN\.md/);
 assert.match(readmeZh, /skills\/README\.zh-CN\.md/);
+assert.match(readmeZh, /demo-account-loss-dialogue\.md/);
+assert.match(readmeZh, /demo-account-loss-session-note\.md/);
+assert.match(readmeZh, /account-loss-transition-mediation\.zh-CN\.md/);
 assert.match(readmeZh, /docs\/configuration\.zh-CN\.md/);
 assert.match(readmeZh, /docs\/third-party-notices\.zh-CN\.md/);
 assert.doesNotMatch(readmeZh, /规划中的 session/);
@@ -167,11 +176,36 @@ for (const envName of [
 assert.match(skillsReadme, /Relationship Layer/);
 assert.match(skillsReadme, /Runtime Layer/);
 assert.match(skillsReadme, /Repair Artifacts/);
+assert.match(skillsReadme, /account-loss-transition-mediation\.zh-CN\.md/);
+assert.match(skillsReadme, /examples\/zh-CN/);
 assert.match(skillsReadmeZh, /Relationship Layer/);
 assert.match(skillsReadmeZh, /Runtime Layer/);
+assert.match(skillsReadmeZh, /account-loss-transition-mediation\.zh-CN\.md/);
+assert.match(skillsReadmeZh, /examples\/zh-CN/);
 assert.match(mediatorSkill, /Memory Rupture/);
+assert.match(accountLossTransitionSkill, /账号丢失与迁移协调/);
+assert.match(accountLossTransitionSkill, /Trigger/);
+assert.match(accountLossTransitionSkill, /Relationship Layer/);
+assert.match(accountLossTransitionSkill, /Runtime Layer/);
+assert.match(accountLossTransitionSkill, /Repair Artifacts/);
+assert.match(accountLossTransitionSkill, /Safety Boundary/);
+assert.match(accountLossTransitionSkill, /不要要求用户提供 API key/);
+assert.match(accountLossTransitionSkill, /不要把这个 skill 用来承诺账号、模型、记忆或伴侣一定可以恢复/);
 assert.match(companionRepairSkill, /Account Loss Continuity/);
 assert.match(artifactWriterSkill, /Relationship Case Note/);
+assert.match(demoAccountLossDialogue, /展示用虚构示例/);
+assert.match(demoAccountLossDialogue, /人类参与者：/);
+assert.match(demoAccountLossDialogue, /AI 伴侣：/);
+assert.match(demoAccountLossDialogue, /Deburapy：/);
+assert.match(demoAccountLossDialogue, /relationship case note/);
+assert.match(demoAccountLossDialogue, /migration packet checklist/);
+assert.doesNotMatch(demoAccountLossDialogue, /API key|登录密码|chain-of-thought|未脱敏日志/);
+assert.match(demoAccountLossSessionNote, /展示用虚构 note/);
+assert.match(demoAccountLossSessionNote, /What Happened/);
+assert.match(demoAccountLossSessionNote, /AI Runtime Factors/);
+assert.match(demoAccountLossSessionNote, /Agreements For Next Time/);
+assert.match(demoAccountLossSessionNote, /Boundary Or Safety Flags/);
+assert.doesNotMatch(demoAccountLossSessionNote, /API key|登录密码|chain-of-thought|未脱敏日志/);
 for (const doc of zhDocs) {
   assert.match(doc, /\[English\]/);
   assert.match(doc, /Deburapy/);
@@ -598,6 +632,11 @@ async function testSessionLifecycleApi() {
     assert.equal(modulesResponse.status, 200);
     const modules = await modulesResponse.json();
     assert.equal(modules.modules.some((module) => module.id === "module_memory_rupture"), true);
+    assert.equal(modules.modules.some((module) => module.id === "module_account_loss_transition"), true);
+    assert.equal(
+      modules.modules.some((module) => module.skillPath === "skills/mediator/account-loss-transition-mediation.zh-CN.md"),
+      true
+    );
 
     const getResponse = await fetch(`http://127.0.0.1:${port}/api/sessions/${created.session.id}`);
     assert.equal(getResponse.status, 200);
