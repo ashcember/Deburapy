@@ -288,6 +288,8 @@ assert.match(appJs, /syncConsentGate/);
 assert.match(appJs, /\/api\/intake\/respond/);
 assert.match(appJs, /not added to the room transcript/);
 assert.match(appJs, /deburapy\.locale/);
+assert.match(appJs, /deburapy\.vercel\.app/);
+assert.match(appJs, /hostname\.endsWith\("\.vercel\.app"\)/);
 assert.match(appJs, /applyStaticTranslations/);
 assert.match(appJs, /欢迎来到你的数字安全空间/);
 assert.match(appJs, /Session note 已本地保存/);

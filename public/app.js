@@ -578,6 +578,10 @@ function readLocalePreference() {
   } catch {
     // Locale preference is cosmetic; keep the app usable if storage is blocked.
   }
+  const hostname = window.location.hostname || "";
+  if (hostname === "deburapy.vercel.app" || hostname.endsWith(".vercel.app")) {
+    return "zh-Hans";
+  }
   const browserLanguage = navigator.language || "";
   return browserLanguage.toLowerCase().startsWith("zh") ? "zh-Hans" : "en";
 }
