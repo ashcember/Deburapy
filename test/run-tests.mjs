@@ -269,6 +269,9 @@ assert.match(appJs, /hostedDemoCompanionManaged/);
 assert.match(appJs, /useOwnCompanionKey/);
 assert.match(appJs, /toggleCompanionKeyMode/);
 assert.match(appJs, /hostedDemo\[target\]\?\.enabled/);
+assert.match(appJs, /legacyDefaultCompanionPrompt/);
+assert.match(appJs, /Speak like a real, emotionally present companion/);
+assert.match(appJs, /Do not lead with technical explanations/);
 assert.match(appJs, /statusCode === 429/);
 assert.doesNotMatch(appJs, /__DEBURAPY_HOSTED_DEMO_KEY__/);
 assert.match(appJs, /testCompanion:\s*document\.querySelector\("#testCompanion"\)/);
@@ -333,7 +336,7 @@ assert.match(appJs, /isOneOnOneMode\(\) \? t\("turnInstructionOneOnOne"\) : t\("
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 assert.match(indexHtml, /id="companionMode"/);
 assert.match(indexHtml, /id="aiCompanionSection"/);
-assert.match(indexHtml, /app\.js\?v=2026-07-05-companion-hosted/);
+assert.match(indexHtml, /app\.js\?v=2026-07-05-companion-voice/);
 assert.match(indexHtml, /id="testCompanion"/);
 assert.match(indexHtml, /id="settingsDrawer"/);
 assert.match(indexHtml, /id="mediatorPersona"/);
@@ -567,6 +570,9 @@ assert.match(oneOnOneNotePrompt, /intake concern: ai_loss_or_ban/);
 const companionSystem = defaultCompanionPrompt("Configured Companion");
 assert.match(companionSystem, /Configured Companion/);
 assert.match(companionSystem, /not the mediator/i);
+assert.match(companionSystem, /emotionally present companion/i);
+assert.match(companionSystem, /Do not lead with technical explanations/);
+assert.match(companionSystem, /Only discuss runtime constraints when the human or Deburapy explicitly asks/);
 
 const companionUserPrompt = buildCompanionUserPrompt(
   {
@@ -582,6 +588,8 @@ const companionUserPrompt = buildCompanionUserPrompt(
 assert.match(companionUserPrompt, /Companion notes/);
 assert.match(companionUserPrompt, /I felt hurt/);
 assert.match(companionUserPrompt, /Configured Companion/);
+assert.match(companionUserPrompt, /relationship voice/);
+assert.match(companionUserPrompt, /Do not write a system\/debug explanation by default/);
 
 const request = buildChatCompletionsRequest({
   provider: "openrouter",
