@@ -242,6 +242,8 @@ assert.match(await readFile(new URL("../docs/session-architecture.md", import.me
 assert.match(prompt, /not a therapist/i);
 assert.match(prompt, /AI-human relationship/i);
 assert.match(prompt, /人机关系协调员/);
+assert.match(prompt, /grounded person in the room/);
+assert.match(prompt, /natural conversational language/);
 assert.doesNotMatch(prompt, /single named deployment/i);
 assert.doesNotMatch(prompt, /private chat platform/i);
 assert.match(appJs, /rememberApiKey/);
@@ -301,6 +303,8 @@ assert.match(appJs, /syncConsentGate/);
 assert.match(appJs, /function supportModeForConcern/);
 assert.match(appJs, /function currentSupportContext/);
 assert.match(appJs, /function resetLocalStateFromUrl/);
+assert.match(appJs, /function signedHumanName/);
+assert.match(appJs, /function currentMediatorName/);
 assert.match(appJs, /params\.get\("reset"\)/);
 assert.match(appJs, /localStateReset/);
 assert.match(appJs, /supportMode:\s*supportModeForConcern/);
@@ -308,6 +312,9 @@ assert.match(appJs, /oneOnOneNoCompanion/);
 assert.match(appJs, /turnInstructionOneOnOne/);
 assert.match(appJs, /humanMessageAddedOneOnOne/);
 assert.match(appJs, /AI companion is connected for this session/);
+assert.match(appJs, /message\.kind !== "room_message"/);
+assert.match(appJs, /authorName: signedHumanName\(\)/);
+assert.match(appJs, /mediatorName: currentMediatorName\(\)/);
 assert.match(appJs, /\/api\/intake\/respond/);
 assert.match(appJs, /not added to the room transcript/);
 assert.match(appJs, /deburapy\.locale/);
@@ -321,7 +328,7 @@ assert.match(appJs, /isOneOnOneMode\(\) \? t\("turnInstructionOneOnOne"\) : t\("
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 assert.match(indexHtml, /id="companionMode"/);
 assert.match(indexHtml, /id="aiCompanionSection"/);
-assert.match(indexHtml, /app\.js\?v=2026-07-05-reset-link/);
+assert.match(indexHtml, /app\.js\?v=2026-07-05-name-style/);
 assert.match(indexHtml, /id="testCompanion"/);
 assert.match(indexHtml, /id="settingsDrawer"/);
 assert.match(indexHtml, /id="mediatorPersona"/);
@@ -403,6 +410,8 @@ assert.match(serverJs, /pre_intake/);
 assert.match(serverJs, /supportContextFor/);
 assert.match(serverJs, /AI companion turns are disabled in one-on-one support mode/);
 assert.match(serverJs, /supportMode: supportContext\.supportMode/);
+assert.match(serverJs, /const mediatorName = String\(input\.mediatorName/);
+assert.match(serverJs, /authorName: mediatorName\.slice\(0, 80\)/);
 assert.match(serverJs, /course-outline/);
 assert.match(serverJs, /relationship-map/);
 assert.match(serverJs, /check-in-scale/);
@@ -439,6 +448,7 @@ const mediatorUserPrompt = buildMediatorUserPrompt({ messages: [] });
 assert.match(mediatorUserPrompt, /Next speaker: human/);
 assert.match(mediatorUserPrompt, /Next speaker: companion/);
 assert.match(mediatorUserPrompt, /Session timing context/);
+assert.match(mediatorUserPrompt, /Speak naturally/);
 
 const oneOnOneSupportBlock = buildSupportContextBlock({
   messages: [],
@@ -458,6 +468,7 @@ assert.match(oneOnOneMediatorPrompt, /support mode: one_on_one/);
 assert.match(oneOnOneMediatorPrompt, /no AI companion is present/i);
 assert.match(oneOnOneMediatorPrompt, /intake concern: ai_loss_or_ban/);
 assert.match(oneOnOneMediatorPrompt, /Next speaker: human/);
+assert.match(oneOnOneMediatorPrompt, /Speak naturally/);
 assert.doesNotMatch(oneOnOneMediatorPrompt, /Next speaker: companion/);
 
 assert.deepEqual(parseMediatorTurn("Visible reply.\nNext speaker: human"), {

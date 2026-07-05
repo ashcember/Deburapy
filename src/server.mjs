@@ -584,9 +584,10 @@ async function handleApi(req, res) {
     });
     const parsed = parseMediatorTurn(rawContent);
     const nextSpeaker = supportContext.supportMode === "one_on_one" ? "human" : parsed.nextSpeaker;
+    const mediatorName = String(input.mediatorName || "Deburapy").trim() || "Deburapy";
     const updated = store.addMessage(roomId, {
       authorRole: "mediator",
-      authorName: "Deburapy",
+      authorName: mediatorName.slice(0, 80),
       content: parsed.visibleContent
     });
     return sendJson(res, 200, { message: updated.messages.at(-1), room: updated, nextSpeaker });

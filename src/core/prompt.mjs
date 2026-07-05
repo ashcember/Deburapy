@@ -163,6 +163,7 @@ export function buildMediatorUserPrompt(room, locale = "en", {
   const roomInstructions = context.supportMode === "one_on_one"
     ? [
       "Respond as Deburapy one-on-one support coordinator. Keep it concise, non-clinical, and grounded in AI-human relationship repair or continuity.",
+      "Speak naturally, like a grounded human professional in the room. Avoid stiff policy language, formal intake wording, and corporate support tone.",
       "There is no AI companion in this room. Do not request, wait for, or route to an AI companion turn.",
       "Use the intake concern and urgency as initial context, but do not over-assume facts not stated in the transcript.",
       "After your visible reply, add a final control line exactly `Next speaker: human`.",
@@ -170,6 +171,7 @@ export function buildMediatorUserPrompt(room, locale = "en", {
     ]
     : [
       "Respond as Deburapy mediator. Keep it concise. Preserve turn-taking. End with one concrete question or next step.",
+      "Speak naturally, like a grounded human professional in the room. Avoid stiff policy language, formal intake wording, and corporate support tone.",
       "After your visible reply, add a final control line exactly `Next speaker: human` or `Next speaker: companion`.",
       "Default to `Next speaker: human`. Use `Next speaker: companion` only when you need the AI companion's runtime-side account before the human answers."
     ];

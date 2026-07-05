@@ -1016,6 +1016,18 @@ function isOneOnOneMode() {
   return currentSupportContext().supportMode === "one_on_one";
 }
 
+function signedHumanName() {
+  const saved = readOnboarding();
+  return String(saved.signature || "").trim() || "Human";
+}
+
+function currentMediatorName() {
+  const personaId = els.mediatorPersona?.value || "core";
+  if (!personaId || personaId === "core" || personaId === "custom") return "Deburapy";
+  const label = els.mediatorPersona.selectedOptions?.[0]?.textContent?.trim();
+  return label || "Deburapy";
+}
+
 function showConsentGate() {
   els.consentGate.hidden = false;
   document.body.classList.add("isConsentOpen");
@@ -1273,7 +1285,11 @@ function renderMessages(messages) {
     item.className = `message message--${message.authorRole || "unknown"}`;
     const meta = document.createElement("div");
     meta.className = "messageMeta";
-    meta.textContent = `${message.authorName || message.authorRole} · ${message.kind || "message"}`;
+    const author = message.authorName || message.authorRole || "Participant";
+    const kind = message.kind && message.kind !== "room_message"
+      ? ` · ${String(message.kind).replace(/_/g, " ")}`
+      : "";
+    meta.textContent = `${author}${kind}`;
     const content = document.createElement("div");
     content.className = "messageContent";
     content.textContent = message.content;
@@ -2062,6 +2078,7 @@ async function askMediator() {
       roomId,
       locale: els.locale.value,
       personaId: els.mediatorPersona.value,
+      mediatorName: currentMediatorName(),
       systemPrompt: els.mediatorPrompt.value,
       turnInstruction: isOneOnOneMode() ? t("turnInstructionOneOnOne") : t("turnInstruction")
     })
@@ -2188,7 +2205,7 @@ els.messageForm.addEventListener("submit", async (event) => {
       method: "POST",
       body: JSON.stringify({
         authorRole: "human",
-        authorName: "Human",
+        authorName: signedHumanName(),
         content
       })
     });
