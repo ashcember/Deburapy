@@ -133,9 +133,20 @@ curl -sS -X POST http://127.0.0.1:8787/api/channels/local/push \
 对 Claude Code，先启动 web server，然后在 Deburapy repo root 执行：
 
 ```bash
+sh scripts/install-claude-mcp.sh
+```
+
+手动等价命令：
+
+```bash
+NODE_BIN="$(command -v node || true)"
+if [ -z "$NODE_BIN" ] && [ -x /opt/homebrew/bin/node ]; then NODE_BIN=/opt/homebrew/bin/node; fi
+if [ -z "$NODE_BIN" ] && [ -x /usr/local/bin/node ]; then NODE_BIN=/usr/local/bin/node; fi
+test -n "$NODE_BIN" || { echo "需要 Node.js 20 或更新版本"; exit 1; }
+
 claude mcp add --env DEBURAPY_URL=http://127.0.0.1:8787 \
   --transport stdio deburapy \
-  -- node "$(pwd)/src/mcp-server.mjs"
+  -- "$NODE_BIN" "$(pwd)/src/mcp-server.mjs"
 ```
 
 如果你的 Claude Code build 需要项目配置，请参考
@@ -150,10 +161,7 @@ claude mcp get deburapy
 Claude Code 还可以通过实验性的 `notifications/claude/channel` 路径接收 channel wake-up：
 
 ```bash
-claude mcp add --env DEBURAPY_URL=http://127.0.0.1:8787 \
-  --env DEBURAPY_CLAUDE_CHANNEL_NOTIFICATIONS=1 \
-  --transport stdio deburapy \
-  -- node "$(pwd)/src/mcp-server.mjs"
+DEBURAPY_CLAUDE_CHANNEL_NOTIFICATIONS=1 sh scripts/install-claude-mcp.sh
 claude --dangerously-load-development-channels server:deburapy
 ```
 

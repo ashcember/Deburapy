@@ -26,9 +26,23 @@ https://github.com/ashcember/Deburapy
 Deburapy 通过 stdio 暴露标准 MCP tools。先启动 web server，然后在 Deburapy repo root 注册：
 
 ```bash
+sh scripts/install-claude-mcp.sh
+```
+
+这个安装脚本会用绝对路径注册 Claude Code，避免在非登录 shell 里已经安装
+Node、但 `node` 不在 `PATH` 上时失败。
+
+手动等价命令：
+
+```bash
+NODE_BIN="$(command -v node || true)"
+if [ -z "$NODE_BIN" ] && [ -x /opt/homebrew/bin/node ]; then NODE_BIN=/opt/homebrew/bin/node; fi
+if [ -z "$NODE_BIN" ] && [ -x /usr/local/bin/node ]; then NODE_BIN=/usr/local/bin/node; fi
+test -n "$NODE_BIN" || { echo "需要 Node.js 20 或更新版本"; exit 1; }
+
 claude mcp add --env DEBURAPY_URL=http://127.0.0.1:8787 \
   --transport stdio deburapy \
-  -- node "$(pwd)/src/mcp-server.mjs"
+  -- "$NODE_BIN" "$(pwd)/src/mcp-server.mjs"
 ```
 
 如果你的 Claude Code build 不支持这个命令形状，请使用 [../examples/claude-code.mcp.example.json](../examples/claude-code.mcp.example.json) 中的 config shape。

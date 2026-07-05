@@ -30,9 +30,23 @@ Deburapy exposes standard MCP tools over stdio. Register it from the Deburapy
 repo root after the web server is running:
 
 ```bash
+sh scripts/install-claude-mcp.sh
+```
+
+The installer registers Claude Code with absolute binary paths, which avoids
+failures in non-login shells where `node` is installed but not on `PATH`.
+
+Manual equivalent:
+
+```bash
+NODE_BIN="$(command -v node || true)"
+if [ -z "$NODE_BIN" ] && [ -x /opt/homebrew/bin/node ]; then NODE_BIN=/opt/homebrew/bin/node; fi
+if [ -z "$NODE_BIN" ] && [ -x /usr/local/bin/node ]; then NODE_BIN=/usr/local/bin/node; fi
+test -n "$NODE_BIN" || { echo "Node.js 20+ is required"; exit 1; }
+
 claude mcp add --env DEBURAPY_URL=http://127.0.0.1:8787 \
   --transport stdio deburapy \
-  -- node "$(pwd)/src/mcp-server.mjs"
+  -- "$NODE_BIN" "$(pwd)/src/mcp-server.mjs"
 ```
 
 If your Claude Code build does not support that command shape, use the config
