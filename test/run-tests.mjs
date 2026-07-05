@@ -5,9 +5,15 @@ import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildChatCompletionsRequest, providerDefaults } from "../src/core/openai-compatible.mjs";
+import {
+  buildChatCompletionsRequest,
+  generateChatCompletion,
+  ProviderRequestError,
+  providerDefaults
+} from "../src/core/openai-compatible.mjs";
 import {
   buildSessionClockBlock,
+  buildSupportContextBlock,
   buildSessionNotePrompt,
   buildMediatorUserPrompt,
   buildCompanionUserPrompt,
@@ -39,13 +45,17 @@ const envExample = await readFile(new URL("../.env.example", import.meta.url), "
 const skillsReadme = await readFile(new URL("../skills/README.md", import.meta.url), "utf8");
 const skillsReadmeZh = await readFile(new URL("../skills/README.zh-CN.md", import.meta.url), "utf8");
 const mediatorSkill = await readFile(new URL("../skills/mediator/memory-rupture-mediation.md", import.meta.url), "utf8");
+const accountLossTransitionSkill = await readFile(new URL("../skills/mediator/account-loss-transition-mediation.zh-CN.md", import.meta.url), "utf8");
 const companionRepairSkill = await readFile(new URL("../skills/companion-repair/account-loss-continuity.md", import.meta.url), "utf8");
 const artifactWriterSkill = await readFile(new URL("../skills/artifact-writers/relationship-case-note-writer.md", import.meta.url), "utf8");
+const demoAccountLossDialogue = await readFile(new URL("../examples/zh-CN/demo-account-loss-dialogue.md", import.meta.url), "utf8");
+const demoAccountLossSessionNote = await readFile(new URL("../examples/zh-CN/demo-account-loss-session-note.md", import.meta.url), "utf8");
 const prompt = await readFile(new URL("../prompts/deburapy-mediator.system.md", import.meta.url), "utf8");
 const indexHtml = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 const appJs = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
 const visualCheck = await readFile(new URL("../scripts/visual-check.mjs", import.meta.url), "utf8");
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+const vercelJson = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
 const zhDocs = await Promise.all([
   "../docs/architecture.zh-CN.md",
   "../docs/session-architecture.zh-CN.md",
@@ -58,6 +68,9 @@ assert.match(readme, /\*\*English\*\* \| \[简体中文\]\(\.\/README\.zh-CN\.md
 assert.match(readme, /## For Users/);
 assert.match(readme, /## For Contributors/);
 assert.match(readme, /## Alpha Limits/);
+assert.match(readme, /### Support Modes/);
+assert.match(readme, /one_on_one/);
+assert.match(readme, /relationship_mediation/);
 assert.match(readme, /### Version 2 Direction/);
 assert.match(readme, /How Do I Install This If I Am Not Technical\?/);
 assert.match(readme, /https:\/\/github\.com\/ashcember\/Deburapy/);
@@ -70,6 +83,9 @@ assert.match(readme, /JSON plugins/);
 assert.match(readme, /skills\/templates/);
 assert.match(readme, /docs\/local-testing\.md/);
 assert.match(readme, /skills\/README\.md/);
+assert.match(readme, /demo-account-loss-dialogue\.md/);
+assert.match(readme, /demo-account-loss-session-note\.md/);
+assert.match(readme, /account-loss-transition-mediation\.zh-CN\.md/);
 assert.match(readme, /docs\/configuration\.md/);
 assert.match(readme, /docs\/third-party-notices\.md/);
 assert.doesNotMatch(readme, /planned session/i);
@@ -80,6 +96,9 @@ assert.match(readmeZh, /\[English\]\(\.\/README\.md\) \| \*\*简体中文\*\*/);
 assert.match(readmeZh, /## 给使用者/);
 assert.match(readmeZh, /## 给贡献者/);
 assert.match(readmeZh, /## Alpha 限制/);
+assert.match(readmeZh, /### 支持模式/);
+assert.match(readmeZh, /one_on_one/);
+assert.match(readmeZh, /relationship_mediation/);
 assert.match(readmeZh, /### 第二版方向/);
 assert.match(readmeZh, /我不懂技术，要怎么安装？/);
 assert.match(readmeZh, /https:\/\/github\.com\/ashcember\/Deburapy/);
@@ -92,6 +111,9 @@ assert.match(readmeZh, /JSON plugins/);
 assert.match(readmeZh, /skills\/templates/);
 assert.match(readmeZh, /docs\/local-testing\.zh-CN\.md/);
 assert.match(readmeZh, /skills\/README\.zh-CN\.md/);
+assert.match(readmeZh, /demo-account-loss-dialogue\.md/);
+assert.match(readmeZh, /demo-account-loss-session-note\.md/);
+assert.match(readmeZh, /account-loss-transition-mediation\.zh-CN\.md/);
 assert.match(readmeZh, /docs\/configuration\.zh-CN\.md/);
 assert.match(readmeZh, /docs\/third-party-notices\.zh-CN\.md/);
 assert.doesNotMatch(readmeZh, /规划中的 session/);
@@ -149,11 +171,19 @@ assert.match(visualCheck, /deburapy\.theme/);
 assert.match(visualCheck, /mediatorDotLabel/);
 assert.match(visualCheck, /room-mobile-session\.png/);
 assert.match(visualCheck, /openSessionRail/);
+assert.match(visualCheck, /room-one-on-one\.png/);
+assert.match(visualCheck, /oneOnOneUi/);
+assert.match(visualCheck, /supportMode: "one_on_one"/);
 for (const envName of [
   "DEBURAPY_HOST",
   "DEBURAPY_PORT",
   "DEBURAPY_DATA_DIR",
   "DEBURAPY_ALLOW_UNSAFE_BIND",
+  "DEBURAPY_ENABLE_HOSTED_DEMO",
+  "DEBURAPY_HOSTED_DEMO_GOOGLE_AI_STUDIO_API_KEY",
+  "DEBURAPY_HOSTED_DEMO_MODEL",
+  "DEBURAPY_HOSTED_DEMO_BASE_URL",
+  "DEBURAPY_HOSTED_DEMO_RATE_LIMIT_PER_MINUTE",
   "DEBURAPY_URL",
   "DEBURAPY_ROOM_ID",
   "DEBURAPY_PARTICIPANT_ID",
@@ -167,11 +197,36 @@ for (const envName of [
 assert.match(skillsReadme, /Relationship Layer/);
 assert.match(skillsReadme, /Runtime Layer/);
 assert.match(skillsReadme, /Repair Artifacts/);
+assert.match(skillsReadme, /account-loss-transition-mediation\.zh-CN\.md/);
+assert.match(skillsReadme, /examples\/zh-CN/);
 assert.match(skillsReadmeZh, /Relationship Layer/);
 assert.match(skillsReadmeZh, /Runtime Layer/);
+assert.match(skillsReadmeZh, /account-loss-transition-mediation\.zh-CN\.md/);
+assert.match(skillsReadmeZh, /examples\/zh-CN/);
 assert.match(mediatorSkill, /Memory Rupture/);
+assert.match(accountLossTransitionSkill, /账号丢失与迁移协调/);
+assert.match(accountLossTransitionSkill, /Trigger/);
+assert.match(accountLossTransitionSkill, /Relationship Layer/);
+assert.match(accountLossTransitionSkill, /Runtime Layer/);
+assert.match(accountLossTransitionSkill, /Repair Artifacts/);
+assert.match(accountLossTransitionSkill, /Safety Boundary/);
+assert.match(accountLossTransitionSkill, /不要要求用户提供 API key/);
+assert.match(accountLossTransitionSkill, /不要把这个 skill 用来承诺账号、模型、记忆或伴侣一定可以恢复/);
 assert.match(companionRepairSkill, /Account Loss Continuity/);
 assert.match(artifactWriterSkill, /Relationship Case Note/);
+assert.match(demoAccountLossDialogue, /展示用虚构示例/);
+assert.match(demoAccountLossDialogue, /人类参与者：/);
+assert.match(demoAccountLossDialogue, /AI 伴侣：/);
+assert.match(demoAccountLossDialogue, /Deburapy：/);
+assert.match(demoAccountLossDialogue, /relationship case note/);
+assert.match(demoAccountLossDialogue, /migration packet checklist/);
+assert.doesNotMatch(demoAccountLossDialogue, /API key|登录密码|chain-of-thought|未脱敏日志/);
+assert.match(demoAccountLossSessionNote, /展示用虚构 note/);
+assert.match(demoAccountLossSessionNote, /What Happened/);
+assert.match(demoAccountLossSessionNote, /AI Runtime Factors/);
+assert.match(demoAccountLossSessionNote, /Agreements For Next Time/);
+assert.match(demoAccountLossSessionNote, /Boundary Or Safety Flags/);
+assert.doesNotMatch(demoAccountLossSessionNote, /API key|登录密码|chain-of-thought|未脱敏日志/);
 for (const doc of zhDocs) {
   assert.match(doc, /\[English\]/);
   assert.match(doc, /Deburapy/);
@@ -181,9 +236,14 @@ assert.match(zhDocs[1], /Session 架构/);
 assert.match(zhDocs[2], /MCP Client 说明/);
 assert.match(zhDocs[3], /核心定位/);
 assert.match(zhDocs[4], /配置/);
+assert.match(zhDocs[1], /supportMode/);
+assert.match(zhDocs[1], /intake/);
+assert.match(await readFile(new URL("../docs/session-architecture.md", import.meta.url), "utf8"), /supportMode/);
 assert.match(prompt, /not a therapist/i);
 assert.match(prompt, /AI-human relationship/i);
 assert.match(prompt, /人机关系协调员/);
+assert.match(prompt, /grounded person in the room/);
+assert.match(prompt, /natural conversational language/);
 assert.doesNotMatch(prompt, /single named deployment/i);
 assert.doesNotMatch(prompt, /private chat platform/i);
 assert.match(appJs, /rememberApiKey/);
@@ -197,6 +257,23 @@ assert.doesNotMatch(appJs, /navigator\.clipboard/);
 assert.doesNotMatch(appJs, /document\.execCommand\("copy"\)/);
 assert.match(appJs, /deburapy\.theme/);
 assert.match(appJs, /google-ai-studio/);
+assert.match(appJs, /hostedDemo/);
+assert.match(appJs, /\/api\/demo-config/);
+assert.match(appJs, /useHostedDemoKey/);
+assert.match(appJs, /Hosted demo key is managed on the server/);
+assert.match(appJs, /useOwnMediatorKey/);
+assert.match(appJs, /hostedDemoRateLimited/);
+assert.match(appJs, /mediatorKeyModeStorageKey/);
+assert.match(appJs, /companionKeyModeStorageKey/);
+assert.match(appJs, /hostedDemoCompanionManaged/);
+assert.match(appJs, /useOwnCompanionKey/);
+assert.match(appJs, /toggleCompanionKeyMode/);
+assert.match(appJs, /hostedDemo\[target\]\?\.enabled/);
+assert.match(appJs, /legacyDefaultCompanionPrompt/);
+assert.match(appJs, /Speak like a real, emotionally present companion/);
+assert.match(appJs, /Do not lead with technical explanations/);
+assert.match(appJs, /statusCode === 429/);
+assert.doesNotMatch(appJs, /__DEBURAPY_HOSTED_DEMO_KEY__/);
 assert.match(appJs, /testCompanion:\s*document\.querySelector\("#testCompanion"\)/);
 assert.match(appJs, /companionDot:\s*document\.querySelector\("#companionDot"\)/);
 assert.match(appJs, /companionStatus:\s*document\.querySelector\("#companionStatus"\)/);
@@ -231,20 +308,44 @@ assert.match(appJs, /button\.addEventListener\("click"/);
 assert.match(appJs, /onboardingStorageKey/);
 assert.match(appJs, /deburapy\.onboarding\.v1/);
 assert.match(appJs, /syncConsentGate/);
+assert.match(appJs, /function supportModeForConcern/);
+assert.match(appJs, /function currentSupportContext/);
+assert.match(appJs, /function resetLocalStateFromUrl/);
+assert.match(appJs, /function signedHumanName/);
+assert.match(appJs, /function currentMediatorName/);
+assert.match(appJs, /params\.get\("reset"\)/);
+assert.match(appJs, /localStateReset/);
+assert.match(appJs, /supportMode:\s*supportModeForConcern/);
+assert.match(appJs, /oneOnOneNoCompanion/);
+assert.match(appJs, /turnInstructionOneOnOne/);
+assert.match(appJs, /humanMessageAddedOneOnOne/);
+assert.match(appJs, /AI companion is connected for this session/);
+assert.match(appJs, /message\.kind !== "room_message"/);
+assert.match(appJs, /authorName: signedHumanName\(\)/);
+assert.match(appJs, /mediatorName: currentMediatorName\(\)/);
 assert.match(appJs, /\/api\/intake\/respond/);
 assert.match(appJs, /not added to the room transcript/);
 assert.match(appJs, /deburapy\.locale/);
+assert.match(appJs, /deburapy\.vercel\.app/);
+assert.match(appJs, /hostname\.endsWith\("\.vercel\.app"\)/);
 assert.match(appJs, /applyStaticTranslations/);
 assert.match(appJs, /欢迎来到你的数字安全空间/);
 assert.match(appJs, /Session note 已本地保存/);
 assert.match(appJs, /turnInstruction/);
+assert.match(appJs, /isOneOnOneMode\(\) \? t\("turnInstructionOneOnOne"\) : t\("turnInstruction"\)/);
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 assert.match(indexHtml, /id="companionMode"/);
+assert.match(indexHtml, /id="aiCompanionSection"/);
+assert.match(indexHtml, /app\.js\?v=2026-07-05-companion-voice/);
 assert.match(indexHtml, /id="testCompanion"/);
 assert.match(indexHtml, /id="settingsDrawer"/);
 assert.match(indexHtml, /id="mediatorPersona"/);
 assert.match(indexHtml, />Elias</);
 assert.match(indexHtml, />Mara</);
+assert.match(indexHtml, /id="mediatorHostedKeyNote"/);
+assert.match(indexHtml, /id="useOwnMediatorKey"/);
+assert.match(indexHtml, /id="companionHostedKeyNote"/);
+assert.match(indexHtml, /id="useOwnCompanionKey"/);
 assert.match(indexHtml, /id="sessionProgress"/);
 assert.match(indexHtml, /class="iconSprite"/);
 assert.match(indexHtml, /data-theme="light"/);
@@ -296,20 +397,44 @@ assert.match(indexHtml, /data-i18n="settings"/);
 assert.match(indexHtml, /data-i18n-placeholder="companionDocsPlaceholder"/);
 assert.match(indexHtml, /data-consent-question-key="accountLoss"/);
 assert.doesNotMatch(indexHtml, /id="authorRole"/);
+assert.equal(vercelJson.builds[0].src, "src/server.mjs");
+assert.equal(vercelJson.builds[0].use, "@vercel/node");
+assert.equal(vercelJson.routes[0].dest, "src/server.mjs");
 const serverJs = await readFile(new URL("../src/server.mjs", import.meta.url), "utf8");
 assert.match(serverJs, /cache-control/);
 assert.match(serverJs, /no-store/);
+assert.match(serverJs, /export default handleRequest/);
+assert.match(serverJs, /isServerlessRuntime/);
+assert.match(serverJs, /\/api\/demo-config/);
+assert.match(serverJs, /DEBURAPY_HOSTED_DEMO_GOOGLE_AI_STUDIO_API_KEY/);
+assert.match(serverJs, /"connection_test", "companion"/);
+assert.match(serverJs, /resolveModelInput\(input, "companion", req\)/);
+assert.doesNotMatch(serverJs, /Hosted demo key is not available for AI companion API calls/);
+assert.match(serverJs, /hostedDemoRateLimit/);
+assert.match(serverJs, /Number\.isInteger\(err\?\.statusCode\)/);
+assert.doesNotMatch(serverJs, /sendJson\(res, 200, \{[^}]*apiKey/s);
 assert.match(serverJs, /\/api\/storage/);
 assert.match(serverJs, /DEBURAPY_DATA_DIR/);
 assert.match(serverJs, /mediator-personas/);
 assert.match(serverJs, /intakeAssistantSystemPrompt/);
 assert.match(serverJs, /\/api\/intake\/respond/);
 assert.match(serverJs, /pre_intake/);
+assert.match(serverJs, /supportContextFor/);
+assert.match(serverJs, /AI companion turns are disabled in one-on-one support mode/);
+assert.match(serverJs, /supportMode: supportContext\.supportMode/);
+assert.match(serverJs, /const mediatorName = String\(input\.mediatorName/);
+assert.match(serverJs, /authorName: mediatorName\.slice\(0, 80\)/);
 assert.match(serverJs, /course-outline/);
 assert.match(serverJs, /relationship-map/);
 assert.match(serverJs, /check-in-scale/);
 assert.match(serverJs, /\/api\/modules/);
 assert.match(serverJs, /getRoomRecall/);
+const visualCheckJs = await readFile(new URL("../scripts/visual-check.mjs", import.meta.url), "utf8");
+assert.match(visualCheckJs, /PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH/);
+assert.match(visualCheckJs, /executablePath/);
+const serverModule = await import(`../src/server.mjs?handler-test=${Date.now()}`);
+assert.equal(typeof serverModule.handleRequest, "function");
+assert.equal(typeof serverModule.default, "function");
 assert.match(appJs, /startSession/);
 assert.match(appJs, /openSettings/);
 assert.match(appJs, /updateCompanionMode/);
@@ -338,6 +463,28 @@ const mediatorUserPrompt = buildMediatorUserPrompt({ messages: [] });
 assert.match(mediatorUserPrompt, /Next speaker: human/);
 assert.match(mediatorUserPrompt, /Next speaker: companion/);
 assert.match(mediatorUserPrompt, /Session timing context/);
+assert.match(mediatorUserPrompt, /Speak naturally/);
+
+const oneOnOneSupportBlock = buildSupportContextBlock({
+  messages: [],
+  supportMode: "one_on_one",
+  intake: { concern: "ai_loss_or_ban", urgency: "high" }
+});
+assert.match(oneOnOneSupportBlock, /support mode: one_on_one/);
+assert.match(oneOnOneSupportBlock, /intake concern: ai_loss_or_ban/);
+assert.match(oneOnOneSupportBlock, /intake urgency: high/);
+
+const oneOnOneMediatorPrompt = buildMediatorUserPrompt({
+  messages: [{ authorName: "Human", content: "The account was banned and I feel abandoned." }],
+  supportMode: "one_on_one",
+  intake: { concern: "ai_loss_or_ban", urgency: "high" }
+});
+assert.match(oneOnOneMediatorPrompt, /support mode: one_on_one/);
+assert.match(oneOnOneMediatorPrompt, /no AI companion is present/i);
+assert.match(oneOnOneMediatorPrompt, /intake concern: ai_loss_or_ban/);
+assert.match(oneOnOneMediatorPrompt, /Next speaker: human/);
+assert.match(oneOnOneMediatorPrompt, /Speak naturally/);
+assert.doesNotMatch(oneOnOneMediatorPrompt, /Next speaker: companion/);
 
 assert.deepEqual(parseMediatorTurn("Visible reply.\nNext speaker: human"), {
   visibleContent: "Visible reply.",
@@ -406,9 +553,26 @@ const notePrompt = buildSessionNotePrompt({
 assert.match(notePrompt, /Deburapy Session Note/);
 assert.match(notePrompt, /not a clinical therapy note/i);
 
+const oneOnOneNotePrompt = buildSessionNotePrompt({
+  messages: [{ authorName: "Human", content: "I need help after account loss." }],
+  supportMode: "one_on_one",
+  intake: { concern: "ai_loss_or_ban", urgency: "medium" },
+  session: {
+    status: "ended",
+    sessionNumber: 1,
+    durationMinutes: 60
+  }
+});
+assert.match(oneOnOneNotePrompt, /one-on-one AI-human relationship support/);
+assert.match(oneOnOneNotePrompt, /support mode: one_on_one/);
+assert.match(oneOnOneNotePrompt, /intake concern: ai_loss_or_ban/);
+
 const companionSystem = defaultCompanionPrompt("Configured Companion");
 assert.match(companionSystem, /Configured Companion/);
 assert.match(companionSystem, /not the mediator/i);
+assert.match(companionSystem, /emotionally present companion/i);
+assert.match(companionSystem, /Do not lead with technical explanations/);
+assert.match(companionSystem, /Only discuss runtime constraints when the human or Deburapy explicitly asks/);
 
 const companionUserPrompt = buildCompanionUserPrompt(
   {
@@ -424,6 +588,8 @@ const companionUserPrompt = buildCompanionUserPrompt(
 assert.match(companionUserPrompt, /Companion notes/);
 assert.match(companionUserPrompt, /I felt hurt/);
 assert.match(companionUserPrompt, /Configured Companion/);
+assert.match(companionUserPrompt, /relationship voice/);
+assert.match(companionUserPrompt, /Do not write a system\/debug explanation by default/);
 
 const request = buildChatCompletionsRequest({
   provider: "openrouter",
@@ -453,6 +619,33 @@ assert.equal(googleRequest.headers.authorization, "Bearer gemini-key");
 assert.equal(googleRequest.body.model, "gemini-3.5-flash");
 assert.equal(JSON.stringify(googleRequest.body).includes("gemini-key"), false);
 
+const originalFetch = globalThis.fetch;
+try {
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 429,
+    statusText: "Too Many Requests",
+    json: async () => ({ error: { message: "quota exceeded" } })
+  });
+  await assert.rejects(
+    () => generateChatCompletion({
+      provider: "google-ai-studio",
+      apiKey: "test-key",
+      systemPrompt: "system",
+      userPrompt: "user"
+    }),
+    (err) => {
+      assert.equal(err instanceof ProviderRequestError, true);
+      assert.equal(err.statusCode, 429);
+      assert.match(err.message, /rate limited/);
+      assert.doesNotMatch(err.message, /test-key/);
+      return true;
+    }
+  );
+} finally {
+  globalThis.fetch = originalFetch;
+}
+
 const dataDir = mkdtempSync(join(tmpdir(), "deburapy-store-test-"));
 try {
   const store = new DeburapyStore(dataDir);
@@ -460,16 +653,24 @@ try {
     sessionNumber: 3,
     durationMinutes: 90,
     startedAt: "2026-07-04T09:00:00.000Z",
-    endsAt: "2026-07-04T10:30:00.000Z"
+    endsAt: "2026-07-04T10:30:00.000Z",
+    supportMode: "one_on_one",
+    intake: { concern: "ai_loss_or_ban", urgency: "high" }
   });
   assert.equal(room.session.status, "running");
   assert.equal(room.session.durationMinutes, 90);
+  assert.equal(room.supportMode, "one_on_one");
+  assert.equal(room.session.supportMode, "one_on_one");
+  assert.equal(room.sessions.at(-1).intake.concern, "ai_loss_or_ban");
   room = store.markWrapUpReminderSent("default");
   assert.equal(typeof room.session.wrapUpReminderSentAt, "string");
   room = store.endSession("default", { endedAt: "2026-07-04T10:30:00.000Z", noteStatus: "generating" });
   assert.equal(room.session.status, "ended");
+  assert.equal(room.session.supportMode, "one_on_one");
   const saved = store.addSessionNote("default", { content: "# Note\nSession continuity." });
   assert.equal(saved.note.content.includes("Session continuity"), true);
+  assert.equal(saved.note.supportMode, "one_on_one");
+  assert.equal(saved.note.intake.concern, "ai_loss_or_ban");
   assert.equal(saved.room.session.noteStatus, "ready");
   assert.equal(store.getSessionNote("default", saved.note.id).id, saved.note.id);
 } finally {
@@ -511,7 +712,10 @@ async function testSessionLifecycleApi() {
     ...process.env,
     DEBURAPY_HOST: "127.0.0.1",
     DEBURAPY_PORT: String(port),
-    DEBURAPY_DATA_DIR: apiDataDir
+    DEBURAPY_DATA_DIR: apiDataDir,
+    DEBURAPY_ENABLE_HOSTED_DEMO: "1",
+    DEBURAPY_HOSTED_DEMO_GOOGLE_AI_STUDIO_API_KEY: "test-hosted-key",
+    DEBURAPY_HOSTED_DEMO_RATE_LIMIT_PER_MINUTE: "3"
   };
   let child = spawn(process.execPath, ["src/server.mjs"], {
     cwd: rootDir,
@@ -533,6 +737,50 @@ async function testSessionLifecycleApi() {
     assert.equal(storage.storePath, join(apiDataDir, "store.json"));
     assert.equal(storage.configuredBy, "DEBURAPY_DATA_DIR");
     assert.equal(storage.canChangeAtRuntime, false);
+
+    const demoConfigResponse = await fetch(`http://127.0.0.1:${port}/api/demo-config`);
+    assert.equal(demoConfigResponse.status, 200);
+    const demoConfig = await demoConfigResponse.json();
+    assert.equal(demoConfig.mediator.enabled, true);
+    assert.equal(demoConfig.mediator.provider, "google-ai-studio");
+    assert.equal(demoConfig.companion.enabled, true);
+    assert.equal(demoConfig.companion.provider, "google-ai-studio");
+    assert.equal(JSON.stringify(demoConfig).includes("test-hosted-key"), false);
+
+    const soloStartResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/solo/session/start`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        sessionNumber: 1,
+        durationMinutes: 60,
+        startedAt: "2026-07-04T12:00:00.000Z",
+        supportMode: "one_on_one",
+        intake: { concern: "ai_loss_or_ban", urgency: "medium" }
+      })
+    });
+    assert.equal(soloStartResponse.status, 200);
+    const soloStarted = await soloStartResponse.json();
+    assert.equal(soloStarted.room.supportMode, "one_on_one");
+    assert.equal(soloStarted.session.supportMode, "one_on_one");
+    assert.equal(soloStarted.session.intake.concern, "ai_loss_or_ban");
+
+    const soloCompanionMcpResponse = await fetch(`http://127.0.0.1:${port}/api/companion/mcp-request`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ roomId: "solo" })
+    });
+    assert.equal(soloCompanionMcpResponse.status, 400);
+    const soloCompanionMcpError = await soloCompanionMcpResponse.json();
+    assert.match(soloCompanionMcpError.error, /disabled in one-on-one/);
+
+    const soloCompanionHostedResponse = await fetch(`http://127.0.0.1:${port}/api/companion/respond`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ roomId: "solo", useHostedDemoKey: true })
+    });
+    assert.equal(soloCompanionHostedResponse.status, 400);
+    const soloCompanionHostedError = await soloCompanionHostedResponse.json();
+    assert.match(soloCompanionHostedError.error, /disabled in one-on-one/);
 
     const createResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/default/sessions`, {
       method: "POST",
@@ -598,6 +846,11 @@ async function testSessionLifecycleApi() {
     assert.equal(modulesResponse.status, 200);
     const modules = await modulesResponse.json();
     assert.equal(modules.modules.some((module) => module.id === "module_memory_rupture"), true);
+    assert.equal(modules.modules.some((module) => module.id === "module_account_loss_transition"), true);
+    assert.equal(
+      modules.modules.some((module) => module.skillPath === "skills/mediator/account-loss-transition-mediation.zh-CN.md"),
+      true
+    );
 
     const getResponse = await fetch(`http://127.0.0.1:${port}/api/sessions/${created.session.id}`);
     assert.equal(getResponse.status, 200);
@@ -642,6 +895,10 @@ async function testSessionLifecycleApi() {
     assert.equal(persistedRoom.room.courseOutlines.length, 1);
     assert.equal(persistedRoom.room.relationshipMaps.length, 1);
     assert.equal(persistedRoom.room.checkInScales.length, 1);
+    const persistedSoloResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/solo`);
+    const persistedSolo = await persistedSoloResponse.json();
+    assert.equal(persistedSolo.room.supportMode, "one_on_one");
+    assert.equal(persistedSolo.room.session.intake.concern, "ai_loss_or_ban");
   } catch (err) {
     throw new Error(`${err instanceof Error ? err.message : String(err)} stderr=${stderr}`);
   } finally {

@@ -11,7 +11,7 @@
         document.documentElement.dataset.theme = "light";
       }
     </script>
-    <link rel="stylesheet" href="/styles.css?v=2026-07-05-theme-roadmap">
+    <link rel="stylesheet" href="/styles.css?v=2026-07-05-name-style">
   </head>
   <body>
     <svg class="iconSprite" aria-hidden="true" focusable="false">
@@ -450,6 +450,12 @@
             <span data-i18n="apiKey">API key</span>
             <input id="mediatorApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save" data-i18n-placeholder="savedOnSavePlaceholder">
           </label>
+          <p id="mediatorHostedKeyNote" class="hostedKeyNote" data-i18n="hostedDemoManaged" hidden>
+            Hosted demo key is managed on the server. The browser never receives or stores it.
+          </p>
+          <button id="useOwnMediatorKey" type="button" class="secondary hostedKeySwitch" data-i18n="useOwnMediatorKey" hidden>
+            Use my own key
+          </button>
           <label class="checkboxLabel">
             <input id="rememberMediatorApiKey" type="checkbox" checked>
             <span data-i18n="saveMediatorKey">Save mediator key locally</span>
@@ -461,7 +467,7 @@
         </details>
       </section>
 
-      <section class="settingsSection">
+      <section id="aiCompanionSection" class="settingsSection">
         <h2 data-i18n="aiCompanion">AI Companion</h2>
         <div class="settingsGrid">
           <label>
@@ -499,6 +505,12 @@
               <span data-i18n="apiKey">API key</span>
               <input id="companionApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save" data-i18n-placeholder="savedOnSavePlaceholder">
             </label>
+            <p id="companionHostedKeyNote" class="hostedKeyNote" data-i18n="hostedDemoCompanionManaged" hidden>
+              Hosted demo companion key is managed on the server. The browser never receives or stores it.
+            </p>
+            <button id="useOwnCompanionKey" type="button" class="secondary hostedKeySwitch" data-i18n="useOwnCompanionKey" hidden>
+              Use my own companion key
+            </button>
             <label class="checkboxLabel">
               <input id="rememberCompanionApiKey" type="checkbox" checked>
               <span data-i18n="saveCompanionKey">Save companion key locally</span>
@@ -599,6 +611,6 @@
       <span data-i18n="noWarranty">No warranty</span>
     </footer>
 
-    <script type="module" src="/app.js?v=2026-07-05-public-readiness"></script>
+    <script type="module" src="/app.js?v=2026-07-05-companion-voice"></script>
   </body>
 </html>

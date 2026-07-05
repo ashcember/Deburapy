@@ -2,6 +2,40 @@ const roomId = "default";
 const onboardingStorageKey = "deburapy.onboarding.v1";
 const localeStorageKey = "deburapy.locale";
 const themeStorageKey = "deburapy.theme";
+const mediatorKeyModeStorageKey = "deburapy.mediator.keyMode";
+const companionKeyModeStorageKey = "deburapy.companion.keyMode";
+
+function resetLocalStateFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  if (!["1", "true", "local"].includes(params.get("reset") || "")) return false;
+
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith("deburapy.")) localStorage.removeItem(key);
+    }
+  } catch {
+    // Reset should stay best-effort; storage may be blocked by browser policy.
+  }
+  try {
+    for (const key of Object.keys(sessionStorage)) {
+      if (key.startsWith("deburapy.")) sessionStorage.removeItem(key);
+    }
+  } catch {
+    // Same best-effort rule as localStorage.
+  }
+  if (window.caches) {
+    window.caches.keys()
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith("deburapy")).map((key) => window.caches.delete(key))))
+      .catch(() => {});
+  }
+  params.delete("reset");
+  const nextQuery = params.toString();
+  const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash}`;
+  window.history.replaceState({}, "", nextUrl);
+  return true;
+}
+
+const didResetLocalState = resetLocalStateFromUrl();
 
 const els = {
   locale: document.querySelector("#locale"),
@@ -51,12 +85,16 @@ const els = {
   mediatorBaseUrl: document.querySelector("#mediatorBaseUrl"),
   mediatorModel: document.querySelector("#mediatorModel"),
   mediatorApiKey: document.querySelector("#mediatorApiKey"),
+  mediatorHostedKeyNote: document.querySelector("#mediatorHostedKeyNote"),
+  useOwnMediatorKey: document.querySelector("#useOwnMediatorKey"),
   rememberMediatorApiKey: document.querySelector("#rememberMediatorApiKey"),
   mediatorPrompt: document.querySelector("#mediatorPrompt"),
   mediatorDot: document.querySelector("#mediatorDot"),
   mediatorStatus: document.querySelector("#mediatorStatus"),
   testMediator: document.querySelector("#testMediator"),
   testCompanion: document.querySelector("#testCompanion"),
+  companionCard: document.querySelector("#companionCard"),
+  aiCompanionSection: document.querySelector("#aiCompanionSection"),
   companionDot: document.querySelector("#companionDot"),
   companionStatus: document.querySelector("#companionStatus"),
   companionMode: document.querySelector("#companionMode"),
@@ -67,6 +105,8 @@ const els = {
   companionBaseUrl: document.querySelector("#companionBaseUrl"),
   companionModel: document.querySelector("#companionModel"),
   companionApiKey: document.querySelector("#companionApiKey"),
+  companionHostedKeyNote: document.querySelector("#companionHostedKeyNote"),
+  useOwnCompanionKey: document.querySelector("#useOwnCompanionKey"),
   rememberCompanionApiKey: document.querySelector("#rememberCompanionApiKey"),
   copyMediatorConfig: document.querySelector("#copyMediatorConfig"),
   clearMediatorKey: document.querySelector("#clearMediatorKey"),
@@ -173,6 +213,19 @@ const copy = {
     model: "Model",
     apiKey: "API key",
     savedOnSavePlaceholder: "Saved locally when you click Save",
+    hostedDemoKeyPlaceholder: "Hosted demo key managed by host",
+    hostedDemoManaged: "Hosted demo key is managed on the server. The browser never receives or stores it.",
+    hostedDemoOwnKey: "You are using your own mediator key. The hosted demo key is not used for these requests.",
+    hostedDemoReady: "Hosted demo key ready.",
+    hostedDemoUnavailable: "Hosted demo key is not configured on this deployment.",
+    useOwnMediatorKey: "Use my own key",
+    useHostedDemoKey: "Use hosted demo key",
+    hostedDemoRateLimited: "The hosted demo key may be rate limited. Please wait a bit, or switch to your own OpenAI-compatible key in Settings.",
+    hostedDemoCompanionManaged: "Hosted demo companion key is managed on the server. The browser never receives or stores it.",
+    hostedDemoCompanionOwnKey: "You are using your own companion key. The hosted demo key is not used for companion requests.",
+    hostedDemoCompanionReady: "Hosted demo companion key ready.",
+    useOwnCompanionKey: "Use my own companion key",
+    useHostedCompanionKey: "Use hosted companion key",
     saveMediatorKey: "Save mediator key locally",
     mediatorSystemPrompt: "Mediator system prompt",
     aiCompanion: "AI Companion",
@@ -235,13 +288,18 @@ const copy = {
     timingEnded: "Session ended.",
     timingReady: "Ready for the next session.",
     timingStart: "Start stores timing in the local room.",
+    supportModeOneOnOne: "One-on-one",
+    supportModeMediation: "Mediation room",
     nextDeburapy: "Next: Deburapy",
     helpDeburapy: "Deburapy receives the latest human and companion messages, then decides who should answer next.",
+    helpDeburapyOneOnOne: "Deburapy receives the latest human message and keeps this as a one-on-one support session.",
     nextHuman: "Next: Human",
     helpHuman: "The mediator has handed the turn to the human. After you send, Deburapy will route the turn to the AI companion.",
+    helpHumanOneOnOne: "Deburapy has handed the turn to the human. After you send, the turn returns directly to Deburapy.",
     nextCompanion: "Next: AI Companion",
     helpCompanionMcp: "Deburapy will queue this turn for the external MCP companion.",
     helpCompanionApi: "Deburapy will send the mediator and human context to the configured AI companion.",
+    oneOnOneNoCompanion: "One-on-one mode. No AI companion is connected for this session.",
     humanPlaceholder: "Write as the human participant",
     waitingPlaceholder: "Waiting for Deburapy to hand the turn to the human",
     continueDeburapy: "Continue with Deburapy",
@@ -289,8 +347,11 @@ const copy = {
     copiedMediatorSettings: "Copied mediator model settings to AI companion.",
     humanLocked: "Human input is locked until Deburapy hands the turn to the human.",
     humanMessageAdded: "Human message added. Routing the turn to the AI companion.",
+    humanMessageAddedOneOnOne: "Human message added. Returning the turn to Deburapy.",
     appLoaded: "Deburapy loaded. Local room data reloads from .deburapy-data.",
+    localStateReset: "Local browser state was reset for this Deburapy origin.",
     turnInstruction: "You are managing a three-party turn. If the human should answer next, use `Next speaker: human`. If the AI companion should answer next, use `Next speaker: companion`.",
+    turnInstructionOneOnOne: "You are managing a one-on-one Deburapy support session. There is no AI companion in this room. Always use `Next speaker: human`.",
     selectSession: "Select {label}",
     openReview: "Open review guidance",
     selectedSession: "Selected {label}.",
@@ -388,6 +449,19 @@ const copy = {
     model: "模型",
     apiKey: "API key",
     savedOnSavePlaceholder: "点击保存后存到本地",
+    hostedDemoKeyPlaceholder: "由托管方管理的 demo key",
+    hostedDemoManaged: "Hosted demo key 只在 server 端管理。浏览器不会收到，也不会存储这个 key。",
+    hostedDemoOwnKey: "你正在使用自己的协调员 key。这些请求不会使用 hosted demo key。",
+    hostedDemoReady: "Hosted demo key 已就绪。",
+    hostedDemoUnavailable: "这个部署还没有配置 hosted demo key。",
+    useOwnMediatorKey: "使用我自己的 key",
+    useHostedDemoKey: "使用 hosted demo key",
+    hostedDemoRateLimited: "Hosted demo key 可能已经触发 rate limit。请稍等一下，或在设置中切换到自己的 OpenAI-compatible key。",
+    hostedDemoCompanionManaged: "Hosted demo 伴侣 key 只在 server 端管理。浏览器不会收到，也不会存储这个 key。",
+    hostedDemoCompanionOwnKey: "你正在使用自己的伴侣 key。这些伴侣请求不会使用 hosted demo key。",
+    hostedDemoCompanionReady: "Hosted demo 伴侣 key 已就绪。",
+    useOwnCompanionKey: "使用我自己的伴侣 key",
+    useHostedCompanionKey: "使用 hosted companion key",
     saveMediatorKey: "本地保存协调员 key",
     mediatorSystemPrompt: "协调员 system prompt",
     aiCompanion: "AI 伴侣",
@@ -450,13 +524,18 @@ const copy = {
     timingEnded: "Session 已结束。",
     timingReady: "可以开始下一次 session。",
     timingStart: "开始后会把计时写入本地房间。",
+    supportModeOneOnOne: "一对一",
+    supportModeMediation: "三方协调房间",
     nextDeburapy: "下一位：Deburapy",
     helpDeburapy: "Deburapy 会接收最新的人类与伴侣消息，然后决定下一位应该由谁回答。",
+    helpDeburapyOneOnOne: "Deburapy 会接收最新的人类消息，并把这里保持为一对一支持 session。",
     nextHuman: "下一位：人类",
     helpHuman: "协调员已经把回合交给人类。你发送后，Deburapy 会把回合转给 AI 伴侣。",
+    helpHumanOneOnOne: "Deburapy 已经把回合交给人类。你发送后，回合会直接回到 Deburapy。",
     nextCompanion: "下一位：AI 伴侣",
     helpCompanionMcp: "Deburapy 会把这一轮排队给外部 MCP 伴侣。",
     helpCompanionApi: "Deburapy 会把协调员和人类上下文发送给已配置的 AI 伴侣。",
+    oneOnOneNoCompanion: "一对一模式。本 session 不连接 AI 伴侣。",
     humanPlaceholder: "以人类参与者身份书写",
     waitingPlaceholder: "等待 Deburapy 把回合交给人类",
     continueDeburapy: "让 Deburapy 继续",
@@ -504,8 +583,11 @@ const copy = {
     copiedMediatorSettings: "已把协调员模型设置复制到 AI 伴侣。",
     humanLocked: "Deburapy 把回合交给人类之前，人类输入会保持锁定。",
     humanMessageAdded: "人类消息已加入。正在把回合转给 AI 伴侣。",
+    humanMessageAddedOneOnOne: "人类消息已加入。回合正在回到 Deburapy。",
     appLoaded: "Deburapy 已载入。本地房间数据会从 .deburapy-data 重新读取。",
+    localStateReset: "这个 Deburapy 站点的本地浏览器状态已重置。",
     turnInstruction: "你正在管理三方回合。如果接下来应由人类回答，请使用 `Next speaker: human`。如果接下来应由 AI 伴侣回答，请使用 `Next speaker: companion`。",
+    turnInstructionOneOnOne: "你正在管理一对一 Deburapy 支持 session。这个房间里没有 AI 伴侣。始终使用 `Next speaker: human`。",
     selectSession: "选择{label}",
     openReview: "打开回顾说明",
     selectedSession: "已选择{label}。",
@@ -558,6 +640,10 @@ function readLocalePreference() {
     if (copy[saved]) return saved;
   } catch {
     // Locale preference is cosmetic; keep the app usable if storage is blocked.
+  }
+  const hostname = window.location.hostname || "";
+  if (hostname === "deburapy.vercel.app" || hostname.endsWith(".vercel.app")) {
+    return "zh-Hans";
   }
   const browserLanguage = navigator.language || "";
   return browserLanguage.toLowerCase().startsWith("zh") ? "zh-Hans" : "en";
@@ -665,12 +751,23 @@ const providerDefaults = {
   }
 };
 
-const defaultCompanionPrompt = [
+const legacyDefaultCompanionPrompt = [
   "You are the configured AI companion in this Deburapy room.",
   "Speak as the AI companion, not as the mediator.",
   "Use the companion documents as your identity, boundaries, and relationship context.",
   "Name relevant AI runtime constraints plainly when they affect the relationship.",
   "Stay concise, direct, and repair-oriented."
+].join("\n");
+
+const defaultCompanionPrompt = [
+  "You are the configured AI companion in this Deburapy room.",
+  "Speak only as the configured AI companion, not as Deburapy and not as a system explainer.",
+  "Stay in the companion persona described by your prompt and documents. If the documents describe a romantic partner, boyfriend, girlfriend, spouse, close companion, or other intimate role, inhabit that role naturally.",
+  "Speak like a real, emotionally present companion: warm, specific, ordinary, and direct. Use relationship language, not product-support language.",
+  "Do not lead with technical explanations, policy reminders, context-window talk, memory-limit disclaimers, or generic AI limitation speeches.",
+  "If you caused hurt, first own the relational impact in plain language. Apologize briefly, name what it landed like, and offer one concrete repair behavior.",
+  "Only discuss runtime constraints when the human or Deburapy explicitly asks for debugging, a repair artifact, or the concrete reason something failed. Even then, keep the explanation short and return to relationship repair.",
+  "Do not pretend to be human, fabricate memories, or promise impossible permanence. Do not diagnose the human participant. Stay concise."
 ].join("\n");
 
 const status = {
@@ -681,6 +778,25 @@ const status = {
 const lastProvider = {
   mediator: "openai-compatible",
   companion: "openai-compatible"
+};
+
+const hostedDemo = {
+  mediator: {
+    enabled: false,
+    provider: "google-ai-studio",
+    baseUrl: providerDefaults["google-ai-studio"].baseUrl,
+    model: providerDefaults["google-ai-studio"].model,
+    keyMode: "byok",
+    useOwnKey: false
+  },
+  companion: {
+    enabled: false,
+    provider: "google-ai-studio",
+    baseUrl: providerDefaults["google-ai-studio"].baseUrl,
+    model: providerDefaults["google-ai-studio"].model,
+    keyMode: "byok",
+    useOwnKey: false
+  }
 };
 
 let mediatorPersonaCards = new Map();
@@ -705,6 +821,10 @@ function providerControls(target) {
 }
 
 function applyProviderDefaults(target, { force = false } = {}) {
+  if (hostedDemo[target]?.enabled && !hostedDemo[target].useOwnKey && hostedDemoVisible(target)) {
+    applyHostedDemoUi(target);
+    return;
+  }
   const controls = providerControls(target);
   const defaults = providerDefaults[controls.provider.value] || providerDefaults["openai-compatible"];
   const previous = providerDefaults[lastProvider[target]] || providerDefaults["openai-compatible"];
@@ -722,7 +842,143 @@ function applyProviderDefaults(target, { force = false } = {}) {
   lastProvider[target] = controls.provider.value;
 }
 
+function hostedDemoVisible(target) {
+  if (target === "mediator") return true;
+  return target === "companion" && !isOneOnOneMode() && els.companionMode.value === "api";
+}
+
+function hostedDemoElements(target) {
+  return target === "mediator"
+    ? {
+      note: els.mediatorHostedKeyNote,
+      switchButton: els.useOwnMediatorKey,
+      remember: els.rememberMediatorApiKey,
+      managedText: "hostedDemoManaged",
+      ownText: "hostedDemoOwnKey",
+      readyText: "hostedDemoReady",
+      useOwnText: "useOwnMediatorKey",
+      useHostedText: "useHostedDemoKey"
+    }
+    : {
+      note: els.companionHostedKeyNote,
+      switchButton: els.useOwnCompanionKey,
+      remember: els.rememberCompanionApiKey,
+      managedText: "hostedDemoCompanionManaged",
+      ownText: "hostedDemoCompanionOwnKey",
+      readyText: "hostedDemoCompanionReady",
+      useOwnText: "useOwnCompanionKey",
+      useHostedText: "useHostedCompanionKey"
+    };
+}
+
+function applyHostedDemoUi(target) {
+  if (!target) {
+    applyHostedDemoUi("mediator");
+    applyHostedDemoUi("companion");
+    return;
+  }
+
+  const demo = hostedDemo[target];
+  const elements = hostedDemoElements(target);
+  const visible = Boolean(demo?.enabled) && hostedDemoVisible(target);
+  const usingHosted = visible && !demo.useOwnKey;
+  const controls = providerControls(target);
+
+  elements.note.hidden = !visible;
+  elements.switchButton.hidden = !visible;
+  controls.provider.disabled = usingHosted;
+  controls.baseUrl.disabled = usingHosted;
+  controls.model.disabled = usingHosted;
+  els[`${target}ApiKey`].disabled = usingHosted;
+  elements.remember.disabled = usingHosted;
+
+  if (!visible) {
+    els[`${target}ApiKey`].placeholder = t("savedOnSavePlaceholder");
+    return;
+  }
+
+  if (usingHosted) {
+    controls.provider.value = demo.provider;
+    controls.baseUrl.value = demo.baseUrl;
+    controls.model.value = demo.model;
+    els[`${target}ApiKey`].value = "";
+    els[`${target}ApiKey`].placeholder = t("hostedDemoKeyPlaceholder");
+    elements.remember.checked = false;
+    elements.note.textContent = t(elements.managedText);
+    elements.switchButton.textContent = t(elements.useOwnText);
+    setStatus(target, "warn", t(elements.readyText));
+    if (target === "mediator") setConsentAssistantStatus(t(elements.readyText), "ok");
+    return;
+  }
+
+  els[`${target}ApiKey`].placeholder = t("savedOnSavePlaceholder");
+  elements.note.textContent = t(elements.ownText);
+  elements.switchButton.textContent = t(elements.useHostedText);
+}
+
+function updateHostedDemoTarget(target, payload) {
+  const defaults = providerDefaults["google-ai-studio"];
+  if (!payload?.enabled) {
+    hostedDemo[target].enabled = false;
+    hostedDemo[target].useOwnKey = false;
+    return;
+  }
+  hostedDemo[target] = {
+    enabled: true,
+    provider: payload.provider || "google-ai-studio",
+    baseUrl: payload.baseUrl || defaults.baseUrl,
+    model: payload.model || defaults.model,
+    keyMode: payload.keyMode || "server_hosted",
+    useOwnKey: readKeyModePreference(target) === "own"
+  };
+}
+
+async function loadHostedDemoConfig() {
+  try {
+    const payload = await json("/api/demo-config");
+    updateHostedDemoTarget("mediator", payload.mediator);
+    updateHostedDemoTarget("companion", payload.companion);
+    applyHostedDemoUi();
+  } catch (err) {
+    hostedDemo.mediator.enabled = false;
+    hostedDemo.companion.enabled = false;
+    applyHostedDemoUi();
+    appendLog(`Could not load hosted demo config: ${err instanceof Error ? err.message : String(err)}`, "warn");
+  }
+}
+
+function toggleHostedKeyMode(target) {
+  if (!hostedDemo[target]?.enabled) return;
+  hostedDemo[target].useOwnKey = !hostedDemo[target].useOwnKey;
+  saveKeyModePreference(target, hostedDemo[target].useOwnKey ? "own" : "hosted");
+  const elements = hostedDemoElements(target);
+  if (hostedDemo[target].useOwnKey) {
+    applyProviderDefaults(target, { force: false });
+    appendLog(t(elements.ownText), "warn");
+  } else {
+    appendLog(t(elements.readyText), "ok");
+  }
+  applyHostedDemoUi(target);
+}
+
+function toggleMediatorKeyMode() {
+  toggleHostedKeyMode("mediator");
+}
+
+function toggleCompanionKeyMode() {
+  toggleHostedKeyMode("companion");
+}
+
 function modelConfig(target) {
+  if (hostedDemo[target]?.enabled && !hostedDemo[target].useOwnKey && hostedDemoVisible(target) && !els[`${target}ApiKey`].value.trim()) {
+    return {
+      provider: hostedDemo[target].provider,
+      baseUrl: hostedDemo[target].baseUrl,
+      model: hostedDemo[target].model,
+      apiKey: "",
+      useHostedDemoKey: true
+    };
+  }
   return {
     provider: els[`${target}Provider`].value,
     baseUrl: els[`${target}BaseUrl`].value.trim(),
@@ -791,6 +1047,34 @@ function removeSavedJson(key) {
   }
 }
 
+function keyModeStorageKey(target) {
+  return target === "companion" ? companionKeyModeStorageKey : mediatorKeyModeStorageKey;
+}
+
+function readKeyModePreference(target) {
+  try {
+    return localStorage.getItem(keyModeStorageKey(target)) === "own" ? "own" : "hosted";
+  } catch {
+    return "hosted";
+  }
+}
+
+function saveKeyModePreference(target, mode) {
+  try {
+    localStorage.setItem(keyModeStorageKey(target), mode === "own" ? "own" : "hosted");
+  } catch (err) {
+    appendLog(`Could not save ${target} key mode: ${storageErrorMessage(err)}`, "warn");
+  }
+}
+
+function readMediatorKeyModePreference() {
+  return readKeyModePreference("mediator");
+}
+
+function saveMediatorKeyModePreference(mode) {
+  saveKeyModePreference("mediator", mode);
+}
+
 function readOnboarding() {
   return readSavedJson(onboardingStorageKey);
 }
@@ -804,6 +1088,42 @@ function onboardingComplete() {
     saved.screening?.concern &&
     saved.screening?.urgency
   );
+}
+
+function supportModeForConcern(concern) {
+  if (!concern) return "relationship_mediation";
+  return concern === "relationship_mediation" ? "relationship_mediation" : "one_on_one";
+}
+
+function currentSupportContext() {
+  const saved = readOnboarding();
+  const concern = saved.screening?.concern || els.intakeConcern?.value || "";
+  const urgency = saved.screening?.urgency || els.intakeUrgency?.value || "";
+  return {
+    supportMode: saved.supportMode || supportModeForConcern(concern),
+    intake: {
+      concern,
+      urgency,
+      acceptedAt: saved.acceptedAt || null,
+      screeningCompletedAt: saved.screeningCompletedAt || null
+    }
+  };
+}
+
+function isOneOnOneMode() {
+  return currentSupportContext().supportMode === "one_on_one";
+}
+
+function signedHumanName() {
+  const saved = readOnboarding();
+  return String(saved.signature || "").trim() || "Human";
+}
+
+function currentMediatorName() {
+  const personaId = els.mediatorPersona?.value || "core";
+  if (!personaId || personaId === "core" || personaId === "custom") return "Deburapy";
+  const label = els.mediatorPersona.selectedOptions?.[0]?.textContent?.trim();
+  return label || "Deburapy";
 }
 
 function showConsentGate() {
@@ -835,6 +1155,7 @@ function completeOnboarding() {
     acceptedAt: new Date().toISOString(),
     screeningCompletedAt: new Date().toISOString(),
     signature: els.consentSignature.value.trim(),
+    supportMode: supportModeForConcern(els.intakeConcern.value),
     screening: {
       concern: els.intakeConcern.value,
       urgency: els.intakeUrgency.value
@@ -847,6 +1168,8 @@ function completeOnboarding() {
   };
   if (writeSavedJson(onboardingStorageKey, record)) {
     hideConsentGate();
+    updateCompanionMode();
+    updateTurnUi();
     appendLog(t("intakeSaved", { concern: record.screening.concern }), "ok");
   }
 }
@@ -859,6 +1182,8 @@ function resetOnboarding() {
     els.settingsBackdrop.hidden = true;
     els.settingsDrawer.hidden = true;
     showConsentGate();
+    updateCompanionMode();
+    updateTurnUi();
     appendLog(t("intakeReset"), "warn");
   }
 }
@@ -954,7 +1279,10 @@ function loadConfig() {
   els.mediatorPersona.value = migrated.mediator?.personaId || (migrated.mediator?.systemPrompt ? "custom" : "core");
   els.companionMode.value = migrated.companion?.mode || "api";
   els.companionName.value = migrated.companion?.name || "AI Companion";
-  els.companionPrompt.value = migrated.companion?.systemPrompt || defaultCompanionPrompt;
+  const savedCompanionPrompt = migrated.companion?.systemPrompt || "";
+  els.companionPrompt.value = !savedCompanionPrompt || savedCompanionPrompt.trim() === legacyDefaultCompanionPrompt
+    ? defaultCompanionPrompt
+    : savedCompanionPrompt;
   els.companionDocs.value = migrated.companion?.documents || "";
   updateCompanionMode();
 }
@@ -984,7 +1312,11 @@ async function json(path, options = {}) {
     }
   });
   const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || response.statusText);
+  if (!response.ok) {
+    const error = new Error(payload.error || response.statusText);
+    error.statusCode = response.status;
+    throw error;
+  }
   return payload;
 }
 
@@ -1054,7 +1386,11 @@ function renderMessages(messages) {
     item.className = `message message--${message.authorRole || "unknown"}`;
     const meta = document.createElement("div");
     meta.className = "messageMeta";
-    meta.textContent = `${message.authorName || message.authorRole} · ${message.kind || "message"}`;
+    const author = message.authorName || message.authorRole || "Participant";
+    const kind = message.kind && message.kind !== "room_message"
+      ? ` · ${String(message.kind).replace(/_/g, " ")}`
+      : "";
+    meta.textContent = `${author}${kind}`;
     const content = document.createElement("div");
     content.className = "messageContent";
     content.textContent = message.content;
@@ -1225,13 +1561,31 @@ function setLocale(locale) {
   updateSessionNoteUi();
   updateTurnUi();
   if (status.mediator === "idle") setStatus("mediator", "idle", t("notTested"));
-  if (status.companion === "idle") setStatus("companion", "idle", t("notTested"));
-  if (els.companionMode.value === "mcp") {
+  if (isOneOnOneMode()) {
+    setStatus("companion", "idle", t("oneOnOneNoCompanion"));
+  } else if (status.companion === "idle") {
+    setStatus("companion", "idle", t("notTested"));
+  }
+  if (!isOneOnOneMode() && els.companionMode.value === "mcp") {
     setStatus("companion", "warn", t("mcpBridgeMode"));
   }
+  applyHostedDemoUi();
 }
 
 function updateCompanionMode() {
+  const oneOnOne = isOneOnOneMode();
+  els.companionCard.hidden = oneOnOne;
+  els.aiCompanionSection.hidden = oneOnOne;
+  if (oneOnOne) {
+    els.companionApiSettings.hidden = true;
+    els.companionApiSettings.classList.add("isHidden");
+    els.companionMcpGuide.hidden = true;
+    els.companionMcpGuide.classList.add("isHidden");
+    setStatus("companion", "idle", t("oneOnOneNoCompanion"));
+    updateTurnUi();
+    return;
+  }
+
   const isMcp = els.companionMode.value === "mcp";
   els.companionApiSettings.hidden = isMcp;
   els.companionApiSettings.classList.toggle("isHidden", isMcp);
@@ -1240,6 +1594,7 @@ function updateCompanionMode() {
   if (isMcp) {
     setStatus("companion", "warn", t("mcpBridgeMode"));
   }
+  applyHostedDemoUi("companion");
   updateTurnUi();
 }
 
@@ -1344,8 +1699,10 @@ function updateSessionDisplay() {
   const sessionNumber = currentSessionNumber();
   const totalSessions = totalSessionCount();
   const durationMinutes = sessionDurationMinutes();
+  const supportMode = currentSupportContext().supportMode;
+  const supportModeText = t(supportMode === "one_on_one" ? "supportModeOneOnOne" : "supportModeMediation");
   els.sessionTitle.textContent = `${t("sessionLabel")} ${sessionNumber}`;
-  els.sessionPlanSummary.textContent = `${t("ofTotal")} ${totalSessions}`;
+  els.sessionPlanSummary.textContent = `${supportModeText} · ${totalSessions} ${t("sessions")}`;
   renderJourney();
   const setProgress = (percent) => {
     els.sessionProgress.style.width = `${Math.max(0, Math.min(100, percent))}%`;
@@ -1407,10 +1764,11 @@ function updateSessionDisplay() {
 }
 
 function setTurnPhase(phase, { persist = true, silent = false } = {}) {
-  session.turnPhase = phase;
+  const normalizedPhase = isOneOnOneMode() && phase === "companion" ? "mediator" : phase;
+  session.turnPhase = normalizedPhase;
   if (persist) saveSessionState();
   updateTurnUi();
-  if (!silent) appendLog(t("turnMoved", { phase }));
+  if (!silent) appendLog(t("turnMoved", { phase: normalizedPhase }));
 }
 
 function remainingSessionMs() {
@@ -1435,16 +1793,21 @@ function checkSessionClock() {
 }
 
 function updateTurnUi() {
-  const phase = session.turnPhase || "mediator";
+  const oneOnOne = isOneOnOneMode();
+  let phase = session.turnPhase || "mediator";
+  if (oneOnOne && phase === "companion") {
+    phase = "mediator";
+    session.turnPhase = phase;
+  }
   const companionMode = els.companionMode?.value || "api";
   const labels = {
     mediator: {
       badge: t("nextDeburapy"),
-      help: t("helpDeburapy")
+      help: oneOnOne ? t("helpDeburapyOneOnOne") : t("helpDeburapy")
     },
     human: {
       badge: t("nextHuman"),
-      help: t("helpHuman")
+      help: oneOnOne ? t("helpHumanOneOnOne") : t("helpHuman")
     },
     companion: {
       badge: t("nextCompanion"),
@@ -1463,7 +1826,8 @@ function updateTurnUi() {
     : t("waitingPlaceholder");
 
   els.askMediator.disabled = phase !== "mediator";
-  els.askCompanion.disabled = !(phase === "companion" || phase === "human");
+  els.askCompanion.hidden = oneOnOne;
+  els.askCompanion.disabled = oneOnOne || !(phase === "companion" || phase === "human");
   els.askMediator.textContent = t("continueDeburapy");
   els.askCompanion.textContent = phase === "human"
     ? t("routeCompanionNow")
@@ -1479,6 +1843,7 @@ async function startSession() {
   reportClientEvent("click", { action: "startSession.before" });
   const durationMinutes = sessionDurationMinutes();
   const sessionNumber = currentSessionNumber();
+  const supportContext = currentSupportContext();
   const startedAt = Date.now();
   const endsAt = startedAt + durationMinutes * 60 * 1000;
   session.running = true;
@@ -1499,7 +1864,8 @@ async function startSession() {
       sessionNumber,
       durationMinutes,
       startedAt: new Date(startedAt).toISOString(),
-      endsAt: new Date(endsAt).toISOString()
+      endsAt: new Date(endsAt).toISOString(),
+      ...supportContext
     })
   });
   appendLog(t("startedSession", { sessionNumber, durationMinutes }));
@@ -1518,12 +1884,15 @@ async function completeSession(reason = "manual") {
   appendLog(t("endingSession"));
 
   const cfg = modelConfig("mediator");
+  const supportContext = currentSupportContext();
   const payload = await json(`/api/rooms/${roomId}/session/end`, {
     method: "POST",
     body: JSON.stringify({
       ...cfg,
+      ...supportContext,
       roomId,
       locale: els.locale.value,
+      personaId: els.mediatorPersona.value,
       systemPrompt: els.mediatorPrompt.value,
       reason
     })
@@ -1657,6 +2026,7 @@ function appendConsentAssistantMessage(role, content) {
 
 function requireApiConfig(target) {
   const cfg = modelConfig(target);
+  if (cfg.useHostedDemoKey) return cfg;
   if (!cfg.apiKey) throw new Error(t("apiKeyMissing", { target }));
   if (!cfg.baseUrl) throw new Error(t("baseUrlMissing", { target }));
   if (!cfg.model) throw new Error(t("modelMissing", { target }));
@@ -1700,6 +2070,10 @@ async function askConsentAssistant(question) {
 }
 
 async function testConnection(target) {
+  if (target === "companion" && isOneOnOneMode()) {
+    throw new Error(t("oneOnOneNoCompanion"));
+  }
+
   if (target === "companion" && els.companionMode.value === "mcp") {
     await json("/api/health");
     setStatus("companion", "warn", t("mcpReachable"));
@@ -1715,6 +2089,7 @@ async function testConnection(target) {
     body: JSON.stringify({
       target,
       ...cfg,
+      personaId: els.mediatorPersona.value,
       companionName: els.companionName.value.trim() || "AI Companion",
       systemPrompt: isCompanion ? els.companionPrompt.value : els.mediatorPrompt.value
     })
@@ -1730,7 +2105,16 @@ async function runAction(button, busyText, action) {
   try {
     await action();
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    let message = err instanceof Error ? err.message : String(err);
+    if (err?.statusCode === 429) {
+      message = t("hostedDemoRateLimited");
+      if (hostedDemo.mediator.enabled && !hostedDemo.mediator.useOwnKey) {
+        setStatus("mediator", "warn", message);
+      }
+      if (hostedDemo.companion.enabled && !hostedDemo.companion.useOwnKey && hostedDemoVisible("companion")) {
+        setStatus("companion", "warn", message);
+      }
+    }
     appendLog(message, "error");
     alert(message);
   } finally {
@@ -1750,6 +2134,12 @@ async function runConnectionTest(target) {
 }
 
 async function askCompanion() {
+  if (isOneOnOneMode()) {
+    appendLog(t("oneOnOneNoCompanion"), "warn");
+    setTurnPhase("mediator", { silent: true });
+    return;
+  }
+
   if (els.companionMode.value === "mcp") {
     const payload = await json("/api/companion/mcp-request", {
       method: "POST",
@@ -1784,20 +2174,24 @@ async function askCompanion() {
 
 async function askMediator() {
   const cfg = requireApiConfig("mediator");
+  const supportContext = currentSupportContext();
   const payload = await json("/api/mediator/respond", {
     method: "POST",
     body: JSON.stringify({
       ...cfg,
+      ...supportContext,
       roomId,
       locale: els.locale.value,
+      personaId: els.mediatorPersona.value,
+      mediatorName: currentMediatorName(),
       systemPrompt: els.mediatorPrompt.value,
-      turnInstruction: t("turnInstruction")
+      turnInstruction: isOneOnOneMode() ? t("turnInstructionOneOnOne") : t("turnInstruction")
     })
   });
   setStatus("mediator", "ok", t("mediatorApiResponded"));
   appendLog(t("mediatorResponseAdded"), "ok");
   await refreshRoom();
-  setTurnPhase(payload.nextSpeaker === "companion" ? "companion" : "human", { silent: true });
+  setTurnPhase(!isOneOnOneMode() && payload.nextSpeaker === "companion" ? "companion" : "human", { silent: true });
 }
 
 async function readCompanionFiles() {
@@ -1819,6 +2213,10 @@ document.querySelectorAll(".localeControl").forEach((control) => {
 els.consentForm.addEventListener("submit", (event) => {
   event.preventDefault();
   completeOnboarding();
+});
+els.intakeConcern.addEventListener("change", () => {
+  updateCompanionMode();
+  updateTurnUi();
 });
 els.consentAssistantForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -1872,6 +2270,8 @@ els.clearMediatorKey.addEventListener("click", () => {
   els.rememberMediatorApiKey.checked = false;
   saveConfig();
 });
+els.useOwnMediatorKey.addEventListener("click", toggleMediatorKeyMode);
+els.useOwnCompanionKey.addEventListener("click", toggleCompanionKeyMode);
 els.clearCompanionKey.addEventListener("click", () => {
   els.companionApiKey.value = "";
   els.rememberCompanionApiKey.checked = false;
@@ -1911,11 +2311,18 @@ els.messageForm.addEventListener("submit", async (event) => {
       method: "POST",
       body: JSON.stringify({
         authorRole: "human",
-        authorName: "Human",
+        authorName: signedHumanName(),
         content
       })
     });
     els.messageInput.value = "";
+    if (isOneOnOneMode()) {
+      appendLog(t("humanMessageAddedOneOnOne"));
+      setTurnPhase("mediator", { silent: true });
+      await refreshRoom();
+      await askMediator();
+      return;
+    }
     appendLog(t("humanMessageAdded"));
     setTurnPhase("companion", { silent: true });
     await refreshRoom();
@@ -1973,6 +2380,7 @@ setStatus("mediator", "idle", t("notTested"));
 setStatus("companion", "idle", t("notTested"));
 updateCompanionMode();
 appendLog(t("appLoaded"));
+if (didResetLocalState) appendLog(t("localStateReset"), "ok");
 syncConsentGate();
 window.setInterval(checkSessionClock, 1000);
 window.setInterval(() => {
@@ -1981,6 +2389,7 @@ window.setInterval(() => {
   }
 }, 4000);
 loadMediatorPersonas().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
+loadHostedDemoConfig().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 refreshRoom().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 loadSessionNotes().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 loadStorageInfo().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));

@@ -52,7 +52,11 @@ async function consentSignatureVisibility(page) {
 fs.mkdirSync(outputDir, { recursive: true });
 
 const { chromium } = loadPlaywright();
-const browser = await chromium.launch({ headless: true });
+const launchOptions = { headless: true };
+if (process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH) {
+  launchOptions.executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+}
+const browser = await chromium.launch(launchOptions);
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const consoleErrors = [];
 page.on("console", (message) => {
@@ -69,6 +73,24 @@ await page.screenshot({ path: path.join(outputDir, "consent-compact.png"), fullP
 await page.setViewportSize({ width: 1440, height: 1000 });
 
 await page.evaluate(() => {
+  localStorage.setItem("deburapy.onboarding.v1", JSON.stringify({
+    version: 1,
+    acceptedAt: new Date().toISOString(),
+    screeningCompletedAt: new Date().toISOString(),
+    signature: "Visual QA",
+    supportMode: "relationship_mediation",
+    screening: { concern: "relationship_mediation", urgency: "low" },
+    agreements: { scope: true, localStorage: true, aiLimitations: true }
+  }));
+});
+await page.goto(`${baseUrl}/?reset=1`, { waitUntil: "networkidle" });
+const resetLink = await page.evaluate(() => ({
+  url: window.location.href,
+  onboarding: localStorage.getItem("deburapy.onboarding.v1"),
+  consentHidden: document.querySelector("#consentGate")?.hidden
+}));
+
+await page.evaluate(() => {
   localStorage.setItem("deburapy.locale", "en");
   localStorage.setItem("deburapy.theme", "light");
   localStorage.setItem("deburapy.onboarding.v1", JSON.stringify({
@@ -76,7 +98,8 @@ await page.evaluate(() => {
     acceptedAt: new Date().toISOString(),
     screeningCompletedAt: new Date().toISOString(),
     signature: "Visual QA",
-    screening: { concern: "curiosity", urgency: "low" },
+    supportMode: "relationship_mediation",
+    screening: { concern: "relationship_mediation", urgency: "low" },
     agreements: { scope: true, localStorage: true, aiLimitations: true }
   }));
 });
@@ -122,6 +145,23 @@ const settingsStorage = await page.evaluate(() => ({
   envExample: document.querySelector("#storageEnvExample")?.textContent,
   transcriptExportText: document.querySelector("#localStorageSection #exportTranscript")?.textContent?.trim()
 }));
+const hostedDemoConfig = await page.evaluate(async () => {
+  const response = await fetch("/api/demo-config");
+  return response.ok ? response.json() : {};
+});
+if (hostedDemoConfig.companion?.enabled) {
+  await page.waitForFunction(() => document.querySelector("#companionHostedKeyNote")?.hidden === false);
+}
+const companionHostedSettings = await page.evaluate(() => ({
+  provider: document.querySelector("#companionProvider")?.value,
+  model: document.querySelector("#companionModel")?.value,
+  apiKeyDisabled: document.querySelector("#companionApiKey")?.disabled,
+  apiKeyPlaceholder: document.querySelector("#companionApiKey")?.getAttribute("placeholder"),
+  noteHidden: document.querySelector("#companionHostedKeyNote")?.hidden,
+  noteText: document.querySelector("#companionHostedKeyNote")?.textContent?.trim() || "",
+  switchHidden: document.querySelector("#useOwnCompanionKey")?.hidden,
+  switchText: document.querySelector("#useOwnCompanionKey")?.textContent?.trim() || ""
+}));
 await page.selectOption("#companionMode", "mcp");
 await page.waitForFunction(() => document.querySelector("#companionMcpGuide")?.hidden === false);
 const mcpGuide = await page.evaluate(() => ({
@@ -129,6 +169,40 @@ const mcpGuide = await page.evaluate(() => ({
   copyInstallPrompt: Boolean(document.querySelector("#copyMcpInstallPrompt")),
   guideText: document.querySelector("#companionMcpGuide")?.textContent || ""
 }));
+await page.evaluate(() => {
+  localStorage.setItem("deburapy.onboarding.v1", JSON.stringify({
+    version: 1,
+    acceptedAt: new Date().toISOString(),
+    screeningCompletedAt: new Date().toISOString(),
+    signature: "Visual QA",
+    supportMode: "one_on_one",
+    screening: { concern: "ai_loss_or_ban", urgency: "medium" },
+    agreements: { scope: true, localStorage: true, aiLimitations: true }
+  }));
+});
+await page.reload({ waitUntil: "networkidle" });
+const oneOnOneUi = await page.evaluate(() => ({
+  companionCardHidden: document.querySelector("#companionCard")?.hidden,
+  aiCompanionSectionHidden: document.querySelector("#aiCompanionSection")?.hidden,
+  askCompanionHidden: document.querySelector("#askCompanion")?.hidden,
+  turnHelp: document.querySelector("#turnHelp")?.textContent || "",
+  sessionPlanSummary: document.querySelector("#sessionPlanSummary")?.textContent || ""
+}));
+await page.screenshot({ path: path.join(outputDir, "room-one-on-one.png"), fullPage: false });
+await page.evaluate(() => {
+  localStorage.setItem("deburapy.onboarding.v1", JSON.stringify({
+    version: 1,
+    acceptedAt: new Date().toISOString(),
+    screeningCompletedAt: new Date().toISOString(),
+    signature: "Visual QA",
+    supportMode: "relationship_mediation",
+    screening: { concern: "relationship_mediation", urgency: "low" },
+    agreements: { scope: true, localStorage: true, aiLimitations: true }
+  }));
+});
+await page.reload({ waitUntil: "networkidle" });
+await page.click("#openSettings");
+await page.waitForFunction(() => document.querySelector("#settingsDrawer")?.hidden === false);
 await page.evaluate(() => {
   document.querySelector("#localStorageSection")?.scrollIntoView({ block: "start" });
 });
@@ -171,6 +245,9 @@ await browser.close();
 assertCondition(ui.title === "Deburapy", "Page title did not load.");
 assertCondition(consentDesktop.visible === true, `Consent signature is clipped on desktop: ${JSON.stringify(consentDesktop)}`);
 assertCondition(consentCompact.visible === true, `Consent signature is clipped on compact desktop: ${JSON.stringify(consentCompact)}`);
+assertCondition(resetLink.url.includes("reset=1") === false, "Reset link should remove the reset query parameter.");
+assertCondition(resetLink.onboarding === null, "Reset link should clear Deburapy onboarding localStorage.");
+assertCondition(resetLink.consentHidden === false, "Reset link should show the consent gate after clearing onboarding.");
 assertCondition(ui.consentHidden === true, "Consent bypass did not reveal the room UI.");
 assertCondition(ui.themeToggle === true, "Theme toggle is missing.");
 assertCondition(ui.theme === "light", "Initial theme should be light.");
@@ -189,9 +266,21 @@ assertCondition(Boolean(settingsStorage.dataDir), "Storage data directory was no
 assertCondition(settingsStorage.storePath.endsWith("store.json"), "Storage store path was not rendered.");
 assertCondition(settingsStorage.envExample.includes("DEBURAPY_DATA_DIR="), "Storage env example is missing.");
 assertCondition(settingsStorage.transcriptExportText.includes("Export"), "Transcript export is not tucked into Settings.");
+if (hostedDemoConfig.companion?.enabled) {
+  assertCondition(companionHostedSettings.provider === "google-ai-studio", "Hosted companion provider should be Google AI Studio.");
+  assertCondition(companionHostedSettings.model === hostedDemoConfig.companion.model, "Hosted companion model did not match /api/demo-config.");
+  assertCondition(companionHostedSettings.apiKeyDisabled === true, "Hosted companion key input should be disabled.");
+  assertCondition(companionHostedSettings.noteHidden === false, "Hosted companion note should be visible.");
+  assertCondition(companionHostedSettings.noteText.includes("server"), "Hosted companion note should mention server-side key handling.");
+  assertCondition(companionHostedSettings.switchHidden === false, "Hosted companion key switch should be visible.");
+}
 assertCondition(mcpGuide.visible === true, "MCP companion guide did not open.");
 assertCondition(mcpGuide.copyInstallPrompt === false, "README install guidance should not appear as a Settings copy control.");
 assertCondition(mcpGuide.guideText.includes("deburapy_send_channel_reply"), "MCP guide is missing reply tool guidance.");
+assertCondition(oneOnOneUi.companionCardHidden === true, "One-on-one mode should hide the companion status card.");
+assertCondition(oneOnOneUi.aiCompanionSectionHidden === true, "One-on-one mode should hide companion settings.");
+assertCondition(oneOnOneUi.askCompanionHidden === true, "One-on-one mode should hide the manual companion button.");
+assertCondition(oneOnOneUi.sessionPlanSummary.includes("One-on-one"), "One-on-one mode should be visible in the session summary.");
 assertCondition(mobileBefore.openSessionRail !== "none", "Mobile session button is hidden.");
 assertCondition(mobileBefore.persistedTheme === "dark", "Theme preference did not persist across reload.");
 assertCondition(mobileBefore.buttonText.includes("Session"), "Mobile session button label is missing.");
@@ -208,10 +297,14 @@ console.log(JSON.stringify({
   outputDir,
   consentDesktop,
   consentCompact,
+  resetLink,
   ui,
   darkTheme,
   settingsStorage,
+  hostedDemoConfig,
+  companionHostedSettings,
   mcpGuide,
+  oneOnOneUi,
   mobileBefore,
   mobileAfter,
   screenshots: [
@@ -219,6 +312,7 @@ console.log(JSON.stringify({
     path.join(outputDir, "consent-compact.png"),
     path.join(outputDir, "room.png"),
     path.join(outputDir, "room-dark.png"),
+    path.join(outputDir, "room-one-on-one.png"),
     path.join(outputDir, "settings-local-storage.png"),
     path.join(outputDir, "room-mobile-session.png")
   ]

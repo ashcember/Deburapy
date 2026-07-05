@@ -59,6 +59,13 @@ you can temporarily point the script at it:
 PLAYWRIGHT_PACKAGE_PATH=/absolute/path/to/node_modules/playwright npm run visual:check
 ```
 
+If the Playwright package is present but its bundled Chromium is missing, point
+the script at a local Chrome or Chromium executable:
+
+```bash
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run visual:check
+```
+
 ## API Smoke Check
 
 Add a human message:
@@ -138,9 +145,20 @@ For Claude Code, start the web server first, then run this from the Deburapy
 repo root:
 
 ```bash
+sh scripts/install-claude-mcp.sh
+```
+
+Manual equivalent:
+
+```bash
+NODE_BIN="$(command -v node || true)"
+if [ -z "$NODE_BIN" ] && [ -x /opt/homebrew/bin/node ]; then NODE_BIN=/opt/homebrew/bin/node; fi
+if [ -z "$NODE_BIN" ] && [ -x /usr/local/bin/node ]; then NODE_BIN=/usr/local/bin/node; fi
+test -n "$NODE_BIN" || { echo "Node.js 20+ is required"; exit 1; }
+
 claude mcp add --env DEBURAPY_URL=http://127.0.0.1:8787 \
   --transport stdio deburapy \
-  -- node "$(pwd)/src/mcp-server.mjs"
+  -- "$NODE_BIN" "$(pwd)/src/mcp-server.mjs"
 ```
 
 If your Claude Code build expects project config instead, copy the shape from
@@ -157,10 +175,7 @@ Claude Code can additionally receive channel wake-ups through the experimental
 `notifications/claude/channel` path when:
 
 ```bash
-claude mcp add --env DEBURAPY_URL=http://127.0.0.1:8787 \
-  --env DEBURAPY_CLAUDE_CHANNEL_NOTIFICATIONS=1 \
-  --transport stdio deburapy \
-  -- node "$(pwd)/src/mcp-server.mjs"
+DEBURAPY_CLAUDE_CHANNEL_NOTIFICATIONS=1 sh scripts/install-claude-mcp.sh
 claude --dangerously-load-development-channels server:deburapy
 ```
 

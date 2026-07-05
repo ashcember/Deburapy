@@ -9,12 +9,28 @@ function newId(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function normalizeSupportMode(value) {
+  return value === "one_on_one" ? "one_on_one" : "relationship_mediation";
+}
+
+function normalizeIntake(value) {
+  if (!value || typeof value !== "object") return {};
+  return {
+    concern: String(value.concern || "").trim(),
+    urgency: String(value.urgency || "").trim(),
+    acceptedAt: value.acceptedAt || null,
+    screeningCompletedAt: value.screeningCompletedAt || null
+  };
+}
+
 function defaultSessionState() {
   return {
     id: null,
     status: "not_started",
     sessionNumber: 1,
     durationMinutes: 60,
+    supportMode: "relationship_mediation",
+    intake: {},
     startedAt: null,
     endsAt: null,
     endedAt: null,
@@ -29,6 +45,8 @@ function defaultRoom(roomId = "default") {
     id: roomId,
     title: "Deburapy Room",
     locale: "en",
+    supportMode: "relationship_mediation",
+    intake: {},
     participants: [
       { id: "human", label: "Human", kind: "human" },
       { id: "companion", label: "AI Companion", kind: "ai_companion" },
@@ -60,13 +78,19 @@ function ensureRoomShape(room) {
   if (!Array.isArray(room.messages)) room.messages = [];
   if (!Array.isArray(room.pendingPushes)) room.pendingPushes = [];
   if (!room.participantState) room.participantState = {};
+  room.supportMode = normalizeSupportMode(room.supportMode);
+  room.intake = normalizeIntake(room.intake);
   room.session = {
     ...defaultSessionState(),
     ...(room.session || {})
   };
+  room.session.supportMode = normalizeSupportMode(room.session.supportMode || room.supportMode);
+  room.session.intake = normalizeIntake(Object.keys(room.session.intake || {}).length ? room.session.intake : room.intake);
   if (!Array.isArray(room.sessions)) room.sessions = [];
   room.sessions = room.sessions.map((session) => ({
     ...session,
+    supportMode: normalizeSupportMode(session.supportMode || room.supportMode),
+    intake: normalizeIntake(Object.keys(session.intake || {}).length ? session.intake : room.intake),
     messageIds: Array.isArray(session.messageIds) ? session.messageIds : []
   }));
   if (!Array.isArray(room.courseOutlines)) room.courseOutlines = [];
@@ -135,6 +159,10 @@ export class DeburapyStore {
     const endsAt = input.endsAt || new Date(new Date(startedAt).getTime() + durationMinutes * 60 * 1000).toISOString();
     const room = this.updateRoom(roomId, (draft) => {
       const sessionNumber = Number(input.sessionNumber || draft.sessions.length + 1);
+      const supportMode = normalizeSupportMode(input.supportMode || draft.supportMode || draft.session?.supportMode);
+      const intake = normalizeIntake(input.intake || draft.intake || draft.session?.intake);
+      draft.supportMode = supportMode;
+      draft.intake = intake;
       created = {
         id: input.sessionId || newId("session"),
         roomId,
@@ -142,6 +170,8 @@ export class DeburapyStore {
         status: "active",
         durationMinutes,
         startedAt,
+        supportMode,
+        intake,
         messageIds: Array.isArray(input.messageIds) ? input.messageIds : []
       };
       if (input.courseOutlineId) created.courseOutlineId = input.courseOutlineId;
@@ -153,6 +183,8 @@ export class DeburapyStore {
         status: "running",
         sessionNumber,
         durationMinutes,
+        supportMode,
+        intake,
         startedAt,
         endsAt,
         endedAt: null,
@@ -324,6 +356,8 @@ export class DeburapyStore {
         sessionNumber: session.sessionNumber || Number(input.sessionNumber || 1),
         createdAt: nowIso(),
         title: input.title || `Deburapy Session ${session.sessionNumber || 1} Note`,
+        supportMode: normalizeSupportMode(session.supportMode || draft.supportMode),
+        intake: normalizeIntake(Object.keys(session.intake || {}).length ? session.intake : draft.intake),
         content: String(input.content || "").trim(),
         format: "markdown",
         recommendedReader: "mediator_or_clinician"

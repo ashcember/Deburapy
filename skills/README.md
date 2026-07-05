@@ -33,3 +33,13 @@ Each skill should include:
 
 Keep skills non-clinical. Do not use private relationship data, hidden logs,
 API keys, chain-of-thought, or unredacted provider traces as examples.
+
+## Current Examples
+
+- `mediator/memory-rupture-mediation.md`: missing memory, promises, names, or continuity rituals.
+- `mediator/repair-after-silence.md`: repair after silence, delay, or non-response.
+- `mediator/account-loss-transition-mediation.zh-CN.md`: Simplified Chinese mediation for account loss, bans, shutdowns, or migration anxiety.
+- `companion-repair/account-loss-continuity.md`: companion-side continuity after account loss.
+- `artifact-writers/relationship-case-note-writer.md`: compact relationship case notes.
+
+Display-safe demo artifacts live under `examples/zh-CN/`.

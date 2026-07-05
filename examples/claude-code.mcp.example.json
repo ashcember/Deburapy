@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "deburapy": {
-      "command": "node",
+      "command": "/absolute/path/to/node",
       "args": [
         "/absolute/path/to/Deburapy/src/mcp-server.mjs"
       ],

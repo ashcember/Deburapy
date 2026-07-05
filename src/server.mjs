@@ -15,21 +15,24 @@ import {
   buildSessionNotePrompt,
   parseMediatorTurn
 } from "./core/prompt.mjs";
-import { generateChatCompletion } from "./core/openai-compatible.mjs";
+import { generateChatCompletion, providerDefaults } from "./core/openai-compatible.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 loadEnvFile(path.join(rootDir, ".env"));
 
 const publicDir = path.join(rootDir, "public");
-const dataDir = path.resolve(rootDir, process.env.DEBURAPY_DATA_DIR || ".deburapy-data");
+const isServerlessRuntime = process.env.VERCEL === "1" || process.env.VERCEL === "true";
+const isCliEntry = process.argv[1] === fileURLToPath(import.meta.url);
+const defaultDataDir = isServerlessRuntime ? "/tmp/deburapy-data" : ".deburapy-data";
+const dataDir = path.resolve(rootDir, process.env.DEBURAPY_DATA_DIR || defaultDataDir);
 const store = new DeburapyStore(dataDir);
 
 const host = process.env.DEBURAPY_HOST || "127.0.0.1";
 const port = Number(process.env.DEBURAPY_PORT || 8787);
 const loopbackHosts = new Set(["127.0.0.1", "localhost", "::1"]);
 
-if (!loopbackHosts.has(host) && process.env.DEBURAPY_ALLOW_UNSAFE_BIND !== "1") {
+if (!isServerlessRuntime && isCliEntry && !loopbackHosts.has(host) && process.env.DEBURAPY_ALLOW_UNSAFE_BIND !== "1") {
   console.error(
     `Refusing to bind unauthenticated API to ${host}. Set DEBURAPY_ALLOW_UNSAFE_BIND=1 only behind your own auth boundary.`
   );
@@ -37,6 +40,105 @@ if (!loopbackHosts.has(host) && process.env.DEBURAPY_ALLOW_UNSAFE_BIND !== "1") 
 }
 
 class BadRequestError extends Error {}
+class HttpStatusError extends Error {
+  constructor(statusCode, message) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
+const hostedDemoProvider = "google-ai-studio";
+const hostedDemoDefaults = providerDefaults(hostedDemoProvider);
+const hostedDemoApiKey =
+  process.env.DEBURAPY_HOSTED_DEMO_GOOGLE_AI_STUDIO_API_KEY ||
+  process.env.DEBURAPY_DEMO_GOOGLE_AI_STUDIO_API_KEY ||
+  process.env.GOOGLE_AI_STUDIO_API_KEY ||
+  process.env.GEMINI_API_KEY ||
+  "";
+const hostedDemoEnabled = process.env.DEBURAPY_ENABLE_HOSTED_DEMO === "1" && Boolean(hostedDemoApiKey);
+const hostedDemoBaseUrl = process.env.DEBURAPY_HOSTED_DEMO_BASE_URL || hostedDemoDefaults.baseUrl;
+const hostedDemoModel = process.env.DEBURAPY_HOSTED_DEMO_MODEL || hostedDemoDefaults.model;
+const hostedDemoRateLimit = Math.max(1, Number(process.env.DEBURAPY_HOSTED_DEMO_RATE_LIMIT_PER_MINUTE || 12));
+const hostedDemoRateWindowMs = 60 * 1000;
+const hostedDemoBuckets = new Map();
+const hostedDemoRoles = new Set(["pre_intake", "mediator", "session_note", "connection_test", "companion"]);
+
+function hostedDemoPublicConfig(role = "mediator") {
+  return {
+    enabled: hostedDemoEnabled,
+    provider: hostedDemoProvider,
+    baseUrl: hostedDemoBaseUrl,
+    model: hostedDemoModel,
+    keyMode: hostedDemoEnabled ? "server_hosted" : "byok",
+    keyLabel: hostedDemoEnabled ? `Hosted demo ${role} key` : ""
+  };
+}
+
+function wantsHostedDemo(input = {}) {
+  return input.useHostedDemoKey === true || input.apiKey === "__DEBURAPY_HOSTED_DEMO_KEY__";
+}
+
+function clientIp(req) {
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  return forwarded || req.socket?.remoteAddress || "unknown";
+}
+
+function checkHostedDemoRateLimit(req) {
+  const key = clientIp(req);
+  const now = Date.now();
+  const bucket = hostedDemoBuckets.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    hostedDemoBuckets.set(key, { count: 1, resetAt: now + hostedDemoRateWindowMs });
+    return;
+  }
+  bucket.count += 1;
+  if (bucket.count > hostedDemoRateLimit) {
+    throw new HttpStatusError(429, "Hosted demo rate limit reached. Please wait before trying again.");
+  }
+}
+
+function validateHostedDemoInput(input, role) {
+  const maxQuestionLength = role === "pre_intake" ? 1800 : 6000;
+  const maxTurnInstructionLength = 800;
+  if (String(input.question || "").length > maxQuestionLength) {
+    throw new BadRequestError("Hosted demo input is too long.");
+  }
+  if (String(input.turnInstruction || "").length > maxTurnInstructionLength) {
+    throw new BadRequestError("Hosted demo turn instruction is too long.");
+  }
+}
+
+function resolveModelInput(input, role, req) {
+  if (wantsHostedDemo(input)) {
+    if (!hostedDemoRoles.has(role)) {
+      throw new BadRequestError("Hosted demo key is not available for this endpoint.");
+    }
+    if (!hostedDemoEnabled) {
+      throw new BadRequestError("Hosted demo key is not configured.");
+    }
+    if (input.provider && input.provider !== hostedDemoProvider) {
+      throw new BadRequestError("Hosted demo key only supports Google AI Studio.");
+    }
+    checkHostedDemoRateLimit(req);
+    validateHostedDemoInput(input, role);
+    return {
+      provider: hostedDemoProvider,
+      apiKey: hostedDemoApiKey,
+      baseUrl: hostedDemoBaseUrl,
+      model: hostedDemoModel,
+      usesHostedDemoKey: true
+    };
+  }
+
+  requiredText(input, "apiKey");
+  return {
+    provider: input.provider,
+    apiKey: input.apiKey,
+    baseUrl: input.baseUrl,
+    model: input.model,
+    usesHostedDemoKey: false
+  };
+}
 
 function safeBaseUrl(value) {
   if (!value) return undefined;
@@ -131,6 +233,21 @@ function storageInfo() {
   };
 }
 
+function normalizeSupportMode(value) {
+  return value === "one_on_one" ? "one_on_one" : "relationship_mediation";
+}
+
+function supportContextFor(room, input = {}) {
+  const session = room.session || {};
+  const supportMode = normalizeSupportMode(input.supportMode || session.supportMode || room.supportMode);
+  const intake = input.intake || session.intake || room.intake || {};
+  return { supportMode, intake };
+}
+
+function isOneOnOneRoom(room, input = {}) {
+  return supportContextFor(room, input).supportMode === "one_on_one";
+}
+
 async function readJson(req) {
   let body = "";
   for await (const chunk of req) body += chunk;
@@ -179,16 +296,20 @@ function buildIntakeAssistantUserPrompt(input) {
   ].join("\n");
 }
 
-async function generateSessionNote(roomId, input) {
+async function generateSessionNote(roomId, input, req) {
   store.setSessionNoteStatus(roomId, "generating");
   const room = store.getRoom(roomId);
-  const systemPrompt = input.systemPrompt || await loadMediatorPrompt();
-  const userPrompt = buildSessionNotePrompt(room, input.locale || room.locale);
+  const modelInput = resolveModelInput(input, "session_note", req);
+  const systemPrompt = modelInput.usesHostedDemoKey
+    ? await loadMediatorPrompt(input.personaId || "core")
+    : input.systemPrompt || await loadMediatorPrompt();
+  const supportContext = supportContextFor(room, input);
+  const userPrompt = buildSessionNotePrompt(room, input.locale || room.locale, supportContext);
   const content = await generateChatCompletion({
-    provider: input.provider,
-    apiKey: input.apiKey,
-    baseUrl: input.baseUrl,
-    model: input.model,
+    provider: modelInput.provider,
+    apiKey: modelInput.apiKey,
+    baseUrl: modelInput.baseUrl,
+    model: modelInput.model,
     systemPrompt,
     userPrompt,
     temperature: 0.2
@@ -226,6 +347,13 @@ async function handleApi(req, res) {
     return sendJson(res, 200, storageInfo());
   }
 
+  if (req.method === "GET" && url.pathname === "/api/demo-config") {
+    return sendJson(res, 200, {
+      mediator: hostedDemoPublicConfig("mediator"),
+      companion: hostedDemoPublicConfig("companion")
+    });
+  }
+
   if (req.method === "GET" && url.pathname === "/api/prompts/mediator") {
     const personaId = url.searchParams.get("persona") || "core";
     return sendJson(res, 200, { personaId, systemPrompt: await loadMediatorPrompt(personaId) });
@@ -247,19 +375,20 @@ async function handleApi(req, res) {
   if (req.method === "POST" && url.pathname === "/api/intake/respond") {
     const input = await readJson(req);
     input.question = requiredText(input, "question");
-    requiredText(input, "apiKey");
+    const modelInput = resolveModelInput(input, "pre_intake", req);
     setRequestLog(req, {
       role: "pre_intake",
       action: "intake_assistant",
-      provider: input.provider,
-      model: input.model,
-      baseUrl: safeBaseUrl(input.baseUrl)
+      provider: modelInput.provider,
+      model: modelInput.model,
+      baseUrl: safeBaseUrl(modelInput.baseUrl),
+      keyMode: modelInput.usesHostedDemoKey ? "hosted_demo" : "byok"
     });
     const content = await generateChatCompletion({
-      provider: input.provider,
-      apiKey: input.apiKey,
-      baseUrl: input.baseUrl,
-      model: input.model,
+      provider: modelInput.provider,
+      apiKey: modelInput.apiKey,
+      baseUrl: modelInput.baseUrl,
+      model: modelInput.model,
       systemPrompt: intakeAssistantSystemPrompt,
       userPrompt: buildIntakeAssistantUserPrompt(input),
       temperature: 0.2
@@ -350,7 +479,8 @@ async function handleApi(req, res) {
       action: "session_start",
       roomId,
       sessionNumber: input.sessionNumber,
-      durationMinutes: input.durationMinutes
+      durationMinutes: input.durationMinutes,
+      supportMode: normalizeSupportMode(input.supportMode)
     });
     const room = store.startSession(roomId, input);
     return sendJson(res, 200, { room, session: room.session });
@@ -374,10 +504,12 @@ async function handleApi(req, res) {
       roomId,
       provider: input.provider,
       model: input.model,
-      baseUrl: safeBaseUrl(input.baseUrl)
+      baseUrl: safeBaseUrl(input.baseUrl),
+      keyMode: wantsHostedDemo(input) ? "hosted_demo" : "byok"
     });
-    const ended = store.endSession(roomId, { noteStatus: input.apiKey ? "generating" : "error" });
-    if (!input.apiKey) {
+    const shouldAttemptNote = Boolean(input.apiKey || wantsHostedDemo(input));
+    const ended = store.endSession(roomId, { noteStatus: shouldAttemptNote ? "generating" : "error" });
+    if (!shouldAttemptNote) {
       return sendJson(res, 200, {
         room: ended,
         session: ended.session,
@@ -386,7 +518,7 @@ async function handleApi(req, res) {
       });
     }
     try {
-      const { room, note } = await generateSessionNote(roomId, input);
+      const { room, note } = await generateSessionNote(roomId, input, req);
       return sendJson(res, 200, { room, session: room.session, note });
     } catch (err) {
       store.setSessionNoteStatus(roomId, "error");
@@ -424,50 +556,63 @@ async function handleApi(req, res) {
 
   if (req.method === "POST" && url.pathname === "/api/mediator/respond") {
     const input = await readJson(req);
-    requiredText(input, "apiKey");
+    const modelInput = resolveModelInput(input, "mediator", req);
     const roomId = input.roomId || "default";
+    const room = store.getRoom(roomId);
+    const supportContext = supportContextFor(room, input);
     setRequestLog(req, {
       role: "mediator",
       roomId,
-      provider: input.provider,
-      model: input.model,
-      baseUrl: safeBaseUrl(input.baseUrl)
+      provider: modelInput.provider,
+      model: modelInput.model,
+      baseUrl: safeBaseUrl(modelInput.baseUrl),
+      keyMode: modelInput.usesHostedDemoKey ? "hosted_demo" : "byok",
+      supportMode: supportContext.supportMode
     });
-    const room = store.getRoom(roomId);
-    const systemPrompt = input.systemPrompt || await loadMediatorPrompt();
+    const systemPrompt = modelInput.usesHostedDemoKey
+      ? await loadMediatorPrompt(input.personaId || "core")
+      : input.systemPrompt || await loadMediatorPrompt();
     const userPrompt = buildMediatorUserPrompt(room, input.locale || room.locale, {
-      turnInstruction: input.turnInstruction || ""
+      turnInstruction: input.turnInstruction || "",
+      ...supportContext
     });
     const rawContent = await generateChatCompletion({
-      provider: input.provider,
-      apiKey: input.apiKey,
-      baseUrl: input.baseUrl,
-      model: input.model,
+      provider: modelInput.provider,
+      apiKey: modelInput.apiKey,
+      baseUrl: modelInput.baseUrl,
+      model: modelInput.model,
       systemPrompt,
       userPrompt,
       temperature: input.temperature
     });
-    const { visibleContent, nextSpeaker } = parseMediatorTurn(rawContent);
+    const parsed = parseMediatorTurn(rawContent);
+    const nextSpeaker = supportContext.supportMode === "one_on_one" ? "human" : parsed.nextSpeaker;
+    const mediatorName = String(input.mediatorName || "Deburapy").trim() || "Deburapy";
     const updated = store.addMessage(roomId, {
       authorRole: "mediator",
-      authorName: "Deburapy",
-      content: visibleContent
+      authorName: mediatorName.slice(0, 80),
+      content: parsed.visibleContent
     });
     return sendJson(res, 200, { message: updated.messages.at(-1), room: updated, nextSpeaker });
   }
 
   if (req.method === "POST" && url.pathname === "/api/companion/respond") {
     const input = await readJson(req);
-    requiredText(input, "apiKey");
     const roomId = input.roomId || "default";
     const room = store.getRoom(roomId);
+    if (isOneOnOneRoom(room, input)) {
+      throw new BadRequestError("AI companion turns are disabled in one-on-one support mode.");
+    }
+    const modelInput = resolveModelInput(input, "companion", req);
     const companionName = input.companionName || "AI Companion";
     setRequestLog(req, {
       role: "companion",
       roomId,
-      provider: input.provider,
-      model: input.model,
-      baseUrl: safeBaseUrl(input.baseUrl)
+      provider: modelInput.provider,
+      model: modelInput.model,
+      baseUrl: safeBaseUrl(modelInput.baseUrl),
+      keyMode: modelInput.usesHostedDemoKey ? "hosted_demo" : "byok",
+      supportMode: supportContextFor(room, input).supportMode
     });
     const systemPrompt = input.systemPrompt || defaultCompanionPrompt(companionName);
     const userPrompt = buildCompanionUserPrompt(room, {
@@ -476,10 +621,10 @@ async function handleApi(req, res) {
       knowledge: input.knowledge || ""
     });
     const content = await generateChatCompletion({
-      provider: input.provider,
-      apiKey: input.apiKey,
-      baseUrl: input.baseUrl,
-      model: input.model,
+      provider: modelInput.provider,
+      apiKey: modelInput.apiKey,
+      baseUrl: modelInput.baseUrl,
+      model: modelInput.model,
       systemPrompt,
       userPrompt,
       temperature: input.temperature
@@ -496,13 +641,17 @@ async function handleApi(req, res) {
   if (req.method === "POST" && url.pathname === "/api/companion/mcp-request") {
     const input = await readJson(req);
     const roomId = input.roomId || "default";
+    const room = store.getRoom(roomId);
+    if (isOneOnOneRoom(room, input)) {
+      throw new BadRequestError("AI companion turns are disabled in one-on-one support mode.");
+    }
     setRequestLog(req, {
       role: "companion",
       mode: "mcp",
       roomId,
-      targetParticipantId: input.targetParticipantId || "companion"
+      targetParticipantId: input.targetParticipantId || "companion",
+      supportMode: supportContextFor(room, input).supportMode
     });
-    const room = store.getRoom(roomId);
     const content = String(input.content || [
       "Deburapy turn request for the external AI companion.",
       "",
@@ -524,21 +673,26 @@ async function handleApi(req, res) {
 
   if (req.method === "POST" && url.pathname === "/api/connections/test") {
     const input = await readJson(req);
-    requiredText(input, "apiKey");
     const target = input.target === "companion" ? "companion" : "mediator";
+    const modelInput = resolveModelInput(input, "connection_test", req);
     setRequestLog(req, {
       role: target,
       action: "connection_test",
-      provider: input.provider,
-      model: input.model,
-      baseUrl: safeBaseUrl(input.baseUrl)
+      provider: modelInput.provider,
+      model: modelInput.model,
+      baseUrl: safeBaseUrl(modelInput.baseUrl),
+      keyMode: modelInput.usesHostedDemoKey ? "hosted_demo" : "byok"
     });
     const content = await generateChatCompletion({
-      provider: input.provider,
-      apiKey: input.apiKey,
-      baseUrl: input.baseUrl,
-      model: input.model,
-      systemPrompt: input.systemPrompt || (target === "companion" ? defaultCompanionPrompt(input.companionName) : await loadMediatorPrompt()),
+      provider: modelInput.provider,
+      apiKey: modelInput.apiKey,
+      baseUrl: modelInput.baseUrl,
+      model: modelInput.model,
+      systemPrompt: target === "companion"
+        ? input.systemPrompt || defaultCompanionPrompt(input.companionName)
+        : (modelInput.usesHostedDemoKey
+          ? await loadMediatorPrompt(input.personaId || "core")
+          : input.systemPrompt || await loadMediatorPrompt()),
       userPrompt: [
         "Connection check only.",
         "Reply with one short sentence confirming that this model endpoint is reachable for Deburapy.",
@@ -591,7 +745,7 @@ async function handleApi(req, res) {
   return sendJson(res, 404, { error: "Not found" });
 }
 
-const server = http.createServer(async (req, res) => {
+export async function handleRequest(req, res) {
   req.deburapyStartedAt = Date.now();
   const originalWriteHead = res.writeHead;
   res.writeHead = function writeHeadWithStatus(statusCode, ...args) {
@@ -605,6 +759,11 @@ const server = http.createServer(async (req, res) => {
   try {
     const { url } = routeParts(req);
     if (url.pathname.startsWith("/api/")) return await handleApi(req, res);
+    if (url.pathname === "/favicon.ico") {
+      res.writeHead(204, { "cache-control": "public, max-age=86400" });
+      res.end();
+      return;
+    }
     if (serveStatic(req, res, url.pathname)) return;
     sendJson(res, 404, { error: "Not found" });
   } catch (err) {
@@ -612,10 +771,22 @@ const server = http.createServer(async (req, res) => {
     if (err instanceof BadRequestError) {
       return sendJson(res, 400, { error: err.message });
     }
+    if (err instanceof HttpStatusError) {
+      return sendJson(res, err.statusCode, { error: err.message });
+    }
+    if (Number.isInteger(err?.statusCode) && err.statusCode >= 400 && err.statusCode < 600) {
+      return sendJson(res, err.statusCode, { error: err.message });
+    }
     sendJson(res, 500, { error: err instanceof Error ? err.message : String(err) });
   }
-});
+}
 
-server.listen(port, host, () => {
-  console.log(`Deburapy running at http://${host}:${port}`);
-});
+export default handleRequest;
+
+const server = http.createServer(handleRequest);
+
+if (isCliEntry) {
+  server.listen(port, host, () => {
+    console.log(`Deburapy running at http://${host}:${port}`);
+  });
+}

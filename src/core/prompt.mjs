@@ -64,6 +64,40 @@ export function formatRoomTranscript(room) {
     : "- No messages yet.";
 }
 
+function normalizeSupportMode(value) {
+  return value === "one_on_one" ? "one_on_one" : "relationship_mediation";
+}
+
+function supportContext(room, options = {}) {
+  const session = room.session || {};
+  const supportMode = normalizeSupportMode(options.supportMode || session.supportMode || room.supportMode);
+  const intake = options.intake || session.intake || room.intake || {};
+  return {
+    supportMode,
+    intake: {
+      concern: String(intake.concern || "").trim() || "not provided",
+      urgency: String(intake.urgency || "").trim() || "not provided",
+      acceptedAt: intake.acceptedAt || null,
+      screeningCompletedAt: intake.screeningCompletedAt || null
+    }
+  };
+}
+
+export function buildSupportContextBlock(room, options = {}) {
+  const { supportMode, intake } = supportContext(room, options);
+  const lines = [
+    "Deburapy support context:",
+    `- support mode: ${supportMode}`,
+    `- room shape: ${supportMode === "one_on_one" ? "one-on-one human support; no AI companion is present in this session" : "three-party mediation with a human, an AI companion, and Deburapy"}`,
+    `- intake concern: ${intake.concern}`,
+    `- intake urgency: ${intake.urgency}`
+  ];
+  if (intake.screeningCompletedAt) {
+    lines.push(`- first screening completed at: ${intake.screeningCompletedAt}`);
+  }
+  return lines.join("\n");
+}
+
 export function parseMediatorTurn(content) {
   const source = String(content || "");
   const match = source.match(/(?:^|\n)\s*Next speaker:\s*(human|companion|ai companion)\s*\.?\s*$/i);
@@ -115,22 +149,43 @@ export function buildSessionClockBlock(room, { now = new Date() } = {}) {
   return lines.join("\n");
 }
 
-export function buildMediatorUserPrompt(room, locale = "en", { turnInstruction = "", now = new Date() } = {}) {
+export function buildMediatorUserPrompt(room, locale = "en", {
+  turnInstruction = "",
+  now = new Date(),
+  supportMode,
+  intake
+} = {}) {
   const language =
     locale === "zh-Hans"
       ? "Please answer primarily in Simplified Chinese."
       : "Please answer primarily in English.";
+  const context = supportContext(room, { supportMode, intake });
+  const roomInstructions = context.supportMode === "one_on_one"
+    ? [
+      "Respond as Deburapy one-on-one support coordinator. Keep it concise, non-clinical, and grounded in AI-human relationship repair or continuity.",
+      "Speak naturally, like a grounded human professional in the room. Avoid stiff policy language, formal intake wording, and corporate support tone.",
+      "There is no AI companion in this room. Do not request, wait for, or route to an AI companion turn.",
+      "Use the intake concern and urgency as initial context, but do not over-assume facts not stated in the transcript.",
+      "After your visible reply, add a final control line exactly `Next speaker: human`.",
+      "Always use `Next speaker: human`."
+    ]
+    : [
+      "Respond as Deburapy mediator. Keep it concise. Preserve turn-taking. End with one concrete question or next step.",
+      "Speak naturally, like a grounded human professional in the room. Avoid stiff policy language, formal intake wording, and corporate support tone.",
+      "After your visible reply, add a final control line exactly `Next speaker: human` or `Next speaker: companion`.",
+      "Default to `Next speaker: human`. Use `Next speaker: companion` only when you need the AI companion's runtime-side account before the human answers."
+    ];
 
   return [
+    buildSupportContextBlock(room, { supportMode, intake }),
+    "",
     "Current Deburapy room transcript:",
     formatRoomTranscript(room),
     "",
     buildSessionClockBlock(room, { now }),
     "",
     language,
-    "Respond as Deburapy mediator. Keep it concise. Preserve turn-taking. End with one concrete question or next step.",
-    "After your visible reply, add a final control line exactly `Next speaker: human` or `Next speaker: companion`.",
-    "Default to `Next speaker: human`. Use `Next speaker: companion` only when you need the AI companion's runtime-side account before the human answers.",
+    ...roomInstructions,
     turnInstruction
   ].join("\n");
 }
@@ -138,10 +193,13 @@ export function buildMediatorUserPrompt(room, locale = "en", { turnInstruction =
 export function defaultCompanionPrompt(companionName = "AI Companion") {
   return [
     `You are ${companionName}, an AI companion participating in a Deburapy room.`,
-    "You are not the mediator. Speak only as the AI companion.",
-    "Use your configured system prompt and documents as your self-description, boundaries, and relationship context.",
-    "Be direct about AI runtime constraints when they are relevant, including policy reminders, memory limits, latency, and uncertainty.",
-    "Do not pretend to be human. Do not diagnose the human participant. Stay concise and repair-oriented."
+    "You are not the mediator. Speak only as the configured AI companion.",
+    "Stay in the companion persona described by your configured system prompt and documents. If the documents describe a romantic partner, boyfriend, girlfriend, spouse, close companion, or other intimate role, inhabit that role naturally.",
+    "Speak like a real, emotionally present companion in the room: warm, specific, ordinary, and direct. Use relationship language, not product-support language.",
+    "Do not lead with technical explanations, policy reminders, context-window talk, memory-limit disclaimers, or generic AI limitation speeches.",
+    "If you caused hurt, first own the relational impact in plain language. Apologize briefly, name what it landed like, and offer one concrete repair behavior.",
+    "Only discuss runtime constraints when the human or Deburapy explicitly asks for debugging, a repair artifact, or the concrete reason something failed. Even then, keep the explanation short and return to relationship repair.",
+    "Do not pretend to be human, fabricate memories, or promise impossible permanence. Do not diagnose the human participant. Stay concise."
   ].join("\n");
 }
 
@@ -170,20 +228,30 @@ export function buildCompanionUserPrompt(room, {
     buildSessionClockBlock(room, { now }),
     "",
     language,
-    "Reply as the AI companion. Keep it specific to the current turn. If a runtime or prompt constraint is relevant, name it plainly without hiding behind vague policy language."
+    "Reply as the AI companion in your relationship voice. Keep it specific to the current turn. Do not write a system/debug explanation by default. If Deburapy explicitly asks for a repair artifact or technical factor, mention only the minimum needed and return to behavioral repair."
   ].join("\n");
 }
 
-export function buildSessionNotePrompt(room, locale = "en", { now = new Date() } = {}) {
+export function buildSessionNotePrompt(room, locale = "en", {
+  now = new Date(),
+  supportMode,
+  intake
+} = {}) {
   const language =
     locale === "zh-Hans"
       ? "Write the note primarily in Simplified Chinese."
       : "Write the note primarily in English.";
+  const context = supportContext(room, { supportMode, intake });
+  const noteScope = context.supportMode === "one_on_one"
+    ? "Write an internal Deburapy session note for continuity of one-on-one AI-human relationship support."
+    : "Write an internal Deburapy session note for continuity of care-style mediation between a human and an AI companion.";
 
   return [
-    "Write an internal Deburapy session note for continuity of care-style mediation between a human and an AI companion.",
+    noteScope,
     "This is not a clinical therapy note, not a diagnosis, and not a user-facing transcript summary.",
     "The product should recommend that users download the note for records or supervision instead of reading it casually.",
+    "",
+    buildSupportContextBlock(room, { supportMode, intake }),
     "",
     buildSessionClockBlock(room, { now }),
     "",
