@@ -51,6 +51,7 @@ const els = {
   mediatorBaseUrl: document.querySelector("#mediatorBaseUrl"),
   mediatorModel: document.querySelector("#mediatorModel"),
   mediatorApiKey: document.querySelector("#mediatorApiKey"),
+  mediatorHostedKeyNote: document.querySelector("#mediatorHostedKeyNote"),
   rememberMediatorApiKey: document.querySelector("#rememberMediatorApiKey"),
   mediatorPrompt: document.querySelector("#mediatorPrompt"),
   mediatorDot: document.querySelector("#mediatorDot"),
@@ -173,6 +174,10 @@ const copy = {
     model: "Model",
     apiKey: "API key",
     savedOnSavePlaceholder: "Saved locally when you click Save",
+    hostedDemoKeyPlaceholder: "Hosted demo key managed by host",
+    hostedDemoManaged: "Hosted demo key is managed on the server. The browser never receives or stores it.",
+    hostedDemoReady: "Hosted demo key ready.",
+    hostedDemoUnavailable: "Hosted demo key is not configured on this deployment.",
     saveMediatorKey: "Save mediator key locally",
     mediatorSystemPrompt: "Mediator system prompt",
     aiCompanion: "AI Companion",
@@ -388,6 +393,10 @@ const copy = {
     model: "模型",
     apiKey: "API key",
     savedOnSavePlaceholder: "点击保存后存到本地",
+    hostedDemoKeyPlaceholder: "由托管方管理的 demo key",
+    hostedDemoManaged: "Hosted demo key 只在 server 端管理。浏览器不会收到，也不会存储这个 key。",
+    hostedDemoReady: "Hosted demo key 已就绪。",
+    hostedDemoUnavailable: "这个部署还没有配置 hosted demo key。",
     saveMediatorKey: "本地保存协调员 key",
     mediatorSystemPrompt: "协调员 system prompt",
     aiCompanion: "AI 伴侣",
@@ -683,6 +692,16 @@ const lastProvider = {
   companion: "openai-compatible"
 };
 
+const hostedDemo = {
+  mediator: {
+    enabled: false,
+    provider: "google-ai-studio",
+    baseUrl: providerDefaults["google-ai-studio"].baseUrl,
+    model: providerDefaults["google-ai-studio"].model,
+    keyMode: "byok"
+  }
+};
+
 let mediatorPersonaCards = new Map();
 
 const session = {
@@ -705,6 +724,10 @@ function providerControls(target) {
 }
 
 function applyProviderDefaults(target, { force = false } = {}) {
+  if (target === "mediator" && hostedDemo.mediator.enabled) {
+    applyHostedDemoUi();
+    return;
+  }
   const controls = providerControls(target);
   const defaults = providerDefaults[controls.provider.value] || providerDefaults["openai-compatible"];
   const previous = providerDefaults[lastProvider[target]] || providerDefaults["openai-compatible"];
@@ -722,7 +745,65 @@ function applyProviderDefaults(target, { force = false } = {}) {
   lastProvider[target] = controls.provider.value;
 }
 
+function applyHostedDemoUi() {
+  const demo = hostedDemo.mediator;
+  const enabled = Boolean(demo.enabled);
+  els.mediatorHostedKeyNote.hidden = !enabled;
+  els.mediatorProvider.disabled = enabled;
+  els.mediatorBaseUrl.disabled = enabled;
+  els.mediatorModel.disabled = enabled;
+  els.mediatorApiKey.disabled = enabled;
+  els.rememberMediatorApiKey.disabled = enabled;
+
+  if (!enabled) {
+    els.mediatorApiKey.placeholder = t("savedOnSavePlaceholder");
+    return;
+  }
+
+  els.mediatorProvider.value = demo.provider;
+  els.mediatorBaseUrl.value = demo.baseUrl;
+  els.mediatorModel.value = demo.model;
+  els.mediatorApiKey.value = "";
+  els.mediatorApiKey.placeholder = t("hostedDemoKeyPlaceholder");
+  els.rememberMediatorApiKey.checked = false;
+  els.mediatorHostedKeyNote.textContent = t("hostedDemoManaged");
+  setStatus("mediator", "warn", t("hostedDemoReady"));
+  setConsentAssistantStatus(t("hostedDemoReady"), "ok");
+}
+
+async function loadHostedDemoConfig() {
+  try {
+    const payload = await json("/api/demo-config");
+    if (!payload.mediator?.enabled) {
+      hostedDemo.mediator.enabled = false;
+      applyHostedDemoUi();
+      return;
+    }
+    hostedDemo.mediator = {
+      enabled: true,
+      provider: payload.mediator.provider || "google-ai-studio",
+      baseUrl: payload.mediator.baseUrl || providerDefaults["google-ai-studio"].baseUrl,
+      model: payload.mediator.model || providerDefaults["google-ai-studio"].model,
+      keyMode: payload.mediator.keyMode || "server_hosted"
+    };
+    applyHostedDemoUi();
+  } catch (err) {
+    hostedDemo.mediator.enabled = false;
+    applyHostedDemoUi();
+    appendLog(`Could not load hosted demo config: ${err instanceof Error ? err.message : String(err)}`, "warn");
+  }
+}
+
 function modelConfig(target) {
+  if (target === "mediator" && hostedDemo.mediator.enabled && !els.mediatorApiKey.value.trim()) {
+    return {
+      provider: hostedDemo.mediator.provider,
+      baseUrl: hostedDemo.mediator.baseUrl,
+      model: hostedDemo.mediator.model,
+      apiKey: "",
+      useHostedDemoKey: true
+    };
+  }
   return {
     provider: els[`${target}Provider`].value,
     baseUrl: els[`${target}BaseUrl`].value.trim(),
@@ -1229,6 +1310,7 @@ function setLocale(locale) {
   if (els.companionMode.value === "mcp") {
     setStatus("companion", "warn", t("mcpBridgeMode"));
   }
+  applyHostedDemoUi();
 }
 
 function updateCompanionMode() {
@@ -1524,6 +1606,7 @@ async function completeSession(reason = "manual") {
       ...cfg,
       roomId,
       locale: els.locale.value,
+      personaId: els.mediatorPersona.value,
       systemPrompt: els.mediatorPrompt.value,
       reason
     })
@@ -1657,6 +1740,7 @@ function appendConsentAssistantMessage(role, content) {
 
 function requireApiConfig(target) {
   const cfg = modelConfig(target);
+  if (target === "mediator" && cfg.useHostedDemoKey) return cfg;
   if (!cfg.apiKey) throw new Error(t("apiKeyMissing", { target }));
   if (!cfg.baseUrl) throw new Error(t("baseUrlMissing", { target }));
   if (!cfg.model) throw new Error(t("modelMissing", { target }));
@@ -1715,6 +1799,7 @@ async function testConnection(target) {
     body: JSON.stringify({
       target,
       ...cfg,
+      personaId: els.mediatorPersona.value,
       companionName: els.companionName.value.trim() || "AI Companion",
       systemPrompt: isCompanion ? els.companionPrompt.value : els.mediatorPrompt.value
     })
@@ -1790,6 +1875,7 @@ async function askMediator() {
       ...cfg,
       roomId,
       locale: els.locale.value,
+      personaId: els.mediatorPersona.value,
       systemPrompt: els.mediatorPrompt.value,
       turnInstruction: t("turnInstruction")
     })
@@ -1981,6 +2067,7 @@ window.setInterval(() => {
   }
 }, 4000);
 loadMediatorPersonas().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
+loadHostedDemoConfig().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 refreshRoom().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 loadSessionNotes().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));
 loadStorageInfo().catch((err) => appendLog(err instanceof Error ? err.message : String(err), "error"));

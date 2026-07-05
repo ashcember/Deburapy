@@ -49,6 +49,7 @@ const indexHtml = await readFile(new URL("../public/index.html", import.meta.url
 const appJs = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
 const visualCheck = await readFile(new URL("../scripts/visual-check.mjs", import.meta.url), "utf8");
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+const vercelJson = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
 const zhDocs = await Promise.all([
   "../docs/architecture.zh-CN.md",
   "../docs/session-architecture.zh-CN.md",
@@ -163,6 +164,11 @@ for (const envName of [
   "DEBURAPY_PORT",
   "DEBURAPY_DATA_DIR",
   "DEBURAPY_ALLOW_UNSAFE_BIND",
+  "DEBURAPY_ENABLE_HOSTED_DEMO",
+  "DEBURAPY_HOSTED_DEMO_GOOGLE_AI_STUDIO_API_KEY",
+  "DEBURAPY_HOSTED_DEMO_MODEL",
+  "DEBURAPY_HOSTED_DEMO_BASE_URL",
+  "DEBURAPY_HOSTED_DEMO_RATE_LIMIT_PER_MINUTE",
   "DEBURAPY_URL",
   "DEBURAPY_ROOM_ID",
   "DEBURAPY_PARTICIPANT_ID",
@@ -231,6 +237,11 @@ assert.doesNotMatch(appJs, /navigator\.clipboard/);
 assert.doesNotMatch(appJs, /document\.execCommand\("copy"\)/);
 assert.match(appJs, /deburapy\.theme/);
 assert.match(appJs, /google-ai-studio/);
+assert.match(appJs, /hostedDemo/);
+assert.match(appJs, /\/api\/demo-config/);
+assert.match(appJs, /useHostedDemoKey/);
+assert.match(appJs, /Hosted demo key is managed on the server/);
+assert.doesNotMatch(appJs, /__DEBURAPY_HOSTED_DEMO_KEY__/);
 assert.match(appJs, /testCompanion:\s*document\.querySelector\("#testCompanion"\)/);
 assert.match(appJs, /companionDot:\s*document\.querySelector\("#companionDot"\)/);
 assert.match(appJs, /companionStatus:\s*document\.querySelector\("#companionStatus"\)/);
@@ -279,6 +290,7 @@ assert.match(indexHtml, /id="settingsDrawer"/);
 assert.match(indexHtml, /id="mediatorPersona"/);
 assert.match(indexHtml, />Elias</);
 assert.match(indexHtml, />Mara</);
+assert.match(indexHtml, /id="mediatorHostedKeyNote"/);
 assert.match(indexHtml, /id="sessionProgress"/);
 assert.match(indexHtml, /class="iconSprite"/);
 assert.match(indexHtml, /data-theme="light"/);
@@ -330,9 +342,19 @@ assert.match(indexHtml, /data-i18n="settings"/);
 assert.match(indexHtml, /data-i18n-placeholder="companionDocsPlaceholder"/);
 assert.match(indexHtml, /data-consent-question-key="accountLoss"/);
 assert.doesNotMatch(indexHtml, /id="authorRole"/);
+assert.equal(vercelJson.builds[0].src, "src/server.mjs");
+assert.equal(vercelJson.builds[0].use, "@vercel/node");
+assert.equal(vercelJson.routes[0].dest, "src/server.mjs");
 const serverJs = await readFile(new URL("../src/server.mjs", import.meta.url), "utf8");
 assert.match(serverJs, /cache-control/);
 assert.match(serverJs, /no-store/);
+assert.match(serverJs, /export default handleRequest/);
+assert.match(serverJs, /isServerlessRuntime/);
+assert.match(serverJs, /\/api\/demo-config/);
+assert.match(serverJs, /DEBURAPY_HOSTED_DEMO_GOOGLE_AI_STUDIO_API_KEY/);
+assert.match(serverJs, /Hosted demo key is not available for AI companion API calls/);
+assert.match(serverJs, /hostedDemoRateLimit/);
+assert.doesNotMatch(serverJs, /sendJson\(res, 200, \{[^}]*apiKey/s);
 assert.match(serverJs, /\/api\/storage/);
 assert.match(serverJs, /DEBURAPY_DATA_DIR/);
 assert.match(serverJs, /mediator-personas/);
@@ -344,6 +366,9 @@ assert.match(serverJs, /relationship-map/);
 assert.match(serverJs, /check-in-scale/);
 assert.match(serverJs, /\/api\/modules/);
 assert.match(serverJs, /getRoomRecall/);
+const serverModule = await import(`../src/server.mjs?handler-test=${Date.now()}`);
+assert.equal(typeof serverModule.handleRequest, "function");
+assert.equal(typeof serverModule.default, "function");
 assert.match(appJs, /startSession/);
 assert.match(appJs, /openSettings/);
 assert.match(appJs, /updateCompanionMode/);
@@ -545,7 +570,10 @@ async function testSessionLifecycleApi() {
     ...process.env,
     DEBURAPY_HOST: "127.0.0.1",
     DEBURAPY_PORT: String(port),
-    DEBURAPY_DATA_DIR: apiDataDir
+    DEBURAPY_DATA_DIR: apiDataDir,
+    DEBURAPY_ENABLE_HOSTED_DEMO: "1",
+    DEBURAPY_HOSTED_DEMO_GOOGLE_AI_STUDIO_API_KEY: "test-hosted-key",
+    DEBURAPY_HOSTED_DEMO_RATE_LIMIT_PER_MINUTE: "3"
   };
   let child = spawn(process.execPath, ["src/server.mjs"], {
     cwd: rootDir,
@@ -567,6 +595,25 @@ async function testSessionLifecycleApi() {
     assert.equal(storage.storePath, join(apiDataDir, "store.json"));
     assert.equal(storage.configuredBy, "DEBURAPY_DATA_DIR");
     assert.equal(storage.canChangeAtRuntime, false);
+
+    const demoConfigResponse = await fetch(`http://127.0.0.1:${port}/api/demo-config`);
+    assert.equal(demoConfigResponse.status, 200);
+    const demoConfig = await demoConfigResponse.json();
+    assert.equal(demoConfig.mediator.enabled, true);
+    assert.equal(demoConfig.mediator.provider, "google-ai-studio");
+    assert.equal(JSON.stringify(demoConfig).includes("test-hosted-key"), false);
+
+    const companionHostedResponse = await fetch(`http://127.0.0.1:${port}/api/companion/respond`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        roomId: "default",
+        useHostedDemoKey: true
+      })
+    });
+    assert.equal(companionHostedResponse.status, 400);
+    const companionHostedError = await companionHostedResponse.json();
+    assert.match(companionHostedError.error, /not available for AI companion/);
 
     const createResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/default/sessions`, {
       method: "POST",
