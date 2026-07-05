@@ -76,7 +76,8 @@ await page.evaluate(() => {
     acceptedAt: new Date().toISOString(),
     screeningCompletedAt: new Date().toISOString(),
     signature: "Visual QA",
-    screening: { concern: "curiosity", urgency: "low" },
+    supportMode: "relationship_mediation",
+    screening: { concern: "relationship_mediation", urgency: "low" },
     agreements: { scope: true, localStorage: true, aiLimitations: true }
   }));
 });
@@ -129,6 +130,40 @@ const mcpGuide = await page.evaluate(() => ({
   copyInstallPrompt: Boolean(document.querySelector("#copyMcpInstallPrompt")),
   guideText: document.querySelector("#companionMcpGuide")?.textContent || ""
 }));
+await page.evaluate(() => {
+  localStorage.setItem("deburapy.onboarding.v1", JSON.stringify({
+    version: 1,
+    acceptedAt: new Date().toISOString(),
+    screeningCompletedAt: new Date().toISOString(),
+    signature: "Visual QA",
+    supportMode: "one_on_one",
+    screening: { concern: "ai_loss_or_ban", urgency: "medium" },
+    agreements: { scope: true, localStorage: true, aiLimitations: true }
+  }));
+});
+await page.reload({ waitUntil: "networkidle" });
+const oneOnOneUi = await page.evaluate(() => ({
+  companionCardHidden: document.querySelector("#companionCard")?.hidden,
+  aiCompanionSectionHidden: document.querySelector("#aiCompanionSection")?.hidden,
+  askCompanionHidden: document.querySelector("#askCompanion")?.hidden,
+  turnHelp: document.querySelector("#turnHelp")?.textContent || "",
+  sessionPlanSummary: document.querySelector("#sessionPlanSummary")?.textContent || ""
+}));
+await page.screenshot({ path: path.join(outputDir, "room-one-on-one.png"), fullPage: false });
+await page.evaluate(() => {
+  localStorage.setItem("deburapy.onboarding.v1", JSON.stringify({
+    version: 1,
+    acceptedAt: new Date().toISOString(),
+    screeningCompletedAt: new Date().toISOString(),
+    signature: "Visual QA",
+    supportMode: "relationship_mediation",
+    screening: { concern: "relationship_mediation", urgency: "low" },
+    agreements: { scope: true, localStorage: true, aiLimitations: true }
+  }));
+});
+await page.reload({ waitUntil: "networkidle" });
+await page.click("#openSettings");
+await page.waitForFunction(() => document.querySelector("#settingsDrawer")?.hidden === false);
 await page.evaluate(() => {
   document.querySelector("#localStorageSection")?.scrollIntoView({ block: "start" });
 });
@@ -192,6 +227,10 @@ assertCondition(settingsStorage.transcriptExportText.includes("Export"), "Transc
 assertCondition(mcpGuide.visible === true, "MCP companion guide did not open.");
 assertCondition(mcpGuide.copyInstallPrompt === false, "README install guidance should not appear as a Settings copy control.");
 assertCondition(mcpGuide.guideText.includes("deburapy_send_channel_reply"), "MCP guide is missing reply tool guidance.");
+assertCondition(oneOnOneUi.companionCardHidden === true, "One-on-one mode should hide the companion status card.");
+assertCondition(oneOnOneUi.aiCompanionSectionHidden === true, "One-on-one mode should hide companion settings.");
+assertCondition(oneOnOneUi.askCompanionHidden === true, "One-on-one mode should hide the manual companion button.");
+assertCondition(oneOnOneUi.sessionPlanSummary.includes("One-on-one"), "One-on-one mode should be visible in the session summary.");
 assertCondition(mobileBefore.openSessionRail !== "none", "Mobile session button is hidden.");
 assertCondition(mobileBefore.persistedTheme === "dark", "Theme preference did not persist across reload.");
 assertCondition(mobileBefore.buttonText.includes("Session"), "Mobile session button label is missing.");
@@ -212,6 +251,7 @@ console.log(JSON.stringify({
   darkTheme,
   settingsStorage,
   mcpGuide,
+  oneOnOneUi,
   mobileBefore,
   mobileAfter,
   screenshots: [
@@ -219,6 +259,7 @@ console.log(JSON.stringify({
     path.join(outputDir, "consent-compact.png"),
     path.join(outputDir, "room.png"),
     path.join(outputDir, "room-dark.png"),
+    path.join(outputDir, "room-one-on-one.png"),
     path.join(outputDir, "settings-local-storage.png"),
     path.join(outputDir, "room-mobile-session.png")
   ]

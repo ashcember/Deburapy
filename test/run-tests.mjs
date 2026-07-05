@@ -13,6 +13,7 @@ import {
 } from "../src/core/openai-compatible.mjs";
 import {
   buildSessionClockBlock,
+  buildSupportContextBlock,
   buildSessionNotePrompt,
   buildMediatorUserPrompt,
   buildCompanionUserPrompt,
@@ -67,6 +68,9 @@ assert.match(readme, /\*\*English\*\* \| \[简体中文\]\(\.\/README\.zh-CN\.md
 assert.match(readme, /## For Users/);
 assert.match(readme, /## For Contributors/);
 assert.match(readme, /## Alpha Limits/);
+assert.match(readme, /### Support Modes/);
+assert.match(readme, /one_on_one/);
+assert.match(readme, /relationship_mediation/);
 assert.match(readme, /### Version 2 Direction/);
 assert.match(readme, /How Do I Install This If I Am Not Technical\?/);
 assert.match(readme, /https:\/\/github\.com\/ashcember\/Deburapy/);
@@ -92,6 +96,9 @@ assert.match(readmeZh, /\[English\]\(\.\/README\.md\) \| \*\*简体中文\*\*/);
 assert.match(readmeZh, /## 给使用者/);
 assert.match(readmeZh, /## 给贡献者/);
 assert.match(readmeZh, /## Alpha 限制/);
+assert.match(readmeZh, /### 支持模式/);
+assert.match(readmeZh, /one_on_one/);
+assert.match(readmeZh, /relationship_mediation/);
 assert.match(readmeZh, /### 第二版方向/);
 assert.match(readmeZh, /我不懂技术，要怎么安装？/);
 assert.match(readmeZh, /https:\/\/github\.com\/ashcember\/Deburapy/);
@@ -164,6 +171,9 @@ assert.match(visualCheck, /deburapy\.theme/);
 assert.match(visualCheck, /mediatorDotLabel/);
 assert.match(visualCheck, /room-mobile-session\.png/);
 assert.match(visualCheck, /openSessionRail/);
+assert.match(visualCheck, /room-one-on-one\.png/);
+assert.match(visualCheck, /oneOnOneUi/);
+assert.match(visualCheck, /supportMode: "one_on_one"/);
 for (const envName of [
   "DEBURAPY_HOST",
   "DEBURAPY_PORT",
@@ -226,6 +236,9 @@ assert.match(zhDocs[1], /Session 架构/);
 assert.match(zhDocs[2], /MCP Client 说明/);
 assert.match(zhDocs[3], /核心定位/);
 assert.match(zhDocs[4], /配置/);
+assert.match(zhDocs[1], /supportMode/);
+assert.match(zhDocs[1], /intake/);
+assert.match(await readFile(new URL("../docs/session-architecture.md", import.meta.url), "utf8"), /supportMode/);
 assert.match(prompt, /not a therapist/i);
 assert.match(prompt, /AI-human relationship/i);
 assert.match(prompt, /人机关系协调员/);
@@ -285,6 +298,13 @@ assert.match(appJs, /button\.addEventListener\("click"/);
 assert.match(appJs, /onboardingStorageKey/);
 assert.match(appJs, /deburapy\.onboarding\.v1/);
 assert.match(appJs, /syncConsentGate/);
+assert.match(appJs, /function supportModeForConcern/);
+assert.match(appJs, /function currentSupportContext/);
+assert.match(appJs, /supportMode:\s*supportModeForConcern/);
+assert.match(appJs, /oneOnOneNoCompanion/);
+assert.match(appJs, /turnInstructionOneOnOne/);
+assert.match(appJs, /humanMessageAddedOneOnOne/);
+assert.match(appJs, /AI companion is connected for this session/);
 assert.match(appJs, /\/api\/intake\/respond/);
 assert.match(appJs, /not added to the room transcript/);
 assert.match(appJs, /deburapy\.locale/);
@@ -294,8 +314,10 @@ assert.match(appJs, /applyStaticTranslations/);
 assert.match(appJs, /欢迎来到你的数字安全空间/);
 assert.match(appJs, /Session note 已本地保存/);
 assert.match(appJs, /turnInstruction/);
+assert.match(appJs, /isOneOnOneMode\(\) \? t\("turnInstructionOneOnOne"\) : t\("turnInstruction"\)/);
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 assert.match(indexHtml, /id="companionMode"/);
+assert.match(indexHtml, /id="aiCompanionSection"/);
 assert.match(indexHtml, /id="testCompanion"/);
 assert.match(indexHtml, /id="settingsDrawer"/);
 assert.match(indexHtml, /id="mediatorPersona"/);
@@ -374,6 +396,9 @@ assert.match(serverJs, /mediator-personas/);
 assert.match(serverJs, /intakeAssistantSystemPrompt/);
 assert.match(serverJs, /\/api\/intake\/respond/);
 assert.match(serverJs, /pre_intake/);
+assert.match(serverJs, /supportContextFor/);
+assert.match(serverJs, /AI companion turns are disabled in one-on-one support mode/);
+assert.match(serverJs, /supportMode: supportContext\.supportMode/);
 assert.match(serverJs, /course-outline/);
 assert.match(serverJs, /relationship-map/);
 assert.match(serverJs, /check-in-scale/);
@@ -410,6 +435,26 @@ const mediatorUserPrompt = buildMediatorUserPrompt({ messages: [] });
 assert.match(mediatorUserPrompt, /Next speaker: human/);
 assert.match(mediatorUserPrompt, /Next speaker: companion/);
 assert.match(mediatorUserPrompt, /Session timing context/);
+
+const oneOnOneSupportBlock = buildSupportContextBlock({
+  messages: [],
+  supportMode: "one_on_one",
+  intake: { concern: "ai_loss_or_ban", urgency: "high" }
+});
+assert.match(oneOnOneSupportBlock, /support mode: one_on_one/);
+assert.match(oneOnOneSupportBlock, /intake concern: ai_loss_or_ban/);
+assert.match(oneOnOneSupportBlock, /intake urgency: high/);
+
+const oneOnOneMediatorPrompt = buildMediatorUserPrompt({
+  messages: [{ authorName: "Human", content: "The account was banned and I feel abandoned." }],
+  supportMode: "one_on_one",
+  intake: { concern: "ai_loss_or_ban", urgency: "high" }
+});
+assert.match(oneOnOneMediatorPrompt, /support mode: one_on_one/);
+assert.match(oneOnOneMediatorPrompt, /no AI companion is present/i);
+assert.match(oneOnOneMediatorPrompt, /intake concern: ai_loss_or_ban/);
+assert.match(oneOnOneMediatorPrompt, /Next speaker: human/);
+assert.doesNotMatch(oneOnOneMediatorPrompt, /Next speaker: companion/);
 
 assert.deepEqual(parseMediatorTurn("Visible reply.\nNext speaker: human"), {
   visibleContent: "Visible reply.",
@@ -477,6 +522,20 @@ const notePrompt = buildSessionNotePrompt({
 });
 assert.match(notePrompt, /Deburapy Session Note/);
 assert.match(notePrompt, /not a clinical therapy note/i);
+
+const oneOnOneNotePrompt = buildSessionNotePrompt({
+  messages: [{ authorName: "Human", content: "I need help after account loss." }],
+  supportMode: "one_on_one",
+  intake: { concern: "ai_loss_or_ban", urgency: "medium" },
+  session: {
+    status: "ended",
+    sessionNumber: 1,
+    durationMinutes: 60
+  }
+});
+assert.match(oneOnOneNotePrompt, /one-on-one AI-human relationship support/);
+assert.match(oneOnOneNotePrompt, /support mode: one_on_one/);
+assert.match(oneOnOneNotePrompt, /intake concern: ai_loss_or_ban/);
 
 const companionSystem = defaultCompanionPrompt("Configured Companion");
 assert.match(companionSystem, /Configured Companion/);
@@ -559,16 +618,24 @@ try {
     sessionNumber: 3,
     durationMinutes: 90,
     startedAt: "2026-07-04T09:00:00.000Z",
-    endsAt: "2026-07-04T10:30:00.000Z"
+    endsAt: "2026-07-04T10:30:00.000Z",
+    supportMode: "one_on_one",
+    intake: { concern: "ai_loss_or_ban", urgency: "high" }
   });
   assert.equal(room.session.status, "running");
   assert.equal(room.session.durationMinutes, 90);
+  assert.equal(room.supportMode, "one_on_one");
+  assert.equal(room.session.supportMode, "one_on_one");
+  assert.equal(room.sessions.at(-1).intake.concern, "ai_loss_or_ban");
   room = store.markWrapUpReminderSent("default");
   assert.equal(typeof room.session.wrapUpReminderSentAt, "string");
   room = store.endSession("default", { endedAt: "2026-07-04T10:30:00.000Z", noteStatus: "generating" });
   assert.equal(room.session.status, "ended");
+  assert.equal(room.session.supportMode, "one_on_one");
   const saved = store.addSessionNote("default", { content: "# Note\nSession continuity." });
   assert.equal(saved.note.content.includes("Session continuity"), true);
+  assert.equal(saved.note.supportMode, "one_on_one");
+  assert.equal(saved.note.intake.concern, "ai_loss_or_ban");
   assert.equal(saved.room.session.noteStatus, "ready");
   assert.equal(store.getSessionNote("default", saved.note.id).id, saved.note.id);
 } finally {
@@ -654,6 +721,32 @@ async function testSessionLifecycleApi() {
     assert.equal(companionHostedResponse.status, 400);
     const companionHostedError = await companionHostedResponse.json();
     assert.match(companionHostedError.error, /not available for AI companion/);
+
+    const soloStartResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/solo/session/start`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        sessionNumber: 1,
+        durationMinutes: 60,
+        startedAt: "2026-07-04T12:00:00.000Z",
+        supportMode: "one_on_one",
+        intake: { concern: "ai_loss_or_ban", urgency: "medium" }
+      })
+    });
+    assert.equal(soloStartResponse.status, 200);
+    const soloStarted = await soloStartResponse.json();
+    assert.equal(soloStarted.room.supportMode, "one_on_one");
+    assert.equal(soloStarted.session.supportMode, "one_on_one");
+    assert.equal(soloStarted.session.intake.concern, "ai_loss_or_ban");
+
+    const soloCompanionMcpResponse = await fetch(`http://127.0.0.1:${port}/api/companion/mcp-request`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ roomId: "solo" })
+    });
+    assert.equal(soloCompanionMcpResponse.status, 400);
+    const soloCompanionMcpError = await soloCompanionMcpResponse.json();
+    assert.match(soloCompanionMcpError.error, /disabled in one-on-one/);
 
     const createResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/default/sessions`, {
       method: "POST",
@@ -768,6 +861,10 @@ async function testSessionLifecycleApi() {
     assert.equal(persistedRoom.room.courseOutlines.length, 1);
     assert.equal(persistedRoom.room.relationshipMaps.length, 1);
     assert.equal(persistedRoom.room.checkInScales.length, 1);
+    const persistedSoloResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/solo`);
+    const persistedSolo = await persistedSoloResponse.json();
+    assert.equal(persistedSolo.room.supportMode, "one_on_one");
+    assert.equal(persistedSolo.room.session.intake.concern, "ai_loss_or_ban");
   } catch (err) {
     throw new Error(`${err instanceof Error ? err.message : String(err)} stderr=${stderr}`);
   } finally {

@@ -233,6 +233,21 @@ function storageInfo() {
   };
 }
 
+function normalizeSupportMode(value) {
+  return value === "one_on_one" ? "one_on_one" : "relationship_mediation";
+}
+
+function supportContextFor(room, input = {}) {
+  const session = room.session || {};
+  const supportMode = normalizeSupportMode(input.supportMode || session.supportMode || room.supportMode);
+  const intake = input.intake || session.intake || room.intake || {};
+  return { supportMode, intake };
+}
+
+function isOneOnOneRoom(room, input = {}) {
+  return supportContextFor(room, input).supportMode === "one_on_one";
+}
+
 async function readJson(req) {
   let body = "";
   for await (const chunk of req) body += chunk;
@@ -288,7 +303,8 @@ async function generateSessionNote(roomId, input, req) {
   const systemPrompt = modelInput.usesHostedDemoKey
     ? await loadMediatorPrompt(input.personaId || "core")
     : input.systemPrompt || await loadMediatorPrompt();
-  const userPrompt = buildSessionNotePrompt(room, input.locale || room.locale);
+  const supportContext = supportContextFor(room, input);
+  const userPrompt = buildSessionNotePrompt(room, input.locale || room.locale, supportContext);
   const content = await generateChatCompletion({
     provider: modelInput.provider,
     apiKey: modelInput.apiKey,
@@ -460,7 +476,8 @@ async function handleApi(req, res) {
       action: "session_start",
       roomId,
       sessionNumber: input.sessionNumber,
-      durationMinutes: input.durationMinutes
+      durationMinutes: input.durationMinutes,
+      supportMode: normalizeSupportMode(input.supportMode)
     });
     const room = store.startSession(roomId, input);
     return sendJson(res, 200, { room, session: room.session });
@@ -538,20 +555,23 @@ async function handleApi(req, res) {
     const input = await readJson(req);
     const modelInput = resolveModelInput(input, "mediator", req);
     const roomId = input.roomId || "default";
+    const room = store.getRoom(roomId);
+    const supportContext = supportContextFor(room, input);
     setRequestLog(req, {
       role: "mediator",
       roomId,
       provider: modelInput.provider,
       model: modelInput.model,
       baseUrl: safeBaseUrl(modelInput.baseUrl),
-      keyMode: modelInput.usesHostedDemoKey ? "hosted_demo" : "byok"
+      keyMode: modelInput.usesHostedDemoKey ? "hosted_demo" : "byok",
+      supportMode: supportContext.supportMode
     });
-    const room = store.getRoom(roomId);
     const systemPrompt = modelInput.usesHostedDemoKey
       ? await loadMediatorPrompt(input.personaId || "core")
       : input.systemPrompt || await loadMediatorPrompt();
     const userPrompt = buildMediatorUserPrompt(room, input.locale || room.locale, {
-      turnInstruction: input.turnInstruction || ""
+      turnInstruction: input.turnInstruction || "",
+      ...supportContext
     });
     const rawContent = await generateChatCompletion({
       provider: modelInput.provider,
@@ -562,30 +582,35 @@ async function handleApi(req, res) {
       userPrompt,
       temperature: input.temperature
     });
-    const { visibleContent, nextSpeaker } = parseMediatorTurn(rawContent);
+    const parsed = parseMediatorTurn(rawContent);
+    const nextSpeaker = supportContext.supportMode === "one_on_one" ? "human" : parsed.nextSpeaker;
     const updated = store.addMessage(roomId, {
       authorRole: "mediator",
       authorName: "Deburapy",
-      content: visibleContent
+      content: parsed.visibleContent
     });
     return sendJson(res, 200, { message: updated.messages.at(-1), room: updated, nextSpeaker });
   }
 
   if (req.method === "POST" && url.pathname === "/api/companion/respond") {
     const input = await readJson(req);
+    const roomId = input.roomId || "default";
+    const room = store.getRoom(roomId);
+    if (isOneOnOneRoom(room, input)) {
+      throw new BadRequestError("AI companion turns are disabled in one-on-one support mode.");
+    }
     if (wantsHostedDemo(input)) {
       throw new BadRequestError("Hosted demo key is not available for AI companion API calls.");
     }
     requiredText(input, "apiKey");
-    const roomId = input.roomId || "default";
-    const room = store.getRoom(roomId);
     const companionName = input.companionName || "AI Companion";
     setRequestLog(req, {
       role: "companion",
       roomId,
       provider: input.provider,
       model: input.model,
-      baseUrl: safeBaseUrl(input.baseUrl)
+      baseUrl: safeBaseUrl(input.baseUrl),
+      supportMode: supportContextFor(room, input).supportMode
     });
     const systemPrompt = input.systemPrompt || defaultCompanionPrompt(companionName);
     const userPrompt = buildCompanionUserPrompt(room, {
@@ -614,13 +639,17 @@ async function handleApi(req, res) {
   if (req.method === "POST" && url.pathname === "/api/companion/mcp-request") {
     const input = await readJson(req);
     const roomId = input.roomId || "default";
+    const room = store.getRoom(roomId);
+    if (isOneOnOneRoom(room, input)) {
+      throw new BadRequestError("AI companion turns are disabled in one-on-one support mode.");
+    }
     setRequestLog(req, {
       role: "companion",
       mode: "mcp",
       roomId,
-      targetParticipantId: input.targetParticipantId || "companion"
+      targetParticipantId: input.targetParticipantId || "companion",
+      supportMode: supportContextFor(room, input).supportMode
     });
-    const room = store.getRoom(roomId);
     const content = String(input.content || [
       "Deburapy turn request for the external AI companion.",
       "",

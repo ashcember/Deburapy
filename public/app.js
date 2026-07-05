@@ -60,6 +60,8 @@ const els = {
   mediatorStatus: document.querySelector("#mediatorStatus"),
   testMediator: document.querySelector("#testMediator"),
   testCompanion: document.querySelector("#testCompanion"),
+  companionCard: document.querySelector("#companionCard"),
+  aiCompanionSection: document.querySelector("#aiCompanionSection"),
   companionDot: document.querySelector("#companionDot"),
   companionStatus: document.querySelector("#companionStatus"),
   companionMode: document.querySelector("#companionMode"),
@@ -246,13 +248,18 @@ const copy = {
     timingEnded: "Session ended.",
     timingReady: "Ready for the next session.",
     timingStart: "Start stores timing in the local room.",
+    supportModeOneOnOne: "One-on-one",
+    supportModeMediation: "Mediation room",
     nextDeburapy: "Next: Deburapy",
     helpDeburapy: "Deburapy receives the latest human and companion messages, then decides who should answer next.",
+    helpDeburapyOneOnOne: "Deburapy receives the latest human message and keeps this as a one-on-one support session.",
     nextHuman: "Next: Human",
     helpHuman: "The mediator has handed the turn to the human. After you send, Deburapy will route the turn to the AI companion.",
+    helpHumanOneOnOne: "Deburapy has handed the turn to the human. After you send, the turn returns directly to Deburapy.",
     nextCompanion: "Next: AI Companion",
     helpCompanionMcp: "Deburapy will queue this turn for the external MCP companion.",
     helpCompanionApi: "Deburapy will send the mediator and human context to the configured AI companion.",
+    oneOnOneNoCompanion: "One-on-one mode. No AI companion is connected for this session.",
     humanPlaceholder: "Write as the human participant",
     waitingPlaceholder: "Waiting for Deburapy to hand the turn to the human",
     continueDeburapy: "Continue with Deburapy",
@@ -300,8 +307,10 @@ const copy = {
     copiedMediatorSettings: "Copied mediator model settings to AI companion.",
     humanLocked: "Human input is locked until Deburapy hands the turn to the human.",
     humanMessageAdded: "Human message added. Routing the turn to the AI companion.",
+    humanMessageAddedOneOnOne: "Human message added. Returning the turn to Deburapy.",
     appLoaded: "Deburapy loaded. Local room data reloads from .deburapy-data.",
     turnInstruction: "You are managing a three-party turn. If the human should answer next, use `Next speaker: human`. If the AI companion should answer next, use `Next speaker: companion`.",
+    turnInstructionOneOnOne: "You are managing a one-on-one Deburapy support session. There is no AI companion in this room. Always use `Next speaker: human`.",
     selectSession: "Select {label}",
     openReview: "Open review guidance",
     selectedSession: "Selected {label}.",
@@ -469,13 +478,18 @@ const copy = {
     timingEnded: "Session 已结束。",
     timingReady: "可以开始下一次 session。",
     timingStart: "开始后会把计时写入本地房间。",
+    supportModeOneOnOne: "一对一",
+    supportModeMediation: "三方协调房间",
     nextDeburapy: "下一位：Deburapy",
     helpDeburapy: "Deburapy 会接收最新的人类与伴侣消息，然后决定下一位应该由谁回答。",
+    helpDeburapyOneOnOne: "Deburapy 会接收最新的人类消息，并把这里保持为一对一支持 session。",
     nextHuman: "下一位：人类",
     helpHuman: "协调员已经把回合交给人类。你发送后，Deburapy 会把回合转给 AI 伴侣。",
+    helpHumanOneOnOne: "Deburapy 已经把回合交给人类。你发送后，回合会直接回到 Deburapy。",
     nextCompanion: "下一位：AI 伴侣",
     helpCompanionMcp: "Deburapy 会把这一轮排队给外部 MCP 伴侣。",
     helpCompanionApi: "Deburapy 会把协调员和人类上下文发送给已配置的 AI 伴侣。",
+    oneOnOneNoCompanion: "一对一模式。本 session 不连接 AI 伴侣。",
     humanPlaceholder: "以人类参与者身份书写",
     waitingPlaceholder: "等待 Deburapy 把回合交给人类",
     continueDeburapy: "让 Deburapy 继续",
@@ -523,8 +537,10 @@ const copy = {
     copiedMediatorSettings: "已把协调员模型设置复制到 AI 伴侣。",
     humanLocked: "Deburapy 把回合交给人类之前，人类输入会保持锁定。",
     humanMessageAdded: "人类消息已加入。正在把回合转给 AI 伴侣。",
+    humanMessageAddedOneOnOne: "人类消息已加入。回合正在回到 Deburapy。",
     appLoaded: "Deburapy 已载入。本地房间数据会从 .deburapy-data 重新读取。",
     turnInstruction: "你正在管理三方回合。如果接下来应由人类回答，请使用 `Next speaker: human`。如果接下来应由 AI 伴侣回答，请使用 `Next speaker: companion`。",
+    turnInstructionOneOnOne: "你正在管理一对一 Deburapy 支持 session。这个房间里没有 AI 伴侣。始终使用 `Next speaker: human`。",
     selectSession: "选择{label}",
     openReview: "打开回顾说明",
     selectedSession: "已选择{label}。",
@@ -942,6 +958,30 @@ function onboardingComplete() {
   );
 }
 
+function supportModeForConcern(concern) {
+  if (!concern) return "relationship_mediation";
+  return concern === "relationship_mediation" ? "relationship_mediation" : "one_on_one";
+}
+
+function currentSupportContext() {
+  const saved = readOnboarding();
+  const concern = saved.screening?.concern || els.intakeConcern?.value || "";
+  const urgency = saved.screening?.urgency || els.intakeUrgency?.value || "";
+  return {
+    supportMode: saved.supportMode || supportModeForConcern(concern),
+    intake: {
+      concern,
+      urgency,
+      acceptedAt: saved.acceptedAt || null,
+      screeningCompletedAt: saved.screeningCompletedAt || null
+    }
+  };
+}
+
+function isOneOnOneMode() {
+  return currentSupportContext().supportMode === "one_on_one";
+}
+
 function showConsentGate() {
   els.consentGate.hidden = false;
   document.body.classList.add("isConsentOpen");
@@ -971,6 +1011,7 @@ function completeOnboarding() {
     acceptedAt: new Date().toISOString(),
     screeningCompletedAt: new Date().toISOString(),
     signature: els.consentSignature.value.trim(),
+    supportMode: supportModeForConcern(els.intakeConcern.value),
     screening: {
       concern: els.intakeConcern.value,
       urgency: els.intakeUrgency.value
@@ -983,6 +1024,8 @@ function completeOnboarding() {
   };
   if (writeSavedJson(onboardingStorageKey, record)) {
     hideConsentGate();
+    updateCompanionMode();
+    updateTurnUi();
     appendLog(t("intakeSaved", { concern: record.screening.concern }), "ok");
   }
 }
@@ -995,6 +1038,8 @@ function resetOnboarding() {
     els.settingsBackdrop.hidden = true;
     els.settingsDrawer.hidden = true;
     showConsentGate();
+    updateCompanionMode();
+    updateTurnUi();
     appendLog(t("intakeReset"), "warn");
   }
 }
@@ -1365,14 +1410,31 @@ function setLocale(locale) {
   updateSessionNoteUi();
   updateTurnUi();
   if (status.mediator === "idle") setStatus("mediator", "idle", t("notTested"));
-  if (status.companion === "idle") setStatus("companion", "idle", t("notTested"));
-  if (els.companionMode.value === "mcp") {
+  if (isOneOnOneMode()) {
+    setStatus("companion", "idle", t("oneOnOneNoCompanion"));
+  } else if (status.companion === "idle") {
+    setStatus("companion", "idle", t("notTested"));
+  }
+  if (!isOneOnOneMode() && els.companionMode.value === "mcp") {
     setStatus("companion", "warn", t("mcpBridgeMode"));
   }
   applyHostedDemoUi();
 }
 
 function updateCompanionMode() {
+  const oneOnOne = isOneOnOneMode();
+  els.companionCard.hidden = oneOnOne;
+  els.aiCompanionSection.hidden = oneOnOne;
+  if (oneOnOne) {
+    els.companionApiSettings.hidden = true;
+    els.companionApiSettings.classList.add("isHidden");
+    els.companionMcpGuide.hidden = true;
+    els.companionMcpGuide.classList.add("isHidden");
+    setStatus("companion", "idle", t("oneOnOneNoCompanion"));
+    updateTurnUi();
+    return;
+  }
+
   const isMcp = els.companionMode.value === "mcp";
   els.companionApiSettings.hidden = isMcp;
   els.companionApiSettings.classList.toggle("isHidden", isMcp);
@@ -1485,8 +1547,10 @@ function updateSessionDisplay() {
   const sessionNumber = currentSessionNumber();
   const totalSessions = totalSessionCount();
   const durationMinutes = sessionDurationMinutes();
+  const supportMode = currentSupportContext().supportMode;
+  const supportModeText = t(supportMode === "one_on_one" ? "supportModeOneOnOne" : "supportModeMediation");
   els.sessionTitle.textContent = `${t("sessionLabel")} ${sessionNumber}`;
-  els.sessionPlanSummary.textContent = `${t("ofTotal")} ${totalSessions}`;
+  els.sessionPlanSummary.textContent = `${supportModeText} · ${totalSessions} ${t("sessions")}`;
   renderJourney();
   const setProgress = (percent) => {
     els.sessionProgress.style.width = `${Math.max(0, Math.min(100, percent))}%`;
@@ -1548,10 +1612,11 @@ function updateSessionDisplay() {
 }
 
 function setTurnPhase(phase, { persist = true, silent = false } = {}) {
-  session.turnPhase = phase;
+  const normalizedPhase = isOneOnOneMode() && phase === "companion" ? "mediator" : phase;
+  session.turnPhase = normalizedPhase;
   if (persist) saveSessionState();
   updateTurnUi();
-  if (!silent) appendLog(t("turnMoved", { phase }));
+  if (!silent) appendLog(t("turnMoved", { phase: normalizedPhase }));
 }
 
 function remainingSessionMs() {
@@ -1576,16 +1641,21 @@ function checkSessionClock() {
 }
 
 function updateTurnUi() {
-  const phase = session.turnPhase || "mediator";
+  const oneOnOne = isOneOnOneMode();
+  let phase = session.turnPhase || "mediator";
+  if (oneOnOne && phase === "companion") {
+    phase = "mediator";
+    session.turnPhase = phase;
+  }
   const companionMode = els.companionMode?.value || "api";
   const labels = {
     mediator: {
       badge: t("nextDeburapy"),
-      help: t("helpDeburapy")
+      help: oneOnOne ? t("helpDeburapyOneOnOne") : t("helpDeburapy")
     },
     human: {
       badge: t("nextHuman"),
-      help: t("helpHuman")
+      help: oneOnOne ? t("helpHumanOneOnOne") : t("helpHuman")
     },
     companion: {
       badge: t("nextCompanion"),
@@ -1604,7 +1674,8 @@ function updateTurnUi() {
     : t("waitingPlaceholder");
 
   els.askMediator.disabled = phase !== "mediator";
-  els.askCompanion.disabled = !(phase === "companion" || phase === "human");
+  els.askCompanion.hidden = oneOnOne;
+  els.askCompanion.disabled = oneOnOne || !(phase === "companion" || phase === "human");
   els.askMediator.textContent = t("continueDeburapy");
   els.askCompanion.textContent = phase === "human"
     ? t("routeCompanionNow")
@@ -1620,6 +1691,7 @@ async function startSession() {
   reportClientEvent("click", { action: "startSession.before" });
   const durationMinutes = sessionDurationMinutes();
   const sessionNumber = currentSessionNumber();
+  const supportContext = currentSupportContext();
   const startedAt = Date.now();
   const endsAt = startedAt + durationMinutes * 60 * 1000;
   session.running = true;
@@ -1640,7 +1712,8 @@ async function startSession() {
       sessionNumber,
       durationMinutes,
       startedAt: new Date(startedAt).toISOString(),
-      endsAt: new Date(endsAt).toISOString()
+      endsAt: new Date(endsAt).toISOString(),
+      ...supportContext
     })
   });
   appendLog(t("startedSession", { sessionNumber, durationMinutes }));
@@ -1659,10 +1732,12 @@ async function completeSession(reason = "manual") {
   appendLog(t("endingSession"));
 
   const cfg = modelConfig("mediator");
+  const supportContext = currentSupportContext();
   const payload = await json(`/api/rooms/${roomId}/session/end`, {
     method: "POST",
     body: JSON.stringify({
       ...cfg,
+      ...supportContext,
       roomId,
       locale: els.locale.value,
       personaId: els.mediatorPersona.value,
@@ -1843,6 +1918,10 @@ async function askConsentAssistant(question) {
 }
 
 async function testConnection(target) {
+  if (target === "companion" && isOneOnOneMode()) {
+    throw new Error(t("oneOnOneNoCompanion"));
+  }
+
   if (target === "companion" && els.companionMode.value === "mcp") {
     await json("/api/health");
     setStatus("companion", "warn", t("mcpReachable"));
@@ -1900,6 +1979,12 @@ async function runConnectionTest(target) {
 }
 
 async function askCompanion() {
+  if (isOneOnOneMode()) {
+    appendLog(t("oneOnOneNoCompanion"), "warn");
+    setTurnPhase("mediator", { silent: true });
+    return;
+  }
+
   if (els.companionMode.value === "mcp") {
     const payload = await json("/api/companion/mcp-request", {
       method: "POST",
@@ -1934,21 +2019,23 @@ async function askCompanion() {
 
 async function askMediator() {
   const cfg = requireApiConfig("mediator");
+  const supportContext = currentSupportContext();
   const payload = await json("/api/mediator/respond", {
     method: "POST",
     body: JSON.stringify({
       ...cfg,
+      ...supportContext,
       roomId,
       locale: els.locale.value,
       personaId: els.mediatorPersona.value,
       systemPrompt: els.mediatorPrompt.value,
-      turnInstruction: t("turnInstruction")
+      turnInstruction: isOneOnOneMode() ? t("turnInstructionOneOnOne") : t("turnInstruction")
     })
   });
   setStatus("mediator", "ok", t("mediatorApiResponded"));
   appendLog(t("mediatorResponseAdded"), "ok");
   await refreshRoom();
-  setTurnPhase(payload.nextSpeaker === "companion" ? "companion" : "human", { silent: true });
+  setTurnPhase(!isOneOnOneMode() && payload.nextSpeaker === "companion" ? "companion" : "human", { silent: true });
 }
 
 async function readCompanionFiles() {
@@ -1970,6 +2057,10 @@ document.querySelectorAll(".localeControl").forEach((control) => {
 els.consentForm.addEventListener("submit", (event) => {
   event.preventDefault();
   completeOnboarding();
+});
+els.intakeConcern.addEventListener("change", () => {
+  updateCompanionMode();
+  updateTurnUi();
 });
 els.consentAssistantForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -2068,6 +2159,13 @@ els.messageForm.addEventListener("submit", async (event) => {
       })
     });
     els.messageInput.value = "";
+    if (isOneOnOneMode()) {
+      appendLog(t("humanMessageAddedOneOnOne"));
+      setTurnPhase("mediator", { silent: true });
+      await refreshRoom();
+      await askMediator();
+      return;
+    }
     appendLog(t("humanMessageAdded"));
     setTurnPhase("companion", { silent: true });
     await refreshRoom();

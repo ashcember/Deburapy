@@ -12,6 +12,9 @@ language. The core terms are:
 - `pattern_review`: a review every 3 or 4 sessions.
 - `check_in_scale`: a lightweight non-diagnostic rating module.
 - `module`: a scenario-specific workflow.
+- `supportMode`: either `one_on_one` or `relationship_mediation`.
+- `intake`: the first-screening concern and urgency that seed mediator
+  context.
 
 Avoid product/API terms such as diagnosis, treatment plan, clinical note,
 patient, or case conceptualization.
@@ -27,6 +30,8 @@ The MVP backend now stores the first thin version of the model in
 - `relationshipMaps`: periodic pattern reviews.
 - `checkInScales`: lightweight non-diagnostic check-ins attached to a session.
 - `modules`: a discoverable catalog that points to skill files.
+- `supportMode` and `intake`: stored on the room, active session, session
+  record, and generated session note.
 
 The browser still keeps the room UI simple. It uses the current `session`
 compatibility object for the timer and note UI while the backend persists
@@ -38,12 +43,22 @@ compatibility object for the timer and note UI while the backend persists
 {
   "rooms": {
     "default": {
+      "supportMode": "one_on_one",
+      "intake": {
+        "concern": "ai_loss_or_ban",
+        "urgency": "medium"
+      },
       "sessions": [
         {
           "id": "session_...",
           "sessionNumber": 1,
           "status": "scheduled|active|ended",
           "durationMinutes": 60,
+          "supportMode": "one_on_one",
+          "intake": {
+            "concern": "ai_loss_or_ban",
+            "urgency": "medium"
+          },
           "startedAt": "ISO timestamp",
           "endedAt": "ISO timestamp",
           "courseOutlineId": "course_...",
@@ -59,6 +74,11 @@ compatibility object for the timer and note UI while the backend persists
           "sessionNumber": 1,
           "createdAt": "ISO timestamp",
           "title": "Deburapy Session 1 Note",
+          "supportMode": "one_on_one",
+          "intake": {
+            "concern": "ai_loss_or_ban",
+            "urgency": "medium"
+          },
           "content": "markdown note",
           "format": "markdown",
           "recommendedReader": "mediator_or_clinician"
@@ -115,6 +135,10 @@ GET /api/rooms/:roomId/session-notes
 GET /api/rooms/:roomId/session-notes/:noteId/download
 ```
 
+`POST /api/rooms/:roomId/session/start` accepts `supportMode` and `intake`.
+When `supportMode` is `one_on_one`, companion API and MCP turn endpoints reject
+companion turns for that room.
+
 ## Skill Surface
 
 Scenario modules should be written as Deburapy skills under `skills/`. A module
@@ -127,10 +151,11 @@ metadata and a `skillPath`; the skill file carries the actual mediation moves.
 The mediator prompt should receive context in layers:
 
 1. Current session transcript.
-2. Previous `mediator_note`.
-3. Open agreements and next-session focus.
-4. Latest `relationship_map` if the session number is 4, 8, or 12.
-5. Active module instructions and check-in scale results.
+2. Support mode and first-screening intake.
+3. Previous `mediator_note`.
+4. Open agreements and next-session focus.
+5. Latest `relationship_map` if the session number is 4, 8, or 12.
+6. Active module instructions and check-in scale results.
 
 Do not rely on the full raw transcript as long-term memory. It becomes too
 large and makes the next-session focus ambiguous.

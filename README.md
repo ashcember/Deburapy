@@ -4,7 +4,8 @@
 
 Not therapy, not debugging. Deburapy for AI-human relationships.
 
-Deburapy is a local-first room for a human, an AI companion, and a relationship
+Deburapy is a local-first workspace for one-on-one AI-human relationship
+support or a three-party room with a human, an AI companion, and a relationship
 mediator. It helps participants slow down after a rupture, separate the human
 relationship layer from the AI runtime layer, and turn the problem into a
 repairable next step.
@@ -21,7 +22,7 @@ Chinese name for the first prototype: **Deburapy 人机关系协调员**.
 ## What This MVP Includes
 
 - A simple browser UI for transcript, connection health, BYOK model settings,
-  mediator setup, AI companion setup, session timing, and diagnostics.
+  mediator setup, optional AI companion setup, session timing, and diagnostics.
 - A first-run informed consent and screening gate, with a model-backed
   pre-intake assistant for questions before signing.
 - BYOK model calls through OpenAI-compatible chat completions, OpenRouter, and
@@ -107,11 +108,24 @@ it refuses non-loopback binds unless `DEBURAPY_ALLOW_UNSAFE_BIND=1` is set.
 ### First Use
 
 1. Open the local app.
-2. Complete the informed consent and first screening gate.
+2. Complete the informed consent and first screening gate. Your answer to
+   "What brings you here?" selects one-on-one support or a three-party
+   mediation room.
 3. Open Settings and configure the Deburapy mediator provider, model, and API key.
-4. Configure the AI companion as either a BYOK API companion or an external MCP companion.
+4. If you chose mediation with an AI companion in the room, configure the AI
+   companion as either a BYOK API companion or an external MCP companion.
 5. Start a session from the left rail. The session timer, turn flow, room
    transcript, and session notes are stored locally.
+
+### Support Modes
+
+- `one_on_one`: selected for rupture support, account loss, technical
+  continuity, or curiosity. The UI hides companion setup, human turns return
+  directly to Deburapy, and the mediator prompt receives the intake concern and
+  urgency.
+- `relationship_mediation`: selected only when the first screening answer is
+  "Mediation with an AI companion in the room." The AI companion setup appears,
+  and Deburapy can route turns to the companion through API or MCP.
 
 ### BYOK Providers
 
