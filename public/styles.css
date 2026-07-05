@@ -154,6 +154,7 @@ label {
 }
 
 .consentDialog {
+  position: relative;
   width: min(1500px, calc(100vw - 80px));
   height: min(1104px, calc(100vh - 104px));
   min-height: 620px;
@@ -230,25 +231,34 @@ label {
 }
 
 .consentCopy {
-  flex: 1 1 auto;
-  min-height: 170px;
-  max-height: min(480px, 38vh);
+  flex: 0 0 auto;
   margin: 12px 0 22px;
-  padding: 26px 32px;
-  overflow: auto;
-  border: 1px solid rgba(195, 200, 191, 0.5);
-  border-radius: 40px;
-  background: rgba(255, 255, 255, 0.42);
+  padding: 4px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-content: start;
 }
 
 .consentCopy section {
-  padding: 0;
-  border: 0;
-  background: transparent;
+  padding: 22px 24px;
+  border: 1px solid rgba(195, 200, 191, 0.42);
+  border-radius: var(--radius-md);
+  background: var(--surface-container);
+}
+
+.consentCopy section:nth-child(1) {
+  background: var(--primary-pale);
+  border-color: rgba(74, 101, 74, 0.2);
+}
+
+.consentCopy section:nth-child(4) {
+  background: var(--secondary-pale);
+  border-color: rgba(139, 78, 61, 0.24);
 }
 
 .consentCopy section + section {
-  margin-top: 26px;
+  margin-top: 0;
 }
 
 .consentCopy h2 {
@@ -258,11 +268,19 @@ label {
   font-weight: 700;
 }
 
+.consentCopy section:nth-child(4) h2 {
+  color: var(--secondary);
+}
+
 .consentCopy p {
   margin-top: 10px;
   color: var(--muted);
   font-size: 15px;
   line-height: 1.65;
+}
+
+.consentCopy section:nth-child(4) p {
+  color: var(--secondary);
 }
 
 .consentForm {
@@ -661,7 +679,9 @@ label {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 10px;
-  border: 0;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--ink);
   box-shadow: none;
@@ -669,12 +689,45 @@ label {
   font-weight: 700;
 }
 
+.courseItem > span[aria-hidden="true"] {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(240, 237, 237, 0.9);
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .courseItem:hover:not(:disabled) {
   box-shadow: none;
 }
 
+.courseItem--done {
+  background: rgba(238, 246, 236, 0.7);
+  border-color: rgba(74, 101, 74, 0.16);
+}
+
+.courseItem--done > span[aria-hidden="true"] {
+  background: var(--primary-pale);
+  color: var(--primary);
+}
+
+.courseItem--upcoming,
+.courseItem--review {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
 .courseItem.isActive {
   background: var(--primary-soft);
+  color: #163316;
+  border-color: rgba(74, 101, 74, 0.28);
+}
+
+.courseItem.isActive > span[aria-hidden="true"] {
+  background: rgba(255, 255, 255, 0.5);
   color: #163316;
 }
 
@@ -805,6 +858,30 @@ label {
   font-size: 12px;
 }
 
+#mediatorCard {
+  background: rgba(238, 246, 236, 0.82);
+  border-color: rgba(74, 101, 74, 0.24);
+}
+
+#mediatorCard strong {
+  color: var(--primary);
+}
+
+#companionCard {
+  background: rgba(255, 240, 234, 0.82);
+  border-color: rgba(139, 78, 61, 0.24);
+}
+
+#companionCard strong {
+  color: var(--secondary);
+}
+
+#companionCard button {
+  background: var(--secondary-pale);
+  color: var(--secondary);
+  border-color: rgba(139, 78, 61, 0.24);
+}
+
 .iconButton {
   width: 48px;
   min-width: 48px;
@@ -815,6 +892,50 @@ label {
   color: var(--primary);
   box-shadow: var(--soft-shadow);
   font-size: 22px;
+}
+
+.localeSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 8px 0 12px;
+  border: 1px solid rgba(195, 200, 191, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: var(--soft-shadow);
+}
+
+.localeSwitchIcon {
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.localeSwitch select {
+  width: auto;
+  min-height: 0;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.localeSwitch select:focus {
+  box-shadow: none;
+}
+
+.localeSwitch--consent {
+  position: absolute;
+  top: 22px;
+  right: 26px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(8px);
 }
 
 .statusDot {
@@ -931,23 +1052,36 @@ label {
   justify-self: end;
   margin-right: 58px;
   border-bottom-right-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(240, 237, 237, 0.92);
+  border-color: rgba(195, 200, 191, 0.5);
 }
 
 .message--human::before {
   content: "H";
   right: -58px;
+  background: var(--surface-highest);
+  color: var(--muted);
 }
 
 .message--companion {
   justify-self: start;
   margin-left: 58px;
   border-top-left-radius: 8px;
+  background: rgba(255, 240, 234, 0.92);
+  border-color: rgba(139, 78, 61, 0.22);
 }
 
 .message--companion::before {
   content: "AI";
   left: -58px;
+  background: var(--secondary-pale);
+  border-color: rgba(139, 78, 61, 0.3);
+  color: var(--secondary);
+}
+
+.message--companion .messageMeta,
+.message--companion .messageContent {
+  color: var(--secondary);
 }
 
 .message--mediator {
@@ -962,6 +1096,7 @@ label {
   content: "D";
   left: -58px;
   background: var(--primary-soft);
+  border-color: rgba(74, 101, 74, 0.3);
   color: #163316;
 }
 
@@ -997,6 +1132,41 @@ label {
 
 .manualTurnControls button {
   min-height: 40px;
+}
+
+.composerPrompts {
+  width: min(720px, calc(100% - 80px));
+  justify-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding-bottom: 14px;
+}
+
+.promptChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid rgba(195, 200, 191, 0.5);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.promptChip:hover:not(:disabled) {
+  border-color: rgba(74, 101, 74, 0.4);
+  box-shadow: var(--soft-shadow);
+}
+
+.promptChipIcon {
+  color: var(--primary);
+  font-size: 14px;
 }
 
 .composer {
@@ -1335,8 +1505,12 @@ details textarea {
   }
 
   .consentCopy {
-    max-height: 240px;
+    gap: 14px;
     margin-bottom: 20px;
+  }
+
+  .consentCopy section {
+    padding: 16px 18px;
   }
 }
 
@@ -1420,7 +1594,7 @@ details textarea {
   }
 
   .consentCopy {
-    max-height: none;
+    grid-template-columns: 1fr;
   }
 
   .consentAssistantHistory {
