@@ -505,6 +505,12 @@
               <span data-i18n="apiKey">API key</span>
               <input id="companionApiKey" type="password" autocomplete="off" placeholder="Saved locally when you click Save" data-i18n-placeholder="savedOnSavePlaceholder">
             </label>
+            <p id="companionHostedKeyNote" class="hostedKeyNote" data-i18n="hostedDemoCompanionManaged" hidden>
+              Hosted demo companion key is managed on the server. The browser never receives or stores it.
+            </p>
+            <button id="useOwnCompanionKey" type="button" class="secondary hostedKeySwitch" data-i18n="useOwnCompanionKey" hidden>
+              Use my own companion key
+            </button>
             <label class="checkboxLabel">
               <input id="rememberCompanionApiKey" type="checkbox" checked>
               <span data-i18n="saveCompanionKey">Save companion key locally</span>
@@ -605,6 +611,6 @@
       <span data-i18n="noWarranty">No warranty</span>
     </footer>
 
-    <script type="module" src="/app.js?v=2026-07-05-name-style"></script>
+    <script type="module" src="/app.js?v=2026-07-05-companion-hosted"></script>
   </body>
 </html>

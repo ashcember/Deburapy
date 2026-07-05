@@ -48,6 +48,13 @@ npx playwright install chromium
 PLAYWRIGHT_PACKAGE_PATH=/absolute/path/to/node_modules/playwright npm run visual:check
 ```
 
+如果 Playwright package 已存在，但它自己的 Chromium browser 没有下载，可以指向本机
+Chrome 或 Chromium：
+
+```bash
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run visual:check
+```
+
 ## API 冒烟检查
 
 先写入一条人类消息：

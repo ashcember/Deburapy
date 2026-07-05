@@ -61,16 +61,16 @@ const hostedDemoModel = process.env.DEBURAPY_HOSTED_DEMO_MODEL || hostedDemoDefa
 const hostedDemoRateLimit = Math.max(1, Number(process.env.DEBURAPY_HOSTED_DEMO_RATE_LIMIT_PER_MINUTE || 12));
 const hostedDemoRateWindowMs = 60 * 1000;
 const hostedDemoBuckets = new Map();
-const hostedDemoRoles = new Set(["pre_intake", "mediator", "session_note", "connection_test"]);
+const hostedDemoRoles = new Set(["pre_intake", "mediator", "session_note", "connection_test", "companion"]);
 
-function hostedDemoPublicConfig() {
+function hostedDemoPublicConfig(role = "mediator") {
   return {
     enabled: hostedDemoEnabled,
     provider: hostedDemoProvider,
     baseUrl: hostedDemoBaseUrl,
     model: hostedDemoModel,
     keyMode: hostedDemoEnabled ? "server_hosted" : "byok",
-    keyLabel: hostedDemoEnabled ? "Hosted demo key" : ""
+    keyLabel: hostedDemoEnabled ? `Hosted demo ${role} key` : ""
   };
 }
 
@@ -348,7 +348,10 @@ async function handleApi(req, res) {
   }
 
   if (req.method === "GET" && url.pathname === "/api/demo-config") {
-    return sendJson(res, 200, { mediator: hostedDemoPublicConfig() });
+    return sendJson(res, 200, {
+      mediator: hostedDemoPublicConfig("mediator"),
+      companion: hostedDemoPublicConfig("companion")
+    });
   }
 
   if (req.method === "GET" && url.pathname === "/api/prompts/mediator") {
@@ -600,17 +603,15 @@ async function handleApi(req, res) {
     if (isOneOnOneRoom(room, input)) {
       throw new BadRequestError("AI companion turns are disabled in one-on-one support mode.");
     }
-    if (wantsHostedDemo(input)) {
-      throw new BadRequestError("Hosted demo key is not available for AI companion API calls.");
-    }
-    requiredText(input, "apiKey");
+    const modelInput = resolveModelInput(input, "companion", req);
     const companionName = input.companionName || "AI Companion";
     setRequestLog(req, {
       role: "companion",
       roomId,
-      provider: input.provider,
-      model: input.model,
-      baseUrl: safeBaseUrl(input.baseUrl),
+      provider: modelInput.provider,
+      model: modelInput.model,
+      baseUrl: safeBaseUrl(modelInput.baseUrl),
+      keyMode: modelInput.usesHostedDemoKey ? "hosted_demo" : "byok",
       supportMode: supportContextFor(room, input).supportMode
     });
     const systemPrompt = input.systemPrompt || defaultCompanionPrompt(companionName);
@@ -620,10 +621,10 @@ async function handleApi(req, res) {
       knowledge: input.knowledge || ""
     });
     const content = await generateChatCompletion({
-      provider: input.provider,
-      apiKey: input.apiKey,
-      baseUrl: input.baseUrl,
-      model: input.model,
+      provider: modelInput.provider,
+      apiKey: modelInput.apiKey,
+      baseUrl: modelInput.baseUrl,
+      model: modelInput.model,
       systemPrompt,
       userPrompt,
       temperature: input.temperature
@@ -673,9 +674,6 @@ async function handleApi(req, res) {
   if (req.method === "POST" && url.pathname === "/api/connections/test") {
     const input = await readJson(req);
     const target = input.target === "companion" ? "companion" : "mediator";
-    if (target === "companion" && wantsHostedDemo(input)) {
-      throw new BadRequestError("Hosted demo key is not available for AI companion API calls.");
-    }
     const modelInput = resolveModelInput(input, "connection_test", req);
     setRequestLog(req, {
       role: target,
@@ -690,9 +688,11 @@ async function handleApi(req, res) {
       apiKey: modelInput.apiKey,
       baseUrl: modelInput.baseUrl,
       model: modelInput.model,
-      systemPrompt: modelInput.usesHostedDemoKey
-        ? await loadMediatorPrompt(input.personaId || "core")
-        : input.systemPrompt || (target === "companion" ? defaultCompanionPrompt(input.companionName) : await loadMediatorPrompt()),
+      systemPrompt: target === "companion"
+        ? input.systemPrompt || defaultCompanionPrompt(input.companionName)
+        : (modelInput.usesHostedDemoKey
+          ? await loadMediatorPrompt(input.personaId || "core")
+          : input.systemPrompt || await loadMediatorPrompt()),
       userPrompt: [
         "Connection check only.",
         "Reply with one short sentence confirming that this model endpoint is reachable for Deburapy.",

@@ -3,6 +3,7 @@ const onboardingStorageKey = "deburapy.onboarding.v1";
 const localeStorageKey = "deburapy.locale";
 const themeStorageKey = "deburapy.theme";
 const mediatorKeyModeStorageKey = "deburapy.mediator.keyMode";
+const companionKeyModeStorageKey = "deburapy.companion.keyMode";
 
 function resetLocalStateFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -104,6 +105,8 @@ const els = {
   companionBaseUrl: document.querySelector("#companionBaseUrl"),
   companionModel: document.querySelector("#companionModel"),
   companionApiKey: document.querySelector("#companionApiKey"),
+  companionHostedKeyNote: document.querySelector("#companionHostedKeyNote"),
+  useOwnCompanionKey: document.querySelector("#useOwnCompanionKey"),
   rememberCompanionApiKey: document.querySelector("#rememberCompanionApiKey"),
   copyMediatorConfig: document.querySelector("#copyMediatorConfig"),
   clearMediatorKey: document.querySelector("#clearMediatorKey"),
@@ -218,6 +221,11 @@ const copy = {
     useOwnMediatorKey: "Use my own key",
     useHostedDemoKey: "Use hosted demo key",
     hostedDemoRateLimited: "The hosted demo key may be rate limited. Please wait a bit, or switch to your own OpenAI-compatible key in Settings.",
+    hostedDemoCompanionManaged: "Hosted demo companion key is managed on the server. The browser never receives or stores it.",
+    hostedDemoCompanionOwnKey: "You are using your own companion key. The hosted demo key is not used for companion requests.",
+    hostedDemoCompanionReady: "Hosted demo companion key ready.",
+    useOwnCompanionKey: "Use my own companion key",
+    useHostedCompanionKey: "Use hosted companion key",
     saveMediatorKey: "Save mediator key locally",
     mediatorSystemPrompt: "Mediator system prompt",
     aiCompanion: "AI Companion",
@@ -449,6 +457,11 @@ const copy = {
     useOwnMediatorKey: "使用我自己的 key",
     useHostedDemoKey: "使用 hosted demo key",
     hostedDemoRateLimited: "Hosted demo key 可能已经触发 rate limit。请稍等一下，或在设置中切换到自己的 OpenAI-compatible key。",
+    hostedDemoCompanionManaged: "Hosted demo 伴侣 key 只在 server 端管理。浏览器不会收到，也不会存储这个 key。",
+    hostedDemoCompanionOwnKey: "你正在使用自己的伴侣 key。这些伴侣请求不会使用 hosted demo key。",
+    hostedDemoCompanionReady: "Hosted demo 伴侣 key 已就绪。",
+    useOwnCompanionKey: "使用我自己的伴侣 key",
+    useHostedCompanionKey: "使用 hosted companion key",
     saveMediatorKey: "本地保存协调员 key",
     mediatorSystemPrompt: "协调员 system prompt",
     aiCompanion: "AI 伴侣",
@@ -764,6 +777,14 @@ const hostedDemo = {
     model: providerDefaults["google-ai-studio"].model,
     keyMode: "byok",
     useOwnKey: false
+  },
+  companion: {
+    enabled: false,
+    provider: "google-ai-studio",
+    baseUrl: providerDefaults["google-ai-studio"].baseUrl,
+    model: providerDefaults["google-ai-studio"].model,
+    keyMode: "byok",
+    useOwnKey: false
   }
 };
 
@@ -789,8 +810,8 @@ function providerControls(target) {
 }
 
 function applyProviderDefaults(target, { force = false } = {}) {
-  if (target === "mediator" && hostedDemo.mediator.enabled && !hostedDemo.mediator.useOwnKey) {
-    applyHostedDemoUi();
+  if (hostedDemo[target]?.enabled && !hostedDemo[target].useOwnKey && hostedDemoVisible(target)) {
+    applyHostedDemoUi(target);
     return;
   }
   const controls = providerControls(target);
@@ -810,85 +831,139 @@ function applyProviderDefaults(target, { force = false } = {}) {
   lastProvider[target] = controls.provider.value;
 }
 
-function applyHostedDemoUi() {
-  const demo = hostedDemo.mediator;
-  const enabled = Boolean(demo.enabled);
-  const usingHosted = enabled && !demo.useOwnKey;
-  els.mediatorHostedKeyNote.hidden = !enabled;
-  els.useOwnMediatorKey.hidden = !enabled;
-  els.mediatorProvider.disabled = usingHosted;
-  els.mediatorBaseUrl.disabled = usingHosted;
-  els.mediatorModel.disabled = usingHosted;
-  els.mediatorApiKey.disabled = usingHosted;
-  els.rememberMediatorApiKey.disabled = usingHosted;
+function hostedDemoVisible(target) {
+  if (target === "mediator") return true;
+  return target === "companion" && !isOneOnOneMode() && els.companionMode.value === "api";
+}
 
-  if (!enabled) {
-    els.mediatorApiKey.placeholder = t("savedOnSavePlaceholder");
+function hostedDemoElements(target) {
+  return target === "mediator"
+    ? {
+      note: els.mediatorHostedKeyNote,
+      switchButton: els.useOwnMediatorKey,
+      remember: els.rememberMediatorApiKey,
+      managedText: "hostedDemoManaged",
+      ownText: "hostedDemoOwnKey",
+      readyText: "hostedDemoReady",
+      useOwnText: "useOwnMediatorKey",
+      useHostedText: "useHostedDemoKey"
+    }
+    : {
+      note: els.companionHostedKeyNote,
+      switchButton: els.useOwnCompanionKey,
+      remember: els.rememberCompanionApiKey,
+      managedText: "hostedDemoCompanionManaged",
+      ownText: "hostedDemoCompanionOwnKey",
+      readyText: "hostedDemoCompanionReady",
+      useOwnText: "useOwnCompanionKey",
+      useHostedText: "useHostedCompanionKey"
+    };
+}
+
+function applyHostedDemoUi(target) {
+  if (!target) {
+    applyHostedDemoUi("mediator");
+    applyHostedDemoUi("companion");
+    return;
+  }
+
+  const demo = hostedDemo[target];
+  const elements = hostedDemoElements(target);
+  const visible = Boolean(demo?.enabled) && hostedDemoVisible(target);
+  const usingHosted = visible && !demo.useOwnKey;
+  const controls = providerControls(target);
+
+  elements.note.hidden = !visible;
+  elements.switchButton.hidden = !visible;
+  controls.provider.disabled = usingHosted;
+  controls.baseUrl.disabled = usingHosted;
+  controls.model.disabled = usingHosted;
+  els[`${target}ApiKey`].disabled = usingHosted;
+  elements.remember.disabled = usingHosted;
+
+  if (!visible) {
+    els[`${target}ApiKey`].placeholder = t("savedOnSavePlaceholder");
     return;
   }
 
   if (usingHosted) {
-    els.mediatorProvider.value = demo.provider;
-    els.mediatorBaseUrl.value = demo.baseUrl;
-    els.mediatorModel.value = demo.model;
-    els.mediatorApiKey.value = "";
-    els.mediatorApiKey.placeholder = t("hostedDemoKeyPlaceholder");
-    els.rememberMediatorApiKey.checked = false;
-    els.mediatorHostedKeyNote.textContent = t("hostedDemoManaged");
-    els.useOwnMediatorKey.textContent = t("useOwnMediatorKey");
-    setStatus("mediator", "warn", t("hostedDemoReady"));
-    setConsentAssistantStatus(t("hostedDemoReady"), "ok");
+    controls.provider.value = demo.provider;
+    controls.baseUrl.value = demo.baseUrl;
+    controls.model.value = demo.model;
+    els[`${target}ApiKey`].value = "";
+    els[`${target}ApiKey`].placeholder = t("hostedDemoKeyPlaceholder");
+    elements.remember.checked = false;
+    elements.note.textContent = t(elements.managedText);
+    elements.switchButton.textContent = t(elements.useOwnText);
+    setStatus(target, "warn", t(elements.readyText));
+    if (target === "mediator") setConsentAssistantStatus(t(elements.readyText), "ok");
     return;
   }
 
-  els.mediatorApiKey.placeholder = t("savedOnSavePlaceholder");
-  els.mediatorHostedKeyNote.textContent = t("hostedDemoOwnKey");
-  els.useOwnMediatorKey.textContent = t("useHostedDemoKey");
+  els[`${target}ApiKey`].placeholder = t("savedOnSavePlaceholder");
+  elements.note.textContent = t(elements.ownText);
+  elements.switchButton.textContent = t(elements.useHostedText);
+}
+
+function updateHostedDemoTarget(target, payload) {
+  const defaults = providerDefaults["google-ai-studio"];
+  if (!payload?.enabled) {
+    hostedDemo[target].enabled = false;
+    hostedDemo[target].useOwnKey = false;
+    return;
+  }
+  hostedDemo[target] = {
+    enabled: true,
+    provider: payload.provider || "google-ai-studio",
+    baseUrl: payload.baseUrl || defaults.baseUrl,
+    model: payload.model || defaults.model,
+    keyMode: payload.keyMode || "server_hosted",
+    useOwnKey: readKeyModePreference(target) === "own"
+  };
 }
 
 async function loadHostedDemoConfig() {
   try {
     const payload = await json("/api/demo-config");
-    if (!payload.mediator?.enabled) {
-      hostedDemo.mediator.enabled = false;
-      applyHostedDemoUi();
-      return;
-    }
-    hostedDemo.mediator = {
-      enabled: true,
-      provider: payload.mediator.provider || "google-ai-studio",
-      baseUrl: payload.mediator.baseUrl || providerDefaults["google-ai-studio"].baseUrl,
-      model: payload.mediator.model || providerDefaults["google-ai-studio"].model,
-      keyMode: payload.mediator.keyMode || "server_hosted",
-      useOwnKey: readMediatorKeyModePreference() === "own"
-    };
+    updateHostedDemoTarget("mediator", payload.mediator);
+    updateHostedDemoTarget("companion", payload.companion);
     applyHostedDemoUi();
   } catch (err) {
     hostedDemo.mediator.enabled = false;
+    hostedDemo.companion.enabled = false;
     applyHostedDemoUi();
     appendLog(`Could not load hosted demo config: ${err instanceof Error ? err.message : String(err)}`, "warn");
   }
 }
 
-function toggleMediatorKeyMode() {
-  if (!hostedDemo.mediator.enabled) return;
-  hostedDemo.mediator.useOwnKey = !hostedDemo.mediator.useOwnKey;
-  saveMediatorKeyModePreference(hostedDemo.mediator.useOwnKey ? "own" : "hosted");
-  if (hostedDemo.mediator.useOwnKey) {
-    applyProviderDefaults("mediator", { force: false });
-    appendLog(t("hostedDemoOwnKey"), "warn");
+function toggleHostedKeyMode(target) {
+  if (!hostedDemo[target]?.enabled) return;
+  hostedDemo[target].useOwnKey = !hostedDemo[target].useOwnKey;
+  saveKeyModePreference(target, hostedDemo[target].useOwnKey ? "own" : "hosted");
+  const elements = hostedDemoElements(target);
+  if (hostedDemo[target].useOwnKey) {
+    applyProviderDefaults(target, { force: false });
+    appendLog(t(elements.ownText), "warn");
   } else {
-    appendLog(t("hostedDemoReady"), "ok");
+    appendLog(t(elements.readyText), "ok");
   }
-  applyHostedDemoUi();
+  applyHostedDemoUi(target);
+}
+
+function toggleMediatorKeyMode() {
+  toggleHostedKeyMode("mediator");
+}
+
+function toggleCompanionKeyMode() {
+  toggleHostedKeyMode("companion");
 }
 
 function modelConfig(target) {
-  if (target === "mediator" && hostedDemo.mediator.enabled && !hostedDemo.mediator.useOwnKey && !els.mediatorApiKey.value.trim()) {
+  if (hostedDemo[target]?.enabled && !hostedDemo[target].useOwnKey && hostedDemoVisible(target) && !els[`${target}ApiKey`].value.trim()) {
     return {
-      provider: hostedDemo.mediator.provider,
-      baseUrl: hostedDemo.mediator.baseUrl,
-      model: hostedDemo.mediator.model,
+      provider: hostedDemo[target].provider,
+      baseUrl: hostedDemo[target].baseUrl,
+      model: hostedDemo[target].model,
       apiKey: "",
       useHostedDemoKey: true
     };
@@ -961,20 +1036,32 @@ function removeSavedJson(key) {
   }
 }
 
-function readMediatorKeyModePreference() {
+function keyModeStorageKey(target) {
+  return target === "companion" ? companionKeyModeStorageKey : mediatorKeyModeStorageKey;
+}
+
+function readKeyModePreference(target) {
   try {
-    return localStorage.getItem(mediatorKeyModeStorageKey) === "own" ? "own" : "hosted";
+    return localStorage.getItem(keyModeStorageKey(target)) === "own" ? "own" : "hosted";
   } catch {
     return "hosted";
   }
 }
 
-function saveMediatorKeyModePreference(mode) {
+function saveKeyModePreference(target, mode) {
   try {
-    localStorage.setItem(mediatorKeyModeStorageKey, mode === "own" ? "own" : "hosted");
+    localStorage.setItem(keyModeStorageKey(target), mode === "own" ? "own" : "hosted");
   } catch (err) {
-    appendLog(`Could not save mediator key mode: ${storageErrorMessage(err)}`, "warn");
+    appendLog(`Could not save ${target} key mode: ${storageErrorMessage(err)}`, "warn");
   }
+}
+
+function readMediatorKeyModePreference() {
+  return readKeyModePreference("mediator");
+}
+
+function saveMediatorKeyModePreference(mode) {
+  saveKeyModePreference("mediator", mode);
 }
 
 function readOnboarding() {
@@ -1493,6 +1580,7 @@ function updateCompanionMode() {
   if (isMcp) {
     setStatus("companion", "warn", t("mcpBridgeMode"));
   }
+  applyHostedDemoUi("companion");
   updateTurnUi();
 }
 
@@ -1924,7 +2012,7 @@ function appendConsentAssistantMessage(role, content) {
 
 function requireApiConfig(target) {
   const cfg = modelConfig(target);
-  if (target === "mediator" && cfg.useHostedDemoKey) return cfg;
+  if (cfg.useHostedDemoKey) return cfg;
   if (!cfg.apiKey) throw new Error(t("apiKeyMissing", { target }));
   if (!cfg.baseUrl) throw new Error(t("baseUrlMissing", { target }));
   if (!cfg.model) throw new Error(t("modelMissing", { target }));
@@ -2008,6 +2096,9 @@ async function runAction(button, busyText, action) {
       message = t("hostedDemoRateLimited");
       if (hostedDemo.mediator.enabled && !hostedDemo.mediator.useOwnKey) {
         setStatus("mediator", "warn", message);
+      }
+      if (hostedDemo.companion.enabled && !hostedDemo.companion.useOwnKey && hostedDemoVisible("companion")) {
+        setStatus("companion", "warn", message);
       }
     }
     appendLog(message, "error");
@@ -2166,6 +2257,7 @@ els.clearMediatorKey.addEventListener("click", () => {
   saveConfig();
 });
 els.useOwnMediatorKey.addEventListener("click", toggleMediatorKeyMode);
+els.useOwnCompanionKey.addEventListener("click", toggleCompanionKeyMode);
 els.clearCompanionKey.addEventListener("click", () => {
   els.companionApiKey.value = "";
   els.rememberCompanionApiKey.checked = false;

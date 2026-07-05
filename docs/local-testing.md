@@ -59,6 +59,13 @@ you can temporarily point the script at it:
 PLAYWRIGHT_PACKAGE_PATH=/absolute/path/to/node_modules/playwright npm run visual:check
 ```
 
+If the Playwright package is present but its bundled Chromium is missing, point
+the script at a local Chrome or Chromium executable:
+
+```bash
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run visual:check
+```
+
 ## API Smoke Check
 
 Add a human message:

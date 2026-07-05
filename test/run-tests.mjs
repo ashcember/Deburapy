@@ -264,6 +264,11 @@ assert.match(appJs, /Hosted demo key is managed on the server/);
 assert.match(appJs, /useOwnMediatorKey/);
 assert.match(appJs, /hostedDemoRateLimited/);
 assert.match(appJs, /mediatorKeyModeStorageKey/);
+assert.match(appJs, /companionKeyModeStorageKey/);
+assert.match(appJs, /hostedDemoCompanionManaged/);
+assert.match(appJs, /useOwnCompanionKey/);
+assert.match(appJs, /toggleCompanionKeyMode/);
+assert.match(appJs, /hostedDemo\[target\]\?\.enabled/);
 assert.match(appJs, /statusCode === 429/);
 assert.doesNotMatch(appJs, /__DEBURAPY_HOSTED_DEMO_KEY__/);
 assert.match(appJs, /testCompanion:\s*document\.querySelector\("#testCompanion"\)/);
@@ -328,7 +333,7 @@ assert.match(appJs, /isOneOnOneMode\(\) \? t\("turnInstructionOneOnOne"\) : t\("
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 assert.match(indexHtml, /id="companionMode"/);
 assert.match(indexHtml, /id="aiCompanionSection"/);
-assert.match(indexHtml, /app\.js\?v=2026-07-05-name-style/);
+assert.match(indexHtml, /app\.js\?v=2026-07-05-companion-hosted/);
 assert.match(indexHtml, /id="testCompanion"/);
 assert.match(indexHtml, /id="settingsDrawer"/);
 assert.match(indexHtml, /id="mediatorPersona"/);
@@ -336,6 +341,8 @@ assert.match(indexHtml, />Elias</);
 assert.match(indexHtml, />Mara</);
 assert.match(indexHtml, /id="mediatorHostedKeyNote"/);
 assert.match(indexHtml, /id="useOwnMediatorKey"/);
+assert.match(indexHtml, /id="companionHostedKeyNote"/);
+assert.match(indexHtml, /id="useOwnCompanionKey"/);
 assert.match(indexHtml, /id="sessionProgress"/);
 assert.match(indexHtml, /class="iconSprite"/);
 assert.match(indexHtml, /data-theme="light"/);
@@ -397,7 +404,9 @@ assert.match(serverJs, /export default handleRequest/);
 assert.match(serverJs, /isServerlessRuntime/);
 assert.match(serverJs, /\/api\/demo-config/);
 assert.match(serverJs, /DEBURAPY_HOSTED_DEMO_GOOGLE_AI_STUDIO_API_KEY/);
-assert.match(serverJs, /Hosted demo key is not available for AI companion API calls/);
+assert.match(serverJs, /"connection_test", "companion"/);
+assert.match(serverJs, /resolveModelInput\(input, "companion", req\)/);
+assert.doesNotMatch(serverJs, /Hosted demo key is not available for AI companion API calls/);
 assert.match(serverJs, /hostedDemoRateLimit/);
 assert.match(serverJs, /Number\.isInteger\(err\?\.statusCode\)/);
 assert.doesNotMatch(serverJs, /sendJson\(res, 200, \{[^}]*apiKey/s);
@@ -417,6 +426,9 @@ assert.match(serverJs, /relationship-map/);
 assert.match(serverJs, /check-in-scale/);
 assert.match(serverJs, /\/api\/modules/);
 assert.match(serverJs, /getRoomRecall/);
+const visualCheckJs = await readFile(new URL("../scripts/visual-check.mjs", import.meta.url), "utf8");
+assert.match(visualCheckJs, /PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH/);
+assert.match(visualCheckJs, /executablePath/);
 const serverModule = await import(`../src/server.mjs?handler-test=${Date.now()}`);
 assert.equal(typeof serverModule.handleRequest, "function");
 assert.equal(typeof serverModule.default, "function");
@@ -723,19 +735,9 @@ async function testSessionLifecycleApi() {
     const demoConfig = await demoConfigResponse.json();
     assert.equal(demoConfig.mediator.enabled, true);
     assert.equal(demoConfig.mediator.provider, "google-ai-studio");
+    assert.equal(demoConfig.companion.enabled, true);
+    assert.equal(demoConfig.companion.provider, "google-ai-studio");
     assert.equal(JSON.stringify(demoConfig).includes("test-hosted-key"), false);
-
-    const companionHostedResponse = await fetch(`http://127.0.0.1:${port}/api/companion/respond`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        roomId: "default",
-        useHostedDemoKey: true
-      })
-    });
-    assert.equal(companionHostedResponse.status, 400);
-    const companionHostedError = await companionHostedResponse.json();
-    assert.match(companionHostedError.error, /not available for AI companion/);
 
     const soloStartResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/solo/session/start`, {
       method: "POST",
@@ -762,6 +764,15 @@ async function testSessionLifecycleApi() {
     assert.equal(soloCompanionMcpResponse.status, 400);
     const soloCompanionMcpError = await soloCompanionMcpResponse.json();
     assert.match(soloCompanionMcpError.error, /disabled in one-on-one/);
+
+    const soloCompanionHostedResponse = await fetch(`http://127.0.0.1:${port}/api/companion/respond`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ roomId: "solo", useHostedDemoKey: true })
+    });
+    assert.equal(soloCompanionHostedResponse.status, 400);
+    const soloCompanionHostedError = await soloCompanionHostedResponse.json();
+    assert.match(soloCompanionHostedError.error, /disabled in one-on-one/);
 
     const createResponse = await fetch(`http://127.0.0.1:${port}/api/rooms/default/sessions`, {
       method: "POST",

@@ -14,10 +14,10 @@ boundary. The local server has no built-in authentication.
 | `DEBURAPY_PORT` | `8787` | Port for the local web server and JSON API. |
 | `DEBURAPY_DATA_DIR` | `.deburapy-data` | Local data directory for `store.json`, including room transcripts, session records, channel pushes, and session notes. |
 | `DEBURAPY_ALLOW_UNSAFE_BIND` | `0` | Set to `1` only when binding outside loopback behind your own authentication and network boundary. |
-| `DEBURAPY_ENABLE_HOSTED_DEMO` | `0` | Set to `1` to let the mediator and pre-intake assistant use a server-side hosted demo key. |
+| `DEBURAPY_ENABLE_HOSTED_DEMO` | `0` | Set to `1` to let the mediator, pre-intake assistant, session note generator, and API companion use a server-side hosted demo key. |
 | `DEBURAPY_HOSTED_DEMO_GOOGLE_AI_STUDIO_API_KEY` | empty | Server-only Google AI Studio key for hosted demos. Never expose it to frontend code or commit it. |
-| `DEBURAPY_HOSTED_DEMO_MODEL` | `gemini-3.5-flash` | Model used by the hosted demo mediator. |
-| `DEBURAPY_HOSTED_DEMO_BASE_URL` | Google AI Studio OpenAI-compatible URL | Base URL used by the hosted demo mediator. |
+| `DEBURAPY_HOSTED_DEMO_MODEL` | `gemini-3.5-flash` | Model used by hosted demo AI calls. |
+| `DEBURAPY_HOSTED_DEMO_BASE_URL` | Google AI Studio OpenAI-compatible URL | Base URL used by hosted demo AI calls. |
 | `DEBURAPY_HOSTED_DEMO_RATE_LIMIT_PER_MINUTE` | `12` | Best-effort per-IP in-memory limit for hosted demo calls. This is not a full abuse-prevention system. |
 | `DEBURAPY_URL` | `http://127.0.0.1:8787` | Base URL used by the stdio MCP server when it calls the local Deburapy API. |
 | `DEBURAPY_ROOM_ID` | `default` | Default room ID used by MCP tools when the caller does not pass a room ID. |
@@ -37,15 +37,15 @@ variable. The browser only receives provider, base URL, model, and a "hosted
 demo key" label; it never receives the key value.
 
 Hosted demo mode is intentionally limited to Deburapy's mediator, pre-intake
-assistant, mediator connection test, and session note generation. It is not
-available for BYOK AI companion calls, so the deployment does not become a
-general-purpose model proxy. Use a restricted, low-quota Google AI Studio key
-and add stronger auth / quota controls before treating it as a production
-public service.
+assistant, session note generation, connection tests, and API companion calls
+inside a Deburapy room. One-on-one support mode still hides and disables the AI
+companion. Use a restricted, low-quota Google AI Studio key and add stronger
+auth / quota controls before treating it as a production public service.
 
 When hosted demo mode is enabled, the UI defaults to a disabled "Demo key
-managed by host" state for the mediator. Users can switch the mediator setup to
-their own OpenAI-compatible, OpenRouter, or Google AI Studio key from Settings.
+managed by host" state for the mediator and API companion. Users can switch
+either setup to their own OpenAI-compatible, OpenRouter, or Google AI Studio
+key from Settings.
 If the hosted key hits a provider rate limit, Deburapy returns HTTP 429 and
 prompts the user to wait or switch to their own key.
 

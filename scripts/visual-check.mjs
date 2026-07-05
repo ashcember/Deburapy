@@ -52,7 +52,11 @@ async function consentSignatureVisibility(page) {
 fs.mkdirSync(outputDir, { recursive: true });
 
 const { chromium } = loadPlaywright();
-const browser = await chromium.launch({ headless: true });
+const launchOptions = { headless: true };
+if (process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH) {
+  launchOptions.executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+}
+const browser = await chromium.launch(launchOptions);
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const consoleErrors = [];
 page.on("console", (message) => {
@@ -140,6 +144,23 @@ const settingsStorage = await page.evaluate(() => ({
   configuredBy: document.querySelector("#storageConfiguredBy")?.textContent,
   envExample: document.querySelector("#storageEnvExample")?.textContent,
   transcriptExportText: document.querySelector("#localStorageSection #exportTranscript")?.textContent?.trim()
+}));
+const hostedDemoConfig = await page.evaluate(async () => {
+  const response = await fetch("/api/demo-config");
+  return response.ok ? response.json() : {};
+});
+if (hostedDemoConfig.companion?.enabled) {
+  await page.waitForFunction(() => document.querySelector("#companionHostedKeyNote")?.hidden === false);
+}
+const companionHostedSettings = await page.evaluate(() => ({
+  provider: document.querySelector("#companionProvider")?.value,
+  model: document.querySelector("#companionModel")?.value,
+  apiKeyDisabled: document.querySelector("#companionApiKey")?.disabled,
+  apiKeyPlaceholder: document.querySelector("#companionApiKey")?.getAttribute("placeholder"),
+  noteHidden: document.querySelector("#companionHostedKeyNote")?.hidden,
+  noteText: document.querySelector("#companionHostedKeyNote")?.textContent?.trim() || "",
+  switchHidden: document.querySelector("#useOwnCompanionKey")?.hidden,
+  switchText: document.querySelector("#useOwnCompanionKey")?.textContent?.trim() || ""
 }));
 await page.selectOption("#companionMode", "mcp");
 await page.waitForFunction(() => document.querySelector("#companionMcpGuide")?.hidden === false);
@@ -245,6 +266,14 @@ assertCondition(Boolean(settingsStorage.dataDir), "Storage data directory was no
 assertCondition(settingsStorage.storePath.endsWith("store.json"), "Storage store path was not rendered.");
 assertCondition(settingsStorage.envExample.includes("DEBURAPY_DATA_DIR="), "Storage env example is missing.");
 assertCondition(settingsStorage.transcriptExportText.includes("Export"), "Transcript export is not tucked into Settings.");
+if (hostedDemoConfig.companion?.enabled) {
+  assertCondition(companionHostedSettings.provider === "google-ai-studio", "Hosted companion provider should be Google AI Studio.");
+  assertCondition(companionHostedSettings.model === hostedDemoConfig.companion.model, "Hosted companion model did not match /api/demo-config.");
+  assertCondition(companionHostedSettings.apiKeyDisabled === true, "Hosted companion key input should be disabled.");
+  assertCondition(companionHostedSettings.noteHidden === false, "Hosted companion note should be visible.");
+  assertCondition(companionHostedSettings.noteText.includes("server"), "Hosted companion note should mention server-side key handling.");
+  assertCondition(companionHostedSettings.switchHidden === false, "Hosted companion key switch should be visible.");
+}
 assertCondition(mcpGuide.visible === true, "MCP companion guide did not open.");
 assertCondition(mcpGuide.copyInstallPrompt === false, "README install guidance should not appear as a Settings copy control.");
 assertCondition(mcpGuide.guideText.includes("deburapy_send_channel_reply"), "MCP guide is missing reply tool guidance.");
@@ -272,6 +301,8 @@ console.log(JSON.stringify({
   ui,
   darkTheme,
   settingsStorage,
+  hostedDemoConfig,
+  companionHostedSettings,
   mcpGuide,
   oneOnOneUi,
   mobileBefore,
