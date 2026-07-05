@@ -300,6 +300,9 @@ assert.match(appJs, /deburapy\.onboarding\.v1/);
 assert.match(appJs, /syncConsentGate/);
 assert.match(appJs, /function supportModeForConcern/);
 assert.match(appJs, /function currentSupportContext/);
+assert.match(appJs, /function resetLocalStateFromUrl/);
+assert.match(appJs, /params\.get\("reset"\)/);
+assert.match(appJs, /localStateReset/);
 assert.match(appJs, /supportMode:\s*supportModeForConcern/);
 assert.match(appJs, /oneOnOneNoCompanion/);
 assert.match(appJs, /turnInstructionOneOnOne/);
@@ -318,6 +321,7 @@ assert.match(appJs, /isOneOnOneMode\(\) \? t\("turnInstructionOneOnOne"\) : t\("
 assert.doesNotMatch(appJs, /JSON\.stringify\(config\(\)\)/);
 assert.match(indexHtml, /id="companionMode"/);
 assert.match(indexHtml, /id="aiCompanionSection"/);
+assert.match(indexHtml, /app\.js\?v=2026-07-05-reset-link/);
 assert.match(indexHtml, /id="testCompanion"/);
 assert.match(indexHtml, /id="settingsDrawer"/);
 assert.match(indexHtml, /id="mediatorPersona"/);

@@ -4,6 +4,38 @@ const localeStorageKey = "deburapy.locale";
 const themeStorageKey = "deburapy.theme";
 const mediatorKeyModeStorageKey = "deburapy.mediator.keyMode";
 
+function resetLocalStateFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  if (!["1", "true", "local"].includes(params.get("reset") || "")) return false;
+
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith("deburapy.")) localStorage.removeItem(key);
+    }
+  } catch {
+    // Reset should stay best-effort; storage may be blocked by browser policy.
+  }
+  try {
+    for (const key of Object.keys(sessionStorage)) {
+      if (key.startsWith("deburapy.")) sessionStorage.removeItem(key);
+    }
+  } catch {
+    // Same best-effort rule as localStorage.
+  }
+  if (window.caches) {
+    window.caches.keys()
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith("deburapy")).map((key) => window.caches.delete(key))))
+      .catch(() => {});
+  }
+  params.delete("reset");
+  const nextQuery = params.toString();
+  const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash}`;
+  window.history.replaceState({}, "", nextUrl);
+  return true;
+}
+
+const didResetLocalState = resetLocalStateFromUrl();
+
 const els = {
   locale: document.querySelector("#locale"),
   tagline: document.querySelector("#tagline"),
@@ -309,6 +341,7 @@ const copy = {
     humanMessageAdded: "Human message added. Routing the turn to the AI companion.",
     humanMessageAddedOneOnOne: "Human message added. Returning the turn to Deburapy.",
     appLoaded: "Deburapy loaded. Local room data reloads from .deburapy-data.",
+    localStateReset: "Local browser state was reset for this Deburapy origin.",
     turnInstruction: "You are managing a three-party turn. If the human should answer next, use `Next speaker: human`. If the AI companion should answer next, use `Next speaker: companion`.",
     turnInstructionOneOnOne: "You are managing a one-on-one Deburapy support session. There is no AI companion in this room. Always use `Next speaker: human`.",
     selectSession: "Select {label}",
@@ -539,6 +572,7 @@ const copy = {
     humanMessageAdded: "人类消息已加入。正在把回合转给 AI 伴侣。",
     humanMessageAddedOneOnOne: "人类消息已加入。回合正在回到 Deburapy。",
     appLoaded: "Deburapy 已载入。本地房间数据会从 .deburapy-data 重新读取。",
+    localStateReset: "这个 Deburapy 站点的本地浏览器状态已重置。",
     turnInstruction: "你正在管理三方回合。如果接下来应由人类回答，请使用 `Next speaker: human`。如果接下来应由 AI 伴侣回答，请使用 `Next speaker: companion`。",
     turnInstructionOneOnOne: "你正在管理一对一 Deburapy 支持 session。这个房间里没有 AI 伴侣。始终使用 `Next speaker: human`。",
     selectSession: "选择{label}",
@@ -2223,6 +2257,7 @@ setStatus("mediator", "idle", t("notTested"));
 setStatus("companion", "idle", t("notTested"));
 updateCompanionMode();
 appendLog(t("appLoaded"));
+if (didResetLocalState) appendLog(t("localStateReset"), "ok");
 syncConsentGate();
 window.setInterval(checkSessionClock, 1000);
 window.setInterval(() => {

@@ -69,6 +69,24 @@ await page.screenshot({ path: path.join(outputDir, "consent-compact.png"), fullP
 await page.setViewportSize({ width: 1440, height: 1000 });
 
 await page.evaluate(() => {
+  localStorage.setItem("deburapy.onboarding.v1", JSON.stringify({
+    version: 1,
+    acceptedAt: new Date().toISOString(),
+    screeningCompletedAt: new Date().toISOString(),
+    signature: "Visual QA",
+    supportMode: "relationship_mediation",
+    screening: { concern: "relationship_mediation", urgency: "low" },
+    agreements: { scope: true, localStorage: true, aiLimitations: true }
+  }));
+});
+await page.goto(`${baseUrl}/?reset=1`, { waitUntil: "networkidle" });
+const resetLink = await page.evaluate(() => ({
+  url: window.location.href,
+  onboarding: localStorage.getItem("deburapy.onboarding.v1"),
+  consentHidden: document.querySelector("#consentGate")?.hidden
+}));
+
+await page.evaluate(() => {
   localStorage.setItem("deburapy.locale", "en");
   localStorage.setItem("deburapy.theme", "light");
   localStorage.setItem("deburapy.onboarding.v1", JSON.stringify({
@@ -206,6 +224,9 @@ await browser.close();
 assertCondition(ui.title === "Deburapy", "Page title did not load.");
 assertCondition(consentDesktop.visible === true, `Consent signature is clipped on desktop: ${JSON.stringify(consentDesktop)}`);
 assertCondition(consentCompact.visible === true, `Consent signature is clipped on compact desktop: ${JSON.stringify(consentCompact)}`);
+assertCondition(resetLink.url.includes("reset=1") === false, "Reset link should remove the reset query parameter.");
+assertCondition(resetLink.onboarding === null, "Reset link should clear Deburapy onboarding localStorage.");
+assertCondition(resetLink.consentHidden === false, "Reset link should show the consent gate after clearing onboarding.");
 assertCondition(ui.consentHidden === true, "Consent bypass did not reveal the room UI.");
 assertCondition(ui.themeToggle === true, "Theme toggle is missing.");
 assertCondition(ui.theme === "light", "Initial theme should be light.");
@@ -247,6 +268,7 @@ console.log(JSON.stringify({
   outputDir,
   consentDesktop,
   consentCompact,
+  resetLink,
   ui,
   darkTheme,
   settingsStorage,
